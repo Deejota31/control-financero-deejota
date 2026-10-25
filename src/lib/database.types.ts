@@ -677,7 +677,7 @@ isOneToOne: false
 { Args: { "p_ids": (string)[],"p_kind": string }; Returns: undefined
                            },
 "reorder_funds":
-{ Args: { "p_ids": (string)[] }; Returns: undefined
+{ Args: { "p_dry_run"?: boolean,"p_ids": (string)[] }; Returns: Json
                            },
 "restore_expenses":
 { Args: { "p_ids": (string)[] }; Returns: Json

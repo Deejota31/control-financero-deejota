@@ -612,8 +612,8 @@ begin
 end;
 $$;
 
-create function public.reorder_funds(p_ids uuid[])
-returns void
+create function public.reorder_funds(p_ids uuid[], p_dry_run boolean default false)
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
@@ -621,14 +621,33 @@ as $$
 declare
   v_hid uuid := public.current_household_id();
   v_open record;
+  v_before jsonb;
+  v_after jsonb;
+  v_cons_before jsonb;
+  v_cons_after jsonb;
 begin
   if v_hid is null then raise exception 'Sesión no válida.' using errcode = '28000'; end if;
-  update public.funds f set priority = o.ord::int * 10
-  from unnest(p_ids) with ordinality as o(id, ord)
-  where f.id = o.id and f.household_id = v_hid;
-  for v_open in select id from public.budget_periods where household_id = v_hid and status = 'open' loop
-    perform public.recalc_period(v_open.id);
-  end loop;
+  v_before := public.alloc_signature(v_hid);
+  v_cons_before := public.open_consumption(v_hid);
+  begin
+    update public.funds f set priority = o.ord::int * 10
+    from unnest(p_ids) with ordinality as o(id, ord)
+    where f.id = o.id and f.household_id = v_hid;
+    for v_open in select id from public.budget_periods where household_id = v_hid and status = 'open' loop
+      perform public.recalc_period(v_open.id);
+    end loop;
+    v_after := public.alloc_signature(v_hid);
+    v_cons_after := public.open_consumption(v_hid);
+    if p_dry_run then raise exception 'simulacion' using errcode = 'GD999'; end if;
+  exception when others then
+    if sqlstate <> 'GD999' then raise; end if;
+  end;
+  return jsonb_build_object(
+    'dry_run', p_dry_run,
+    'changed_expenses', public.count_changed(v_before, v_after),
+    'consumption_before', v_cons_before,
+    'consumption_after', v_cons_after
+  );
 end;
 $$;
 
@@ -817,7 +836,7 @@ begin
   end loop;
   foreach fn in array array[
     'ensure_period_rpc(date)', 'create_expense(jsonb,uuid)', 'update_expense(uuid,jsonb)', 'annul_expenses(uuid[])',
-    'restore_expenses(uuid[])', 'preview_expense(jsonb)', 'save_fund(jsonb,boolean)', 'reorder_funds(uuid[])',
+    'restore_expenses(uuid[])', 'preview_expense(jsonb)', 'save_fund(jsonb,boolean)', 'reorder_funds(uuid[],boolean)',
     'set_fund_period_budget(uuid,uuid,numeric,boolean)', 'close_period(uuid)', 'apply_template_batch(date,jsonb,uuid)'
   ] loop
     execute format('revoke all on function public.%s from public, anon', fn);

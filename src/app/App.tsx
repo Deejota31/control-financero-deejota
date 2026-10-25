@@ -8,6 +8,7 @@ import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { PublicOnly, RequireAuth } from '@/features/auth/RouteGuards'
 import { SessionExpiredPage } from '@/features/auth/SessionExpiredPage'
 import { CatalogoPage } from '@/features/catalogo/CatalogoPage'
+import { FondosPage } from '@/features/fondos/FondosPage'
 import { ConfiguracionPage } from '@/features/perfil/ConfiguracionPage'
 import { ThemeProvider, useTema } from '@/features/tema/ThemeProvider'
 import { AppLayout } from './AppLayout'
@@ -40,7 +41,7 @@ export function App() {
                 <Route element={<AppLayout />}>
                   <Route index element={<ModuloPendiente nombre="Dashboard" descripcion="Presupuesto, gasto acumulado y gráficos del período." />} />
                   <Route path="gastos" element={<ModuloPendiente nombre="Gastos" descripcion="Registro, filtros y plantillas de gastos." />} />
-                  <Route path="fondos" element={<ModuloPendiente nombre="Fondos presupuestales" descripcion="Presupuesto asignado, consumo y reglas de cobertura." />} />
+                  <Route path="fondos" element={<FondosPage />} />
                   <Route path="catalogo" element={<CatalogoPage />} />
                   <Route path="salud" element={<ModuloPendiente nombre="Salud financiera" descripcion="Disponible, tendencias y compromisos mensuales." />} />
                   <Route path="configuracion" element={<ConfiguracionPage />} />

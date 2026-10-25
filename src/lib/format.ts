@@ -58,3 +58,10 @@ export function parseImporte(texto: string): number | null {
   const n = Number(limpio)
   return n > 0 ? n : null
 }
+
+/** Como `parseImporte` pero admite 0 (presupuestos de fondos). */
+export function parseMontoNoNegativo(texto: string): number | null {
+  const limpio = texto.replace(/S\/|\s/gi, '').replace(/,/g, '')
+  if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return null
+  return Number(limpio)
+}
