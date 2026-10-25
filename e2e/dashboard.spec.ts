@@ -125,10 +125,10 @@ test.describe('Dashboard', () => {
 
   test('si Supabase falla, el dashboard muestra un error con opción de reintentar', async ({ page }) => {
     await iniciarSesion(page)
-    await page.route('**/rest/v1/expenses**', (r) => r.abort('connectionrefused'))
+    await page.route('**/rest/v1/rpc/dashboard_resumen', (r) => r.abort('connectionrefused'))
     await page.goto('/?desde=2026-09-01&hasta=2026-09-30')
     await expect(page.getByText('No se pudieron cargar los datos del dashboard.')).toBeVisible({ timeout: 20_000 })
-    await page.unroute('**/rest/v1/expenses**')
+    await page.unroute('**/rest/v1/rpc/dashboard_resumen')
     await page.getByRole('button', { name: 'Reintentar' }).click()
     await expect(page.getByLabel('Indicadores')).toBeVisible()
   })
