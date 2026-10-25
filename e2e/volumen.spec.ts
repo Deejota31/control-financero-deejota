@@ -104,6 +104,21 @@ test.describe('Volumen: totales exactos con más gastos que el límite anterior'
     expect(importes.every((n) => !Number.isNaN(n))).toBe(true)
     expect(importes.reduce((t, v) => t + v, 0)).toBeCloseTo(esperado.total, 1)
 
+    // Configuración: exportación completa (más de 5,000 filas) en CSV y en respaldo JSON
+    await page.goto('/configuracion?seccion=exportar')
+    const [dCsv] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exportar CSV' }).click()])
+    const csvCfg = filasCsv((await readFile((await dCsv.path())!, 'utf8')).replace(String.fromCharCode(0xfeff), ''))
+    const hist = sqlLocal(`select count(*) || '|' || coalesce(sum(amount), 0) from public.expenses where status = 'active' and household_id = (select household_id from public.profiles where user_id = '${E2E_UID}')`).split('|').map(Number)
+    expect(csvCfg.length - 1).toBe(hist[0])
+    expect(hist[0]).toBeGreaterThan(5000)
+    const colImp = csvCfg[0].indexOf('importe')
+    expect(csvCfg.slice(1).reduce((t, f) => t + Number(f[colImp]), 0)).toBeCloseTo(hist[1], 1)
+    await page.getByRole('button', { name: 'Descargar respaldo' }).click()
+    const [dJson] = await Promise.all([page.waitForEvent('download'), page.getByRole('alertdialog').getByRole('button', { name: 'Descargar respaldo' }).click()])
+    const respaldo = JSON.parse(await readFile((await dJson.path())!, 'utf8'))
+    expect(respaldo.gastos.length).toBe(Number(sqlLocal(`select count(*) from public.expenses where household_id = (select household_id from public.profiles where user_id = '${E2E_UID}')`)))
+    expect(respaldo.imputaciones.length).toBeGreaterThanOrEqual(hist[0])
+
     // Fondos: el consumo imputado (miles de imputaciones) coincide con el total
     await page.goto('/fondos')
     const consumido = page.getByLabel('Resumen del período').locator('div').filter({ has: page.getByText('Consumido', { exact: true }) }).first()

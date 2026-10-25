@@ -34,7 +34,11 @@ const PAGINAS = [
   { ruta: '/fondos', nombre: 'Fondos', espera: 'Presupuesto asignado' },
   { ruta: '/catalogo', nombre: 'Catálogo', espera: 'Ámbitos' },
   { ruta: '/salud', nombre: 'Salud financiera', espera: '¿Cuánto presupuesto queda?' },
-  { ruta: '/configuracion', nombre: 'Configuración', espera: 'Actividad reciente' },
+  { ruta: '/configuracion', nombre: 'Configuración: perfil', espera: 'Formato de fecha' },
+  { ruta: '/configuracion?seccion=hogar', nombre: 'Configuración: hogar', espera: 'Nombre del hogar' },
+  { ruta: '/configuracion?seccion=exportar', nombre: 'Configuración: exportar', espera: 'Gastos en CSV' },
+  { ruta: '/configuracion?seccion=cuenta', nombre: 'Configuración: cuenta', espera: 'Correo de acceso' },
+  { ruta: '/configuracion?seccion=actividad', nombre: 'Configuración: actividad', espera: 'Ver toda la actividad' },
 ]
 
 test.describe('Accesibilidad (axe)', () => {

@@ -9,7 +9,7 @@ const RUTAS = [
   { ruta: '/fondos', nombre: 'fondos', espera: 'Presupuesto asignado' },
   { ruta: '/catalogo', nombre: 'catalogo', espera: 'Ámbitos' },
   { ruta: '/salud', nombre: 'salud', espera: '¿Cuánto presupuesto queda?' },
-  { ruta: '/configuracion', nombre: 'configuracion', espera: 'Actividad reciente' },
+  { ruta: '/configuracion', nombre: 'configuracion', espera: 'Perfil y preferencias' },
 ] as const
 
 const DIR = 'capturas'
