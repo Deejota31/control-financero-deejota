@@ -8,6 +8,7 @@ import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { PublicOnly, RequireAuth } from '@/features/auth/RouteGuards'
 import { SessionExpiredPage } from '@/features/auth/SessionExpiredPage'
 import { CatalogoPage } from '@/features/catalogo/CatalogoPage'
+import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { FondosPage } from '@/features/fondos/FondosPage'
 import { GastosPage } from '@/features/gastos/GastosPage'
 import { ConfiguracionPage } from '@/features/perfil/ConfiguracionPage'
@@ -40,7 +41,7 @@ export function App() {
 
               <Route element={<RequireAuth />}>
                 <Route element={<AppLayout />}>
-                  <Route index element={<ModuloPendiente nombre="Dashboard" descripcion="Presupuesto, gasto acumulado y gráficos del período." />} />
+                  <Route index element={<DashboardPage />} />
                   <Route path="gastos" element={<GastosPage />} />
                   <Route path="fondos" element={<FondosPage />} />
                   <Route path="catalogo" element={<CatalogoPage />} />

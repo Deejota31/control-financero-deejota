@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { useHogar } from '@/features/dashboard/useDashboard'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { useTema } from '@/features/tema/ThemeProvider'
 import { ThemeToggle } from '@/features/tema/ThemeToggle'
@@ -13,6 +14,7 @@ export function AppLayout() {
   const { user, signOut } = useAuth()
   const { setTema } = useTema()
   const perfil = usePerfil()
+  const hogar = useHogar()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [saliendo, setSaliendo] = useState(false)
@@ -72,7 +74,10 @@ export function AppLayout() {
 
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-between gap-3 border-b border-line bg-surface px-4 md:px-8">
-          <p className="truncate font-display text-lg font-bold">{actual?.label ?? 'Gasto Deejota'}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <p className="truncate font-display text-lg font-bold">{actual?.label ?? 'Gasto Deejota'}</p>
+            {hogar.data?.is_demo && <span className="shrink-0 rounded-md bg-acc-soft px-2 py-0.5 text-xs font-semibold text-warn" title="Los datos de este hogar son de demostración">Datos DEMO</span>}
+          </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
