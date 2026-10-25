@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+/* Paleta B "Índigo" aprobada. Los tokens se consumen como utilidades de Tailwind (bg-surface, text-fg, ...). */
+:root {
+  --bg: #f6f6fa;
+  --surface: #ffffff;
+  --surface-2: #ececf4;
+  --line: #d9d9e6;
+  --fg: #17172b;
+  --muted: #58587a;
+  --pri: #3a3fa6;
+  --pri-fg: #ffffff;
+  --pri-soft: #e0e1f7;
+  --acc: #b4411f;
+  --acc-soft: #fbe3da;
+  --ok: #1b7a43;
+  --warn: #8f5400;
+  --bad: #b3261e;
+  --bad-soft: #f9dedc;
+  --c1: #3a3fa6;
+  --c2: #e0622f;
+  --c3: #1e8a8a;
+  --c4: #a8478f;
+  --c5: #8a8a2e;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f0f1c;
+  --surface: #181829;
+  --surface-2: #222238;
+  --line: #34344f;
+  --fg: #ececf8;
+  --muted: #a5a5c8;
+  --pri: #9ea3ff;
+  --pri-fg: #101030;
+  --pri-soft: #26264a;
+  --acc: #ff9a73;
+  --acc-soft: #3e2218;
+  --ok: #5ad08a;
+  --warn: #f0b24a;
+  --bad: #ff8f86;
+  --bad-soft: #3f1b18;
+  --c1: #9ea3ff;
+  --c2: #ff9a73;
+  --c3: #5fd0d0;
+  --c4: #e58bd0;
+  --c5: #c9c95a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-pri: var(--pri);
+  --color-pri-fg: var(--pri-fg);
+  --color-pri-soft: var(--pri-soft);
+  --color-acc: var(--acc);
+  --color-acc-soft: var(--acc-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--pri);
+  outline-offset: 2px;
+}
