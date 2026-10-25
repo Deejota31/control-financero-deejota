@@ -1,7 +1,7 @@
-import { endOfMonth, startOfMonth, subMonths } from 'date-fns'
-import { ArrowRight, Plus, Receipt, TrendingDown, TrendingUp, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowLeftRight, ArrowRight, Minus, Plus, Receipt, TrendingDown, TrendingUp, Trophy, Wallet, X } from 'lucide-react'
+import { useMemo, useState, type ComponentType } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
 import { DatePicker } from '@/components/ui/DatePicker'
@@ -9,18 +9,19 @@ import { FilaHint, Hint } from '@/components/ui/Hint'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { diasEnRango, esMesCompleto, rangoAnterior, serieDiaria, variacion } from '@/domain/dashboard'
-import { hayCruzados, paramsGastos, type ClaveFiltro } from '@/domain/filtrosCruzados'
+import { hayCruzados, paramsGastos } from '@/domain/filtrosCruzados'
 import { resumirFondo, round2 } from '@/domain/fondos'
 import { resumirPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
-import { formatFecha, formatFechaLarga, formatMes, formatSoles, fromIso, toIso } from '@/lib/format'
+import { formatFecha, formatFechaLarga, formatMes, formatSoles, toIso } from '@/lib/format'
 import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { finDeMes, mesDeFecha, usePeriodo } from '@/features/fondos/useFondos'
 import { useEstadoLote, usePlantillas } from '@/features/gastos/usePlantillas'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { Dona, GraficoAcumulado, GraficoDiario, type PuntoGrafico, type SegmentoDona } from './Graficos'
 import { PresupuestoConsolidado } from './PresupuestoConsolidado'
+import { SelectorPeriodo } from './SelectorPeriodo'
 import { useDashboardPanel } from './useDashboard'
 import { useFiltrosDashboard } from './useFiltrosDashboard'
 
@@ -46,12 +47,14 @@ function Tarjeta({ titulo, descripcion, derecha, children, className, filtrada }
   )
 }
 
-function Kpi({ etiqueta, valor, nota, tono, icono }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad'; icono?: React.ReactNode }) {
+/** Indicador con acento: tinte muy suave, ícono en superficie coloreada y el importe como protagonista. */
+function Kpi({ etiqueta, valor, nota, tono, icono, acento }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad'; icono: ComponentType<{ className?: string }>; acento: Acento }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-xl border border-line bg-surface px-5 py-4">
-      <span className="text-sm text-muted">{etiqueta}</span>
-      <span className={cn('num flex items-center gap-2 text-2xl font-medium', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{icono}{valor}</span>
+    <div className={cn(claseAcento(acento), 'relative flex min-w-0 flex-col gap-1 rounded-2xl border border-[var(--a-bd)] bg-gradient-to-br from-[var(--a-soft)] to-surface px-5 py-4 pr-16')}>
+      <span className="text-sm font-medium text-muted">{etiqueta}</span>
+      <span className={cn('num truncate text-[1.7rem] font-semibold leading-tight', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
       <span className="truncate text-xs text-muted">{nota}</span>
+      <IconoAcento icono={icono} acento={acento} size="md" className="absolute right-4 top-4" />
     </div>
   )
 }
@@ -134,72 +137,31 @@ export function DashboardPage() {
 
   const irAGastos = () => navigate(`/gastos?${paramsGastos(filtros)}`)
 
-  // Chips de filtros activos con su nombre legible
-  const nombreDe = (clave: ClaveFiltro, valor: string): string => {
-    switch (clave) {
-      case 'ambito': return catalogo.ambitos.find((x) => x.id === valor)?.name ?? 'Ámbito'
-      case 'categoria': return catalogo.categorias.find((x) => x.id === valor)?.name ?? 'Categoría'
-      case 'subcategoria': return catalogo.subcategorias.find((x) => x.id === valor)?.name ?? 'Subcategoría'
-      case 'medio': return catalogo.medios.find((x) => x.id === valor)?.name ?? 'Medio'
-      case 'tipo': return valor === 'fixed' ? 'Fijo' : 'Variable'
-      default: return formatFecha(valor, formato)
-    }
-  }
-  const ETIQUETAS: Record<ClaveFiltro, string> = { ambito: 'Ámbito', categoria: 'Categoría', subcategoria: 'Subcategoría', medio: 'Medio de pago', tipo: 'Tipo', dia: 'Día' }
-  const chips = (['ambito', 'categoria', 'subcategoria', 'medio', 'tipo', 'dia'] as ClaveFiltro[]).filter((k) => filtros[k] !== '')
 
   const resumenGrafico = `Gasto acumulado de ${etiquetaPeriodo}${cruzados ? ' con filtros' : ''}: ${formatSoles(total)}${proyeccion !== null ? `, proyección de cierre ${formatSoles(proyeccion)} (estimación)` : ''}`
   const delDiaTexto = filtros.dia ? formatFechaLarga(filtros.dia) : ''
 
+  const categoriasOpc = catalogo.categorias.filter((c) => !filtros.ambito || c.ambito_id === filtros.ambito)
+  const subcategoriasOpc = catalogo.subcategorias.filter((s) => (filtros.categoria ? s.categoria_id === filtros.categoria : categoriasOpc.some((c) => c.id === s.categoria_id)))
+
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{etiquetaPeriodo} · <span aria-live="polite">{cruzados ? 'con filtros activos' : 'todos los ámbitos y medios de pago'}</span></p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex w-44 flex-col gap-1.5"><label htmlFor="d-desde" className="text-sm font-medium">Desde</label><DatePicker id="d-desde" value={desde} onChange={(v) => fijarPeriodo(v, v > hasta ? v : hasta)} formato={formato} /></div>
-          <div className="flex w-44 flex-col gap-1.5"><label htmlFor="d-hasta" className="text-sm font-medium">Hasta</label><DatePicker id="d-hasta" value={hasta} onChange={(v) => fijarPeriodo(v < desde ? v : desde, v)} formato={formato} /></div>
-          <Button variant="secondary" onClick={() => fijarPeriodo(toIso(startOfMonth(fromIso(HOY))), toIso(endOfMonth(fromIso(HOY))))}>Este mes</Button>
-          <Button variant="secondary" onClick={() => fijarPeriodo(toIso(startOfMonth(subMonths(fromIso(HOY), 1))), toIso(endOfMonth(subMonths(fromIso(HOY), 1))))}>Mes anterior</Button>
-          <Button onClick={() => navigate('/gastos?nuevo=1')}><Plus className="size-4" aria-hidden="true" /> Registrar gasto</Button>
-        </div>
+        {cruzados && valido && <Button variant="secondary" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>}
       </div>
 
-      {valido && !cargando && !falla && (
-        <section aria-label="Filtros del dashboard" className="sticky top-2 z-30 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-sm">
-          <div className="flex w-44 flex-col gap-1.5">
-            <label htmlFor="f-dia" className="text-sm font-medium">Día</label>
-            <DatePicker id="f-dia" value={filtros.dia} placeholder="Todo el período" min={desde} max={hasta} formato={formato} onChange={(v) => seleccionar('dia', v)} />
-          </div>
-          <div className="flex w-52 flex-col gap-1.5">
-            <label htmlFor="f-medio-d" className="text-sm font-medium">Medio de pago</label>
-            <Combobox id="f-medio-d" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Todos" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} />
-          </div>
-          <div className="flex w-44 flex-col gap-1.5">
-            <label htmlFor="f-tipo-d" className="text-sm font-medium">Tipo de gasto</label>
-            <Combobox id="f-tipo-d" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Todos" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} />
-          </div>
-          <div className="flex min-w-[16rem] flex-1 flex-wrap items-center gap-2" aria-live="polite">
-            {chips.length === 0 ? (
-              <p className="text-sm text-muted">Selecciona un ámbito, un día o una categoría en los gráficos para filtrar todo el panel.</p>
-            ) : (
-              chips.map((k) => (
-                <span key={k} className="inline-flex items-center gap-1.5 rounded-full border border-pri bg-pri-soft py-1 pl-3 pr-1 text-sm font-medium text-pri">
-                  <span className="text-xs text-muted">{ETIQUETAS[k]}:</span> {nombreDe(k, filtros[k])}
-                  <button type="button" aria-label={`Quitar filtro ${ETIQUETAS[k]}: ${nombreDe(k, filtros[k])}`} onClick={() => seleccionar(k, filtros[k])} className="grid size-6 place-items-center rounded-full hover:bg-surface">
-                    <X className="size-3.5" aria-hidden="true" />
-                  </button>
-                </span>
-              ))
-            )}
-          </div>
-          {cruzados && (
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>
-              <Button variant="ghost" onClick={limpiar}><X className="size-4" aria-hidden="true" /> Limpiar filtros</Button>
-            </div>
-          )}
-        </section>
-      )}
+      <section aria-label="Filtros del dashboard" className="sticky top-2 z-30 grid grid-cols-2 items-center gap-2 rounded-2xl border border-line bg-surface p-2 shadow-sm sm:grid-cols-3 lg:grid-cols-4 xl:flex xl:flex-nowrap">
+        <div className="col-span-2 sm:col-span-1 xl:w-[12.75rem] xl:shrink-0"><SelectorPeriodo desde={desde} hasta={hasta} formato={formato} hoy={HOY} onAplicar={fijarPeriodo} /></div>
+        <div className="xl:w-[7rem] xl:shrink-0"><DatePicker id="f-dia" aria-label="Día" value={filtros.dia} placeholder="Día" min={desde} max={hasta} formato={formato} onChange={(v) => seleccionar('dia', v)} /></div>
+        <div className="xl:w-[7rem] xl:shrink-0"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => seleccionar('ambito', v ?? filtros.ambito)} /></div>
+        <div className="xl:w-[8rem] xl:shrink-0"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable searchable={false} options={opciones(categoriasOpc, filtros.categoria)} placeholder="Categoría" onChange={(v) => seleccionar('categoria', v ?? filtros.categoria)} /></div>
+        <div className="xl:w-[8.5rem] xl:shrink-0"><Combobox id="f-subcategoria" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable searchable={false} options={opciones(subcategoriasOpc, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => seleccionar('subcategoria', v ?? filtros.subcategoria)} /></div>
+        <div className="xl:w-[6.5rem] xl:shrink-0"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></div>
+        <div className="xl:w-[6rem] xl:shrink-0"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></div>
+        <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" disabled={!cruzados} onClick={limpiar} className="px-2.5 xl:shrink-0"><X className="size-4" aria-hidden="true" /></Button>
+        <Button onClick={() => navigate('/gastos?nuevo=1')} className="col-span-2 sm:col-span-1 xl:ml-auto xl:shrink-0"><Plus className="size-4" aria-hidden="true" /> Registrar gasto</Button>
+      </section>
 
       {!valido ? (
         <ErrorState message="La fecha inicial es posterior a la final. Ajusta el rango." />
@@ -218,16 +180,17 @@ export function DashboardPage() {
       ) : (
         <div className={cn('flex flex-col gap-6 transition-opacity', actualizando && 'opacity-60')} aria-busy={actualizando}>
           <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi etiqueta={cruzados ? 'Gasto con filtros actuales' : 'Gasto del período'} valor={formatSoles(total)} nota={`${cantidad} movimientos · ${filtros.dia ? '1 día' : `${dias} días`}`} />
-            <Kpi etiqueta="Movimientos" valor={String(cantidad)} nota={`${Number(panel?.dias_con_gasto ?? 0)} días con gasto`} />
+            <Kpi acento="indigo" icono={Wallet} etiqueta={cruzados ? 'Gasto con filtros actuales' : 'Gasto del período'} valor={formatSoles(total)} nota={`${cantidad} movimientos · ${filtros.dia ? '1 día' : `${dias} días`}`} />
+            <Kpi acento="sky" icono={ArrowLeftRight} etiqueta="Movimientos" valor={String(cantidad)} nota={`${Number(panel?.dias_con_gasto ?? 0)} días con gasto`} />
             <Kpi
+              acento={varPct === null ? 'slate' : varPct > 0 ? 'red' : 'green'}
+              icono={varPct === null ? Minus : varPct > 0 ? TrendingUp : TrendingDown}
               etiqueta="Variación vs período anterior"
               valor={filtros.dia ? 'No aplica' : varPct === null ? 'Sin datos' : `${varPct > 0 ? '+' : ''}${varPct.toFixed(1)}%`}
               tono={varPct === null ? undefined : varPct > 0 ? 'bad' : 'ok'}
-              icono={varPct === null ? undefined : varPct > 0 ? <TrendingUp className="size-5" aria-hidden="true" /> : <TrendingDown className="size-5" aria-hidden="true" />}
-              nota={filtros.dia ? 'Con un día seleccionado no hay comparación' : varPct === null ? 'No hay gasto comparable en el período anterior' : `${formatFecha(ant.desde, formato)} – ${formatFecha(ant.hasta, formato)}: ${formatSoles(totalPrev)}`}
+              nota={filtros.dia ? 'Con un día seleccionado no hay comparación' : varPct === null ? 'No hay gasto comparable en el período anterior' : `Período anterior: ${formatSoles(totalPrev)}`}
             />
-            <Kpi etiqueta="Mayor gasto" valor={panel?.mayor ? formatSoles(Number(panel.mayor.amount)) : '—'} nota={panel?.mayor ? `${panel.mayor.description} · ${formatFecha(panel.mayor.expense_date, formato)}` : 'Sin movimientos con los filtros'} />
+            <Kpi acento="amber" icono={Trophy} etiqueta="Mayor gasto" valor={panel?.mayor ? formatSoles(Number(panel.mayor.amount)) : '—'} nota={panel?.mayor ? `${panel.mayor.description} · ${formatFecha(panel.mayor.expense_date, formato)}` : 'Sin movimientos con los filtros'} />
           </section>
 
           <PresupuestoConsolidado r={resumen} etiquetaPeriodo={etiquetaPeriodo} />

@@ -16,6 +16,12 @@ const idAmbito = (nombre: string) => sqlLocal(`select id from public.ambitos whe
 const kpi = (page: Page, etiqueta: string) => page.getByLabel('Indicadores').locator('div').filter({ has: page.getByText(etiqueta, { exact: true }) }).first()
 const valorKpi = async (page: Page, etiqueta: string) => dinero(await kpi(page, etiqueta).locator('span').nth(1).textContent())
 const chips = (page: Page) => page.getByLabel('Filtros del dashboard')
+/** Abre el selector de período y aplica un atajo. */
+const periodo = async (page: Page, atajo: 'Este mes' | 'Mes anterior') => {
+  await page.getByRole('button', { name: /^Período:/ }).click()
+  await page.getByRole('button', { name: atajo, exact: true }).click()
+  await page.getByRole('button', { name: 'Aplicar', exact: true }).click()
+}
 const filaAmbito = (page: Page, nombre: string) => page.getByLabel('Ámbitos').getByRole('button', { name: new RegExp(`^${nombre}`) })
 const sumaDona = async (page: Page) => {
   const t = await page.getByLabel('Ámbitos').getByRole('button').allTextContents()
@@ -79,7 +85,7 @@ test.describe('Dashboard', () => {
     expect(await valorKpi(page, 'Gasto del período')).toBeCloseTo(sinFiltro.total, 2)
   })
 
-  test('seleccionar un día con el gráfico filtra todo el panel y se quita desde su chip', async ({ page }) => {
+  test('seleccionar un día con el gráfico filtra todo el panel y se quita con Limpiar filtros', async ({ page }) => {
     await iniciarSesion(page)
     // gráfico de barras: clic dentro del área de datos
     const barras = page.getByRole('img', { name: /^Gasto por día/ })
@@ -88,15 +94,15 @@ test.describe('Dashboard', () => {
     await page.mouse.move(caja.x + caja.width * 0.12, caja.y + caja.height * 0.5, { steps: 6 })
     await page.mouse.down()
     await page.mouse.up()
-    await expect(chips(page).getByText(/Día:/)).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Día: \d{2}\/\d{2}\/\d{4}/ })).toBeVisible()
     await expect(page).toHaveURL(/dia=\d{4}-\d{2}-\d{2}/)
     const dia = new URL(page.url()).searchParams.get('dia')!
     await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(sqlTotal(`and expense_date = '${dia}'`), 2)
     await expect(kpi(page, 'Variación vs período anterior')).toContainText('No aplica')
     // el acumulado sigue mostrando todo el período, con el día resaltado
     await expect(page.getByRole('img', { name: /^Gasto acumulado de/ })).toBeVisible()
-    // quitar el chip restablece
-    await chips(page).getByRole('button', { name: /Quitar filtro Día/ }).click()
+    // limpiar restablece
+    await page.getByRole('button', { name: 'Limpiar filtros' }).click()
     await expect(page).not.toHaveURL(/dia=/)
     expect(await valorKpi(page, 'Gasto del período')).toBeCloseTo(sqlTotal(), 2)
   })
@@ -107,7 +113,7 @@ test.describe('Dashboard', () => {
     await expect(filas.first()).toBeVisible()
     const total = await filas.count()
     await filas.first().click()
-    await expect(chips(page).getByText(/Categoría:/)).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Categoría', exact: true })).not.toHaveText('Categoría')
     await expect(page).toHaveURL(/categoria=/)
     const cat = new URL(page.url()).searchParams.get('categoria')!
     const esperado = sqlTotal(`and categoria_id = '${cat}'`)
@@ -127,20 +133,22 @@ test.describe('Dashboard', () => {
     await page.getByRole('option', { name: 'Variable', exact: true }).click()
     const cond = `and ambito_id = '${idAmbito('Personal')}' and payment_method_id = (select id from public.medios_pago where household_id = ${HID} and name = 'Yape') and expense_type = 'variable'`
     await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(sqlTotal(cond), 2)
-    await expect(chips(page).getByRole('button', { name: 'Quitar filtro Medio de pago: Yape' })).toBeVisible()
-    await expect(chips(page).getByRole('button', { name: 'Quitar filtro Tipo: Variable' })).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Medio de pago', exact: true })).toContainText('Yape')
+    await expect(page.getByRole('combobox', { name: 'Tipo de gasto', exact: true })).toContainText('Variable')
+    await expect(page.getByRole('combobox', { name: 'Ámbito', exact: true })).toContainText('Personal')
 
-    await chips(page).getByRole('button', { name: /Quitar filtro Tipo/ }).click()
+    // el tipo se quita con su propia «x»
+    await page.getByRole('combobox', { name: 'Tipo de gasto', exact: true }).locator('xpath=..').getByRole('button', { name: 'Limpiar selección' }).click()
     await expect(page).not.toHaveURL(/tipo=/)
     await expect(page).toHaveURL(/ambito=/)
 
-    await page.getByRole('button', { name: 'Mes anterior' }).click()
+    await periodo(page, 'Mes anterior')
     await expect(page).toHaveURL(/desde=/)
     await expect(page).toHaveURL(/ambito=/) // el cambio de período conserva los demás criterios
     await page.getByRole('button', { name: 'Limpiar filtros' }).click()
     await expect(page).not.toHaveURL(/ambito=|medio=|tipo=/)
     await expect(page).toHaveURL(/desde=/) // el período no se pierde
-    await expect(page.getByRole('button', { name: 'Limpiar filtros' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Limpiar filtros' })).toBeDisabled()
   })
 
   test('"Ver en Gastos" conserva los criterios y la tabla coincide con los KPIs', async ({ page }) => {
@@ -228,12 +236,12 @@ test.describe('Dashboard', () => {
   test('cambiar el período actualiza todo y compara con el anterior', async ({ page }) => {
     await iniciarSesion(page)
     const gastoActual = await valorKpi(page, 'Gasto del período')
-    await page.getByRole('button', { name: 'Mes anterior' }).click()
+    await periodo(page, 'Mes anterior')
     await expect(page).toHaveURL(/desde=/)
     await expect(page.getByText(/Cierre proyectado/)).toHaveCount(0)
     await expect.poll(() => valorKpi(page, 'Gasto del período')).not.toBe(gastoActual)
     await expect(page.getByText('Variación vs período anterior')).toBeVisible()
-    await page.getByRole('button', { name: 'Este mes' }).click()
+    await periodo(page, 'Este mes')
     await expect(page.getByText(/Cierre proyectado/)).toBeVisible()
   })
 
@@ -301,6 +309,101 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('listbox')).toBeVisible()
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Cambiar a tema claro' }).click()
+  })
+})
+
+test.describe('Dashboard: barra de filtros e indicadores', () => {
+  test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
+
+  test('a 1440 px todos los controles caben en una sola fila, sin desborde y a la misma altura', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await iniciarSesion(page)
+    const barra = page.getByRole('region', { name: 'Filtros del dashboard' })
+    await expect(barra).toBeVisible()
+    const nombres = [/^Período:/, /^Día:/, 'Ámbito', 'Categoría', 'Subcategoría', 'Medio de pago', 'Tipo de gasto']
+    const cajas = [] as { y: number; h: number; x2: number }[]
+    for (const n of nombres) {
+      const el = typeof n === 'string' ? barra.getByRole('combobox', { name: n, exact: true }) : barra.getByRole('button', { name: n })
+      const b = (await el.boundingBox())!
+      cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
+    }
+    for (const b of [(await barra.getByRole('button', { name: 'Limpiar filtros' }).boundingBox())!, (await barra.getByRole('button', { name: 'Registrar gasto' }).boundingBox())!]) cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
+    const y0 = cajas[0].y + cajas[0].h / 2
+    for (const c of cajas) expect(Math.abs(c.y + c.h / 2 - y0), 'centrado vertical').toBeLessThanOrEqual(2)
+    const caja = (await barra.boundingBox())!
+    expect(Math.max(...cajas.map((c) => c.x2))).toBeLessThanOrEqual(caja.x + caja.width)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1)
+    expect(caja.height).toBeLessThan(70) // una fila
+  })
+
+  test('el selector de período acepta fechas personalizadas, valida el rango y limpia', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('button', { name: /^Período:/ }).click()
+    await expect(page.getByRole('button', { name: 'Este mes', exact: true })).toBeVisible()
+    await page.getByLabel('Desde', { exact: true }).click()
+    await page.getByRole('gridcell', { name: /^10/ }).first().click()
+    await page.getByLabel('Hasta', { exact: true }).click()
+    await page.getByRole('gridcell', { name: /^20/ }).first().click()
+    await page.getByRole('button', { name: 'Aplicar', exact: true }).click()
+    await expect(page).toHaveURL(/desde=\d{4}-\d{2}-10/)
+    await expect(page).toHaveURL(/hasta=\d{4}-\d{2}-20/)
+    await expect(page.getByRole('button', { name: /^Período: 10 .* – 20 / })).toBeVisible()
+    // el resumen y el SQL coinciden
+    const [d, h] = [new URL(page.url()).searchParams.get('desde')!, new URL(page.url()).searchParams.get('hasta')!]
+    const esperado = Number(sqlLocal(`select coalesce(sum(amount), 0) from public.expenses where household_id = ${HID} and status = 'active' and expense_date between '${d}' and '${h}'`))
+    await expect.poll(() => valorKpi(page, 'Gasto del período')).toBeCloseTo(esperado, 2)
+    // limpiar rango vuelve al mes actual
+    await page.getByRole('button', { name: /^Período:/ }).click()
+    await page.getByRole('button', { name: 'Limpiar rango' }).click()
+    await expect(page).not.toHaveURL(/desde=/)
+  })
+
+  test('Ámbito, Categoría y Subcategoría se filtran entre sí y el Top 5 sigue conectado', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('combobox', { name: 'Ámbito', exact: true }).click()
+    await page.getByRole('option', { name: 'Hogar', exact: true }).click()
+    await page.getByRole('combobox', { name: 'Categoría', exact: true }).click()
+    // solo categorías del ámbito elegido
+    await expect(page.getByRole('option', { name: 'Servicios', exact: true })).toBeVisible()
+    await expect(page.getByRole('option', { name: 'Educación', exact: true })).toHaveCount(0)
+    await page.getByRole('option', { name: 'Servicios', exact: true }).click()
+    await page.getByRole('combobox', { name: 'Subcategoría', exact: true }).click()
+    await page.getByRole('option').first().click()
+    await expect(page).toHaveURL(/ambito=.*categoria=.*subcategoria=|subcategoria=.*/)
+    await expect(kpi(page, 'Gasto con filtros actuales')).toBeVisible()
+    const sub = new URL(page.url()).searchParams.get('subcategoria')!
+    await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(sqlTotal(`and subcategoria_id = '${sub}'`), 2)
+  })
+
+  test('los cuatro indicadores tienen ícono y acento propios y la variación usa verde/rojo según el sentido', async ({ page }) => {
+    await iniciarSesion(page)
+    const tarjetas = page.getByRole('region', { name: 'Indicadores', exact: true }).locator('> div')
+    await expect(tarjetas).toHaveCount(4)
+    const clases = await tarjetas.evaluateAll((els) => els.map((e) => [...e.classList].find((c) => c.startsWith('acento-'))))
+    expect(new Set(clases).size).toBeGreaterThanOrEqual(3)
+    expect(clases[0]).toBe('acento-indigo')
+    expect(clases[1]).toBe('acento-sky')
+    expect(clases[3]).toBe('acento-amber')
+    for (const t of await tarjetas.all()) await expect(t.locator('svg').first()).toBeVisible()
+    const variacion = await kpi(page, 'Variación vs período anterior').textContent()
+    expect(clases[2]).toBe(/\+\d/.test(variacion ?? '') ? 'acento-red' : /-\d/.test(variacion ?? '') ? 'acento-green' : 'acento-slate')
+  })
+
+  test('el Presupuesto consolidado tiene encabezado degradado y los ocho indicadores en cuadrícula de 4 × 2', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await iniciarSesion(page)
+    const panel = page.getByRole('region', { name: 'Presupuesto consolidado' })
+    const fondo = await panel.locator('header').evaluate((e) => getComputedStyle(e).backgroundImage)
+    expect(fondo).toContain('linear-gradient')
+    const tiles = panel.getByRole('list', { name: 'Indicadores complementarios' }).locator('> [role=listitem] > div')
+    await expect(tiles).toHaveCount(8)
+    const ys = await tiles.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)))
+    expect(new Set(ys).size).toBe(2) // dos filas
+    expect(ys.filter((y) => y === ys[0])).toHaveLength(4) // cuatro columnas
+    const alturas = await tiles.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)))
+    expect(new Set(alturas).size).toBe(1) // misma altura
+    const acentos = await tiles.evaluateAll((els) => els.map((e) => [...e.classList].find((c) => c.startsWith('acento-'))))
+    expect(acentos.slice(0, 2)).toEqual(['acento-blue', 'acento-slate'])
   })
 })
 

@@ -42,19 +42,20 @@ export function useFiltrosDashboard(catalogo: Catalogo) {
     [catalogo.categorias, catalogo.subcategorias],
   )
 
-  const escribir = useCallback(
-    (f: FiltrosDashboard) => {
-      setParams(
-        (prev) => {
-          const out = new URLSearchParams(prev)
-          for (const k of CLAVES) {
-            if (f[k] === '' || f[k] === FILTROS_PERIODO_ACTUAL[k]) out.delete(k)
-            else out.set(k, f[k])
-          }
-          return out
-        },
-        { replace: true },
-      )
+  /**
+   * Aplica un cambio sobre los filtros VIGENTES en la URL (no sobre los del último render): dos acciones seguidas
+   * (p. ej. cambiar el período y limpiar) nunca se pisan con un estado obsoleto.
+   */
+  const aplicar = useCallback(
+    (cambio: (actual: FiltrosDashboard) => FiltrosDashboard) => {
+      const prev = new URLSearchParams(window.location.search)
+      const f = cambio(leer(prev))
+      const out = new URLSearchParams(prev)
+      for (const k of CLAVES) {
+        if (f[k] === '' || f[k] === FILTROS_PERIODO_ACTUAL[k]) out.delete(k)
+        else out.set(k, f[k])
+      }
+      setParams(out, { replace: true })
     },
     [setParams],
   )
@@ -62,8 +63,8 @@ export function useFiltrosDashboard(catalogo: Catalogo) {
   return {
     filtros,
     /** Selecciona o, si ya estaba activo, deselecciona. */
-    seleccionar: (clave: ClaveFiltro, valor: string) => escribir(aplicarSeleccion(filtros, clave, valor, rel)),
-    fijarPeriodo: (desde: string, hasta: string) => escribir(conPeriodo(filtros, desde, hasta)),
-    limpiar: () => escribir(limpiarCruzados(filtros)),
+    seleccionar: (clave: ClaveFiltro, valor: string) => aplicar((f) => aplicarSeleccion(f, clave, valor, rel)),
+    fijarPeriodo: (desde: string, hasta: string) => aplicar((f) => conPeriodo(f, desde, hasta)),
+    limpiar: () => aplicar(limpiarCruzados),
   }
 }
