@@ -21,7 +21,7 @@ export function useActualizarPerfil() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (values: Partial<PerfilValues>) => {
-      const patch = { ...values, nombre: values.nombre === undefined ? undefined : values.nombre || null }
+      const patch = { ...values, display_name: values.display_name === undefined ? undefined : values.display_name || null }
       const { data, error } = await supabase.from('profiles').update(patch).eq('user_id', user!.id).select().single()
       if (error) throw error
       return data

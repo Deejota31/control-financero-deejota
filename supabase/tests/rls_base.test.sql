@@ -17,8 +17,8 @@ select is((select count(*)::int from public.profiles), 1, 'A solo ve su perfil')
 select is((select count(*)::int from public.households), 1, 'A solo ve su hogar');
 select is((select count(*)::int from public.profiles where user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'), 0, 'A no ve el perfil de B');
 
-update public.profiles set nombre = 'Hackeado' where user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-select is((select count(*)::int from public.profiles where nombre = 'Hackeado'), 0, 'A no puede modificar el perfil de B');
+update public.profiles set display_name = 'Hackeado' where user_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+select is((select count(*)::int from public.profiles where display_name = 'Hackeado'), 0, 'A no puede modificar el perfil de B');
 
 -- Anónimo
 set local role anon;

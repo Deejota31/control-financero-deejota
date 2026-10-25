@@ -37,10 +37,10 @@ export function ConfiguracionPage() {
   useEffect(() => {
     if (perfil.data) {
       reset({
-        nombre: perfil.data.nombre ?? '',
-        zona_horaria: perfil.data.zona_horaria,
-        formato_fecha: perfil.data.formato_fecha as PerfilValues['formato_fecha'],
-        tema: perfil.data.tema as PerfilValues['tema'],
+        display_name: perfil.data.display_name ?? '',
+        timezone: perfil.data.timezone,
+        date_format: perfil.data.date_format as PerfilValues['date_format'],
+        theme: perfil.data.theme as PerfilValues['theme'],
       })
     }
   }, [perfil.data, reset])
@@ -48,7 +48,7 @@ export function ConfiguracionPage() {
   const onSubmit = handleSubmit((values) =>
     actualizar.mutateAsync(values).then(
       () => {
-        setTema(values.tema)
+        setTema(values.theme)
         toast.success('Perfil guardado.')
       },
       () => toast.error('No se pudo guardar el perfil. Inténtalo de nuevo.'),
@@ -74,14 +74,14 @@ export function ConfiguracionPage() {
         )}
         {perfil.data && (
           <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-            <Field label="Nombre" error={errors.nombre?.message}>
-              {(p) => <Input {...p} autoComplete="name" {...register('nombre')} />}
+            <Field label="Nombre" error={errors.display_name?.message}>
+              {(p) => <Input {...p} autoComplete="name" {...register('display_name')} />}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Zona horaria" error={errors.zona_horaria?.message}>
+              <Field label="Zona horaria" error={errors.timezone?.message}>
                 {(p) => (
-                  <Select {...p} {...register('zona_horaria')}>
-                    {!zonas.includes(perfil.data.zona_horaria) && <option value={perfil.data.zona_horaria}>{perfil.data.zona_horaria}</option>}
+                  <Select {...p} {...register('timezone')}>
+                    {!zonas.includes(perfil.data.timezone) && <option value={perfil.data.timezone}>{perfil.data.timezone}</option>}
                     {zonas.map((z) => (
                       <option key={z} value={z}>
                         {z}
@@ -92,7 +92,7 @@ export function ConfiguracionPage() {
               </Field>
               <Field label="Formato de fecha">
                 {(p) => (
-                  <Select {...p} {...register('formato_fecha')}>
+                  <Select {...p} {...register('date_format')}>
                     {FORMATOS_FECHA.map((f) => (
                       <option key={f} value={f}>
                         {f}
@@ -103,7 +103,7 @@ export function ConfiguracionPage() {
               </Field>
               <Field label="Tema">
                 {(p) => (
-                  <Select {...p} {...register('tema')}>
+                  <Select {...p} {...register('theme')}>
                     <option value="claro">Claro</option>
                     <option value="oscuro">Oscuro</option>
                   </Select>

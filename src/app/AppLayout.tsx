@@ -18,13 +18,13 @@ export function AppLayout() {
   const [saliendo, setSaliendo] = useState(false)
 
   // El tema guardado en el perfil manda al iniciar sesión.
-  const temaPerfil = perfil.data?.tema
+  const temaPerfil = perfil.data?.theme
   useEffect(() => {
     if (temaPerfil === 'claro' || temaPerfil === 'oscuro') setTema(temaPerfil)
   }, [temaPerfil, setTema])
 
   const actual = MODULOS.find((m) => (m.path === '/' ? pathname === '/' : pathname.startsWith(m.path)))
-  const nombre = perfil.data?.nombre || user?.email || ''
+  const nombre = perfil.data?.display_name || user?.email || ''
 
   async function cerrarSesion() {
     setSaliendo(true)
@@ -66,7 +66,7 @@ export function AppLayout() {
         </nav>
         <div className="mt-auto flex flex-col gap-0.5 border-t border-line px-3 pt-3 text-sm">
           <span className="truncate font-semibold">{nombre}</span>
-          {perfil.data?.nombre && <span className="truncate text-muted">{user?.email}</span>}
+          {perfil.data?.display_name && <span className="truncate text-muted">{user?.email}</span>}
         </div>
       </aside>
 

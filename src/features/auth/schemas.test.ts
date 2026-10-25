@@ -30,14 +30,14 @@ describe('newPasswordSchema', () => {
 })
 
 describe('perfilSchema', () => {
-  const base = { nombre: 'Ana', zona_horaria: 'America/Lima', formato_fecha: 'dd/MM/yyyy', tema: 'claro' }
+  const base = { display_name: 'Ana', timezone: 'America/Lima', date_format: 'dd/MM/yyyy', theme: 'claro' }
   it('acepta un perfil válido y permite nombre vacío', () => {
     expect(perfilSchema.safeParse(base).success).toBe(true)
-    expect(perfilSchema.safeParse({ ...base, nombre: '' }).success).toBe(true)
+    expect(perfilSchema.safeParse({ ...base, display_name: '' }).success).toBe(true)
   })
   it('rechaza nombre largo, formato y tema inválidos', () => {
-    expect(perfilSchema.safeParse({ ...base, nombre: 'a'.repeat(81) }).success).toBe(false)
-    expect(perfilSchema.safeParse({ ...base, formato_fecha: 'x' }).success).toBe(false)
-    expect(perfilSchema.safeParse({ ...base, tema: 'azul' }).success).toBe(false)
+    expect(perfilSchema.safeParse({ ...base, display_name: 'a'.repeat(81) }).success).toBe(false)
+    expect(perfilSchema.safeParse({ ...base, date_format: 'x' }).success).toBe(false)
+    expect(perfilSchema.safeParse({ ...base, theme: 'azul' }).success).toBe(false)
   })
 })

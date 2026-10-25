@@ -14,7 +14,7 @@ export function ThemeToggle() {
       type="button"
       onClick={() => {
         setTema(siguiente)
-        actualizar.mutate({ tema: siguiente }, { onError: () => toast.error('No se pudo guardar el tema en tu perfil.') })
+        actualizar.mutate({ theme: siguiente }, { onError: () => toast.error('No se pudo guardar el tema en tu perfil.') })
       }}
       aria-label={tema === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
       className="grid size-9 place-items-center rounded-md border border-line bg-surface hover:bg-surface-2"
