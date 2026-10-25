@@ -1,30 +1,57 @@
-import { useEffect, useState } from 'react'
-import { env, supabase } from '@/lib/supabase'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { Toaster } from 'sonner'
+import { AuthProvider } from '@/features/auth/AuthProvider'
+import { LoginPage } from '@/features/auth/LoginPage'
+import { RecoverPage } from '@/features/auth/RecoverPage'
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
+import { PublicOnly, RequireAuth } from '@/features/auth/RouteGuards'
+import { SessionExpiredPage } from '@/features/auth/SessionExpiredPage'
+import { ConfiguracionPage } from '@/features/perfil/ConfiguracionPage'
+import { ThemeProvider, useTema } from '@/features/tema/ThemeProvider'
+import { AppLayout } from './AppLayout'
+import { ModuloPendiente } from './ModuloPendiente'
 
-type Estado = 'comprobando' | 'conectado' | 'error'
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
+})
+
+function Notificaciones() {
+  const { tema } = useTema()
+  return <Toaster richColors position="top-right" theme={tema === 'oscuro' ? 'dark' : 'light'} />
+}
 
 export function App() {
-  const [estado, setEstado] = useState<Estado>('comprobando')
-
-  useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ error }) => setEstado(error ? 'error' : 'conectado'))
-      .catch(() => setEstado('error'))
-  }, [])
-
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 px-6">
-      <h1 className="font-display text-3xl font-bold">Gasto Deejota</h1>
-      <p className="text-muted">Entorno: {env.appEnv}</p>
-      <p
-        role="status"
-        className={estado === 'error' ? 'text-bad' : estado === 'conectado' ? 'text-ok' : 'text-muted'}
-      >
-        {estado === 'comprobando' && 'Comprobando conexión con Supabase…'}
-        {estado === 'conectado' && 'Conectado a Supabase local.'}
-        {estado === 'error' && 'No se pudo conectar. Ejecuta npm run db:start y revisa .env.local.'}
-      </p>
-    </main>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route element={<PublicOnly />}>
+                <Route path="/acceso" element={<LoginPage />} />
+                <Route path="/recuperar" element={<RecoverPage />} />
+              </Route>
+              <Route path="/restablecer" element={<ResetPasswordPage />} />
+              <Route path="/sesion-expirada" element={<SessionExpiredPage />} />
+
+              <Route element={<RequireAuth />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<ModuloPendiente nombre="Dashboard" descripcion="Presupuesto, gasto acumulado y gráficos del período." />} />
+                  <Route path="gastos" element={<ModuloPendiente nombre="Gastos" descripcion="Registro, filtros y plantillas de gastos." />} />
+                  <Route path="fondos" element={<ModuloPendiente nombre="Fondos presupuestales" descripcion="Presupuesto asignado, consumo y reglas de cobertura." />} />
+                  <Route path="catalogo" element={<ModuloPendiente nombre="Catálogo" descripcion="Ámbitos, categorías, subcategorías y medios de pago." />} />
+                  <Route path="salud" element={<ModuloPendiente nombre="Salud financiera" descripcion="Disponible, tendencias y compromisos mensuales." />} />
+                  <Route path="configuracion" element={<ConfiguracionPage />} />
+                </Route>
+              </Route>
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <Notificaciones />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }

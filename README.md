@@ -23,7 +23,11 @@ Crea `.env.local` a partir de `.env.example` con la URL y la clave **publishable
 npm run dev                         # http://127.0.0.1:5173
 ```
 
-Usuario demo local (solo desarrollo): `demo@gastodeejota.local` / `DemoLocal123`.
+Usuario demo local (solo desarrollo): `demo@gastodeejota.local` / `DemoLocal123`. Se crea con `supabase/seed.sql`; si el login falla tras reiniciar Docker, ejecuta `npm run db:reset`.
+
+Para las pruebas E2E añade a `.env.local` (no versionado) `E2E_USER_EMAIL` y `E2E_USER_PASSWORD` con esas credenciales.
+
+Recuperación de contraseña en local: el correo llega a Mailpit (http://127.0.0.1:54324). El enlace debe abrirse en el mismo navegador desde el que se solicitó (flujo PKCE).
 
 ## Comandos
 
