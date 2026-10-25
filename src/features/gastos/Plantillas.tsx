@@ -287,15 +287,15 @@ function LoteMes({ mes, onClose }: { mes: string; onClose: () => void }) {
                       <td className="min-w-36 p-3">
                         {f.decision === 'include' && (
                           <>
-                            <MoneyInput value={f.amount} onChange={(x) => set(p.id, { amount: x })} invalid={Boolean(err && parseImporte(f.amount) === null)} />
+                            <MoneyInput aria-label={`Importe de ${p.name}`} value={f.amount} onChange={(x) => set(p.id, { amount: x })} invalid={Boolean(err && parseImporte(f.amount) === null)} />
                             {p.is_amount_variable && <p className="mt-1 text-xs text-muted">Importe variable: confírmalo.</p>}
                             {err && <p className="mt-1 text-xs text-bad">{err}</p>}
                           </>
                         )}
                       </td>
-                      <td className="min-w-40 p-3">{f.decision === 'include' && <DatePicker value={f.date} onChange={(x) => set(p.id, { date: x })} min={mes} max={finDeMes(mes)} formato={formato} />}</td>
+                      <td className="min-w-40 p-3">{f.decision === 'include' && <DatePicker aria-label={`Fecha de ${p.name}`} value={f.date} onChange={(x) => set(p.id, { date: x })} min={mes} max={finDeMes(mes)} formato={formato} />}</td>
                       <td className="min-w-44 p-3">
-                        {f.decision === 'include' && <Combobox value={f.method} searchable={false} options={opciones(catalogo.medios, f.method)} onChange={(x) => set(p.id, { method: x ?? '' })} placeholder="Elegir medio" />}
+                        {f.decision === 'include' && <Combobox aria-label={`Medio de pago de ${p.name}`} value={f.method} searchable={false} options={opciones(catalogo.medios, f.method)} onChange={(x) => set(p.id, { method: x ?? '' })} placeholder="Elegir medio" />}
                       </td>
                     </>
                   )}

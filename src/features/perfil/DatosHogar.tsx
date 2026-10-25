@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Field'
 import { ErrorState, Skeleton } from '@/components/ui/States'
 import { descargar } from '@/lib/csv'
 import { mensajeDeError } from '@/lib/errors'
+import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import { useHogar } from '@/features/dashboard/useDashboard'
 import { usePerfil } from './usePerfil'
@@ -19,14 +20,7 @@ const TABLAS = [
 
 /** Lee una tabla completa por páginas (RLS limita el resultado a tu hogar). */
 async function leerTabla(tabla: (typeof TABLAS)[number]) {
-  const filas: unknown[] = []
-  for (let desde = 0; desde < 100_000; desde += 1000) {
-    const { data, error } = await supabase.from(tabla).select('*').range(desde, desde + 999)
-    if (error) throw error
-    filas.push(...(data ?? []))
-    if (!data || data.length < 1000) break
-  }
-  return filas
+  return leerTodo((d, h) => supabase.from(tabla).select('*', { count: 'exact' }).order('id').range(d, h))
 }
 
 const ENTIDADES: Record<string, string> = {

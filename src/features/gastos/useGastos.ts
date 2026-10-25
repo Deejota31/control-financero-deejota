@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { endOfMonth, startOfMonth } from 'date-fns'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
+import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
 import { toIso } from '@/lib/format'
@@ -105,6 +106,8 @@ function construir(f: FiltrosGastos, rango?: [number, number]) {
   q = q.order(col, { ascending: f.dir === 'asc' })
   if (col !== 'expense_date') q = q.order('expense_date', { ascending: false })
   q = q.order('created_at', { ascending: false })
+  // Desempate único: sin él, filas con la misma fecha y created_at pueden repetirse u omitirse entre páginas.
+  q = q.order('id', { ascending: false })
   if (rango) q = q.range(rango[0], rango[1])
   return q
 }
@@ -125,14 +128,8 @@ export function useGastosPagina(f: FiltrosGastos) {
 
 /** Todos los gastos que cumplen los filtros (para exportar). */
 export async function gastosParaExportar(f: FiltrosGastos): Promise<GastoConFondos[]> {
-  const out: GastoConFondos[] = []
-  for (let desde = 0; desde < 20000; desde += 1000) {
-    const { data, error } = await construir(f, [desde, desde + 999])
-    if (error) throw error
-    out.push(...((data ?? []) as unknown as GastoConFondos[]))
-    if (!data || data.length < 1000) break
-  }
-  return out
+  const filas = await leerTodo((d, h) => construir(f, [d, h]))
+  return filas as unknown as GastoConFondos[]
 }
 
 export interface PayloadGasto {

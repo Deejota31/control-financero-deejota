@@ -6,18 +6,18 @@ import { Button } from '@/components/ui/Button'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
-import { admite, resumirFondo, round2 } from '@/domain/fondos'
-import { agruparPor, diasEnRango, esMesCompleto, rangoAnterior, serieDiaria, total, variacion } from '@/domain/dashboard'
+import { resumirFondo, round2 } from '@/domain/fondos'
+import { diasEnRango, esMesCompleto, rangoAnterior, serieDiaria, total, variacion } from '@/domain/dashboard'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, fromIso, toIso } from '@/lib/format'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
-import { finDeMes, mesDeFecha, useFondos, usePeriodo } from '@/features/fondos/useFondos'
+import { finDeMes, mesDeFecha, usePeriodo } from '@/features/fondos/useFondos'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
 import { useEstadoLote, usePlantillas } from '@/features/gastos/usePlantillas'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { Dona, GraficoAcumulado, GraficoDiario, type SegmentoDona } from './Graficos'
-import { usePresupuestoRango } from './useDashboard'
+import { useResumenDashboard } from './useDashboard'
 
 const HOY = toIso(new Date())
 const MES_ACTUAL = mesDeFecha(new Date())
@@ -50,77 +50,55 @@ export function DashboardPage() {
   const perfil = usePerfil()
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const catalogo = useCatalogo()
-  const fondosQ = useFondos()
-  const gastosQ = useGastosRango(desde, hasta, { habilitado: valido })
-  const previosQ = useGastosRango(ant.desde, ant.hasta, { habilitado: valido })
-  const presupuestoQ = usePresupuestoRango(desde, hasta)
+  // KPIs, series y distribuciones vienen agregados desde PostgreSQL: incluyen todos los gastos del rango.
+  const resumenQ = useResumenDashboard(desde, hasta, ant, valido)
   const plantillasQ = usePlantillas()
   const periodoActual = usePeriodo(MES_ACTUAL)
   const loteQ = useEstadoLote(periodoActual.data?.id, MES_ACTUAL, finDeMes(MES_ACTUAL))
 
   const [diaSel, setDiaSel] = useState<string | null>(null)
   const [topModo, setTopModo] = useState<'categorias' | 'subcategorias'>('categorias')
+  const delDiaQ = useGastosRango(diaSel ?? desde, diaSel ?? desde, { habilitado: Boolean(diaSel) })
 
-  const consultas = [gastosQ, previosQ, presupuestoQ, catalogo, fondosQ]
+  const consultas = [resumenQ, catalogo]
   const cargando = consultas.some((q) => q.isPending)
   const falla = consultas.some((q) => q.isError)
 
-  const gastos = useMemo(() => gastosQ.data ?? [], [gastosQ.data])
-  const previos = useMemo(() => previosQ.data ?? [], [previosQ.data])
-  const totalGasto = total(gastos)
-  const totalPrev = total(previos)
-
-  const presupuesto = useMemo(() => {
-    const p = presupuestoQ.data
-    const activos = new Set((fondosQ.data?.fondos ?? []).filter((f) => f.is_active).map((f) => f.id))
-    if (!p || p.periodos.length === 0) return null
-    return round2(p.presupuestos.filter((b) => activos.has(b.fund_id)).reduce((s, b) => s + Number(b.assigned_amount), 0))
-  }, [presupuestoQ.data, fondosQ.data])
+  const resumen = resumenQ.data
+  const totalGasto = Number(resumen?.total ?? 0)
+  const totalPrev = Number(resumen?.total_prev ?? 0)
+  const cantidad = Number(resumen?.cantidad ?? 0)
+  const presupuesto = resumen?.presupuesto === null || resumen?.presupuesto === undefined ? null : Number(resumen.presupuesto)
 
   const disponible = presupuesto === null ? null : round2(presupuesto - totalGasto)
-  const serie = useMemo(() => serieDiaria(gastos, desde, hasta, HOY, presupuesto), [gastos, desde, hasta, presupuesto])
+  const serie = useMemo(
+    () => serieDiaria((resumen?.serie ?? []).map((p) => ({ expense_date: p.fecha, amount: p.monto })), desde, hasta, HOY, presupuesto),
+    [resumen?.serie, desde, hasta, presupuesto],
+  )
   const dias = valido ? diasEnRango(desde, hasta) : 0
   const incluyeHoy = desde <= HOY && HOY <= hasta
   const proyeccion = incluyeHoy && HOY < hasta ? (serie.find((p) => p.fecha === hasta)?.proyeccion ?? null) : null
   const varPct = variacion(totalGasto, totalPrev)
 
-  const porAmbito = useMemo(() => agruparPor(gastos, 'ambito_id'), [gastos])
+  const porAmbito = useMemo(() => (resumen?.por_ambito ?? []).map((a) => ({ ...a, total: Number(a.total) })), [resumen?.por_ambito])
   const segmentos: SegmentoDona[] = porAmbito.map((a) => {
     const amb = catalogo.ambitos.find((x) => x.id === a.id)
     return { id: a.id, nombre: amb?.name ?? 'Ámbito', valor: a.total, fill: colorVar(amb?.color_token) }
   })
-  const top = useMemo(() => agruparPor(gastos, topModo === 'categorias' ? 'categoria_id' : 'subcategoria_id').slice(0, 5), [gastos, topModo])
-  const recientes = useMemo(() => [...gastos].sort((a, b) => b.expense_date.localeCompare(a.expense_date) || b.created_at.localeCompare(a.created_at)).slice(0, 6), [gastos])
+  const top = useMemo(
+    () => (topModo === 'categorias' ? (resumen?.por_categoria ?? []) : (resumen?.por_subcategoria ?? [])).slice(0, 5).map((t) => ({ ...t, total: Number(t.total) })),
+    [resumen?.por_categoria, resumen?.por_subcategoria, topModo],
+  )
+  const recientes = resumen?.recientes ?? []
 
-  const fondosResumen = useMemo(() => {
-    const p = presupuestoQ.data
-    if (!p || !fondosQ.data) return []
-    return fondosQ.data.fondos
-      .filter((f) => f.is_active)
-      .map((f) => {
-        const asignado = p.presupuestos.filter((b) => b.fund_id === f.id).reduce((s, b) => s + Number(b.assigned_amount), 0)
-        const consumido = p.asignaciones.filter((a) => a.fund_id === f.id).reduce((s, a) => s + Number(a.amount), 0)
-        return { fondo: f, resumen: resumirFondo(round2(asignado), round2(consumido)) }
-      })
-      .sort((a, b) => Number(a.fondo.is_general) - Number(b.fondo.is_general) || a.fondo.priority - b.fondo.priority)
-  }, [presupuestoQ.data, fondosQ.data])
-
-  const excedente = useMemo(() => {
-    const p = presupuestoQ.data
-    if (!p || !fondosQ.data) return 0
-    const { fondos, alcance, medios } = fondosQ.data
-    const especificos = fondos.filter((f) => f.is_active && !f.is_general)
-    const porId = new Map(gastos.map((g) => [g.id, g]))
-    let s = 0
-    for (const a of p.asignaciones) {
-      if (a.allocation_kind !== 'general') continue
-      const g = porId.get(a.expense_id)
-      if (!g) continue
-      const c = { ambito_id: g.ambito_id, categoria_id: g.categoria_id, subcategoria_id: g.subcategoria_id, payment_method_id: g.payment_method_id }
-      if (especificos.some((f) => admite(alcance.filter((r) => r.fund_id === f.id), medios.filter((r) => r.fund_id === f.id), c))) s += Number(a.amount)
-    }
-    return round2(s)
-  }, [presupuestoQ.data, fondosQ.data, gastos])
+  const fondosResumen = useMemo(
+    () =>
+      (resumen?.fondos ?? [])
+        .map((f) => ({ fondo: { id: f.fund_id, name: f.nombre, is_general: f.es_general, priority: f.prioridad }, resumen: resumirFondo(round2(Number(f.asignado)), round2(Number(f.consumido))) }))
+        .sort((a, b) => Number(a.fondo.is_general) - Number(b.fondo.is_general) || a.fondo.priority - b.fondo.priority),
+    [resumen?.fondos],
+  )
+  const excedente = Number(resumen?.excedente ?? 0)
 
   const pendientes = useMemo(() => {
     const activas = (plantillasQ.data ?? []).filter((p) => p.is_active)
@@ -132,14 +110,13 @@ export function DashboardPage() {
   const setRango = (d: string, h: string) => { setDiaSel(null); setParams({ desde: d, hasta: h }, { replace: true }) }
 
   const etiquetaPeriodo = esMesCompleto(desde, hasta) ? formatMes(desde) : `${formatFecha(desde, formato)} – ${formatFecha(hasta, formato)}`
-  const delDia = diaSel ? gastos.filter((g) => g.expense_date === diaSel) : []
+  const delDia = diaSel ? (delDiaQ.data ?? []) : []
   const resumenGrafico = `Gasto acumulado de ${etiquetaPeriodo}: ${formatSoles(totalGasto)}${proyeccion !== null ? `, proyección de cierre ${formatSoles(proyeccion)} (estimación)` : ''}`
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="sr-only">Dashboard</h1>
           <p className="text-sm text-muted">{etiquetaPeriodo} · todos los ámbitos y medios de pago</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -161,14 +138,14 @@ export function DashboardPage() {
         </div>
       ) : falla ? (
         <ErrorState message="No se pudieron cargar los datos del dashboard." onRetry={() => consultas.forEach((q) => q.refetch())} />
-      ) : gastos.length === 0 ? (
+      ) : cantidad === 0 ? (
         <EmptyState icon={Receipt} title="No hay gastos en este período" description="Registra un gasto o cambia el rango de fechas para ver tus gráficos."
           action={<div className="flex gap-2"><Button onClick={() => navigate('/gastos?nuevo=1')}>Registrar gasto</Button><Button variant="secondary" onClick={() => navigate('/gastos?lote=1')}>Registrar mensuales</Button></div>} />
       ) : (
         <>
           <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi etiqueta="Presupuesto asignado" valor={presupuesto === null ? '—' : formatSoles(presupuesto)} nota={presupuesto === null ? 'Sin períodos abiertos en este rango' : 'Suma de fondos activos'} />
-            <Kpi etiqueta="Gasto del período" valor={formatSoles(totalGasto)} nota={`${gastos.length} movimientos · ${dias} días`} />
+            <Kpi etiqueta="Gasto del período" valor={formatSoles(totalGasto)} nota={`${cantidad} movimientos · ${dias} días`} />
             <Kpi etiqueta="Disponible" valor={disponible === null ? '—' : formatSoles(disponible)} tono={disponible !== null && disponible < 0 ? 'bad' : 'ok'} nota={disponible === null ? '' : disponible < 0 ? 'Presupuesto superado' : 'Presupuesto menos gasto'} />
             <Kpi
               etiqueta="Variación vs período anterior"
@@ -262,7 +239,7 @@ export function DashboardPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <Tarjeta titulo="Consumo de fondos" descripcion={presupuestoQ.data?.periodos.length ? 'Períodos que toca el rango' : undefined} derecha={<Link to="/fondos" className="text-sm font-medium text-pri underline">Ver fondos</Link>} className="lg:col-span-1">
+            <Tarjeta titulo="Consumo de fondos" descripcion={presupuesto !== null ? 'Períodos que toca el rango' : undefined} derecha={<Link to="/fondos" className="text-sm font-medium text-pri underline">Ver fondos</Link>} className="lg:col-span-1">
               {fondosResumen.length === 0 ? <p className="text-sm text-muted">Sin fondos activos.</p> : (
                 <ul className="flex flex-col gap-3">
                   {fondosResumen.map(({ fondo, resumen }) => (

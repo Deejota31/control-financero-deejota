@@ -6,7 +6,7 @@ type Tone = 'error' | 'success' | 'info'
 
 const tones: Record<Tone, { box: string; icon: typeof Info }> = {
   error: { box: 'border-bad bg-bad-soft text-bad', icon: AlertCircle },
-  success: { box: 'border-ok bg-pri-soft text-ok', icon: CheckCircle2 },
+  success: { box: 'border-ok bg-ok-soft text-ok', icon: CheckCircle2 },
   info: { box: 'border-line bg-surface-2 text-fg', icon: Info },
 }
 

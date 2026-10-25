@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Paperclip, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -20,6 +20,7 @@ import type { Gasto } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
 import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { usePerfil } from '@/features/perfil/usePerfil'
+import { borrarArchivo, registrarLimpieza } from './comprobantes'
 import { useGastoMutaciones, usePrevisualizacion, type PayloadGasto } from './useGastos'
 
 const HOY = toIso(new Date())
@@ -67,6 +68,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
   const [recibo, setRecibo] = useState<string | null>(modo === 'editar' ? (gasto?.receipt_path ?? null) : null)
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const subidoRef = useRef<string | null>(null)
 
   const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<Values>({
     resolver: zodResolver(schema),
@@ -112,21 +114,26 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
     setArchivo(f)
   }
 
-  const enviar = handleSubmit(async (vals) => {
+  const enviar = (ev: React.FormEvent<HTMLFormElement>) => handleSubmit(async (vals) => {
     if (bloqueado) return
     setErrorEnvio(null)
     setEnviando(true)
     const expenseId = modo === 'editar' ? gasto!.id : idNuevo
-    let subido: string | null = null
+    const anterior = modo === 'editar' ? (gasto?.receipt_path ?? null) : null
     try {
       let receipt: string | null = recibo
       if (archivo) {
-        const hid = perfil.data?.household_id
-        if (!hid) throw new Error('Perfil sin hogar')
-        subido = rutaComprobante(hid, expenseId, archivo)
-        const { error } = await supabase.storage.from('comprobantes').upload(subido, archivo, { contentType: archivo.type, upsert: false })
-        if (error) throw error
-        receipt = subido
+        if (!subidoRef.current) {
+          const hid = perfil.data?.household_id
+          if (!hid) throw new Error('Perfil sin hogar')
+          const ruta = rutaComprobante(hid, expenseId, archivo)
+          // Intención previa: si el navegador se cierra tras subir el archivo, el servidor podrá limpiarlo más tarde.
+          await registrarLimpieza([ruta], 'intencion', 10)
+          const { error } = await supabase.storage.from('comprobantes').upload(ruta, archivo, { contentType: archivo.type, upsert: false })
+          if (error) throw error
+          subidoRef.current = ruta
+        }
+        receipt = subidoRef.current
       }
       const payload: PayloadGasto = {
         expense_date: vals.expense_date,
@@ -145,22 +152,30 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
         modo === 'editar'
           ? await mut.actualizar.mutateAsync({ id: gasto!.id, payload })
           : await mut.crear.mutateAsync({ payload: { ...payload, id: expenseId }, clave })
+      subidoRef.current = null
+      // Solo tras guardar con éxito se elimina el comprobante reemplazado o quitado (nunca antes).
+      if (anterior && anterior !== receipt) await borrarArchivo(anterior, 'reemplazo')
       toast.success(modo === 'editar' ? 'Gasto actualizado.' : 'Gasto guardado.')
       for (const w of reporte.warnings ?? []) {
         toast.warning(w.code === 'general_negative' ? `El Fondo General queda en ${formatSoles(w.remaining_after)}.` : `${w.fund_name} queda en sobregasto: ${formatSoles(w.remaining_after)}.`)
       }
       onClose()
     } catch (e) {
-      if (subido) void supabase.storage.from('comprobantes').remove([subido])
-      setErrorEnvio(
-        esErrorDeRed(e)
-          ? 'No se pudo confirmar si el gasto se guardó. Es seguro reintentar: se usa la misma clave y no se duplicará.'
-          : mensajeDeError(e, 'No se pudo guardar el gasto. Revisa los datos e inténtalo de nuevo.'),
-      )
+      if (esErrorDeRed(e)) {
+        // Resultado ambiguo: puede que el gasto sí se haya guardado y apunte al archivo. Se conserva y se reintenta con la misma ruta y clave.
+        setErrorEnvio('No se pudo confirmar si el gasto se guardó. Es seguro reintentar: se usa la misma clave y no se duplicará.')
+      } else {
+        // Fallo definitivo: el archivo recién subido sobra. El comprobante que ya tenía el gasto no se toca.
+        if (subidoRef.current) {
+          await borrarArchivo(subidoRef.current)
+          subidoRef.current = null
+        }
+        setErrorEnvio(mensajeDeError(e, 'No se pudo guardar el gasto. Revisa los datos e inténtalo de nuevo.'))
+      }
     } finally {
       setEnviando(false)
     }
-  })
+  })(ev)
 
   const titulo = modo === 'editar' ? 'Editar gasto' : modo === 'clonar' ? 'Clonar gasto' : 'Nuevo gasto'
   const pendiente = enviando || mut.crear.isPending || mut.actualizar.isPending

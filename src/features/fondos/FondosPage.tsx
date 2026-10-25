@@ -235,7 +235,7 @@ export function FondosPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={t.icon ?? 'wallet'} color={t.color ?? 'pri'} className="size-5" /></span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-display text-base font-bold">{t.nombre}</h3>
+                    <h2 className="truncate font-display text-base font-bold">{t.nombre}</h2>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <Pill tone={t.esGeneral ? 'pri' : 'neutral'}>{t.esGeneral ? 'Fondo General' : `Prioridad ${idx + 1}`}</Pill>
                       <Pill tone={TONO_ESTADO[t.resumen.estado]}>{etiquetaEstado(t)}</Pill>

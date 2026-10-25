@@ -35,7 +35,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 export function Pill({ tone = 'neutral', children, className }: { tone?: 'neutral' | 'ok' | 'warn' | 'bad' | 'pri'; children: ReactNode; className?: string }) {
   const tones = {
     neutral: 'bg-surface-2 text-muted',
-    ok: 'bg-pri-soft text-ok',
+    ok: 'bg-ok-soft text-ok',
     warn: 'bg-acc-soft text-warn',
     bad: 'bg-bad-soft text-bad',
     pri: 'bg-pri-soft text-pri',

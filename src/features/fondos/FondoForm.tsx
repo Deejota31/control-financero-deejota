@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
@@ -120,6 +121,14 @@ export function FondoForm({
     [catalogo],
   )
 
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set())
+  const alternarAbierto = (k: string) =>
+    setAbiertos((p) => {
+      const n = new Set(p)
+      if (n.has(k)) n.delete(k)
+      else n.add(k)
+      return n
+    })
   const setRegla = (key: string, v: Regla) => setAlcance((m) => ({ ...m, [key]: v }))
 
   const enviar = handleSubmit((v) => {
@@ -200,34 +209,52 @@ export function FondoForm({
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-1 text-sm font-semibold">Clasificación que cubre</legend>
             <div className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-md border border-line p-2">
-              {arbol.map(({ a, cats }) => (
-                <details key={a.id} className="rounded-md" open={Boolean(alcance[`ambito:${a.id}`] && alcance[`ambito:${a.id}`] !== 'none') || cats.some((x) => alcance[`categoria:${x.c.id}`] && alcance[`categoria:${x.c.id}`] !== 'none')}>
-                  <summary className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
-                    <ItemIcon name={a.icon_key} color={a.color_token} />
-                    <span className="flex-1 text-sm font-semibold">{a.name}</span>
-                    <SelectorRegla nombre={a.name} value={alcance[`ambito:${a.id}`] ?? 'none'} onChange={(v) => setRegla(`ambito:${a.id}`, v)} />
-                  </summary>
-                  <div className="ml-6 flex flex-col gap-1 border-l border-line pl-3">
-                    {cats.map(({ c, subs }) => (
-                      <details key={c.id} open={subs.some((s) => alcance[`subcategoria:${s.id}`] && alcance[`subcategoria:${s.id}`] !== 'none')}>
-                        <summary className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-surface-2">
-                          <ItemIcon name={c.icon_key} color={c.color_token} />
-                          <span className="flex-1 text-sm">{c.name}</span>
-                          <SelectorRegla nombre={`${a.name} › ${c.name}`} value={alcance[`categoria:${c.id}`] ?? 'none'} onChange={(v) => setRegla(`categoria:${c.id}`, v)} />
-                        </summary>
-                        <div className="ml-6 flex flex-col gap-1 border-l border-line pl-3">
-                          {subs.map((s) => (
-                            <div key={s.id} className="flex items-center gap-2 px-2 py-0.5">
-                              <span className="flex-1 text-sm text-muted">{s.name}</span>
-                              <SelectorRegla nombre={`${a.name} › ${c.name} › ${s.name}`} value={alcance[`subcategoria:${s.id}`] ?? 'none'} onChange={(v) => setRegla(`subcategoria:${s.id}`, v)} />
+              {arbol.map(({ a, cats }) => {
+                const claveA = `ambito:${a.id}`
+                const abierto = abiertos.has(claveA) || (Boolean(alcance[claveA]) && alcance[claveA] !== 'none') || cats.some((x) => alcance[`categoria:${x.c.id}`] && alcance[`categoria:${x.c.id}`] !== 'none')
+                return (
+                  <div key={a.id} className="rounded-md">
+                    <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                      <button type="button" aria-expanded={abierto} onClick={() => alternarAbierto(claveA)} className="flex flex-1 items-center gap-2 text-left">
+                        <ChevronRight className={cn('size-4 shrink-0 transition-transform', abierto && 'rotate-90')} aria-hidden="true" />
+                        <ItemIcon name={a.icon_key} color={a.color_token} />
+                        <span className="flex-1 text-sm font-semibold">{a.name}</span>
+                      </button>
+                      <SelectorRegla nombre={a.name} value={alcance[claveA] ?? 'none'} onChange={(v) => setRegla(claveA, v)} />
+                    </div>
+                    {abierto && (
+                      <div className="ml-6 flex flex-col gap-1 border-l border-line pl-3">
+                        {cats.map(({ c, subs }) => {
+                          const claveC = `categoria:${c.id}`
+                          const abiertoC = abiertos.has(claveC) || subs.some((s) => alcance[`subcategoria:${s.id}`] && alcance[`subcategoria:${s.id}`] !== 'none')
+                          return (
+                            <div key={c.id}>
+                              <div className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-surface-2">
+                                <button type="button" aria-expanded={abiertoC} disabled={subs.length === 0} onClick={() => alternarAbierto(claveC)} className="flex flex-1 items-center gap-2 text-left disabled:opacity-60">
+                                  <ChevronRight className={cn('size-4 shrink-0 transition-transform', abiertoC && 'rotate-90', subs.length === 0 && 'invisible')} aria-hidden="true" />
+                                  <ItemIcon name={c.icon_key} color={c.color_token} />
+                                  <span className="flex-1 text-sm">{c.name}</span>
+                                </button>
+                                <SelectorRegla nombre={`${a.name} › ${c.name}`} value={alcance[claveC] ?? 'none'} onChange={(v) => setRegla(claveC, v)} />
+                              </div>
+                              {abiertoC && (
+                                <div className="ml-6 flex flex-col gap-1 border-l border-line pl-3">
+                                  {subs.map((s) => (
+                                    <div key={s.id} className="flex items-center gap-2 px-2 py-0.5">
+                                      <span className="flex-1 text-sm text-muted">{s.name}</span>
+                                      <SelectorRegla nombre={`${a.name} › ${c.name} › ${s.name}`} value={alcance[`subcategoria:${s.id}`] ?? 'none'} onChange={(v) => setRegla(`subcategoria:${s.id}`, v)} />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </details>
-                    ))}
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
-                </details>
-              ))}
+                )
+              })}
             </div>
           </fieldset>
 

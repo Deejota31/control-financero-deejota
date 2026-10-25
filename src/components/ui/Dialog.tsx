@@ -14,6 +14,17 @@ interface ModalProps {
   children: ReactNode
 }
 
+/** Devuelve el foco al control de origen; si ya no existe (la lista se redibujó), al contenido principal. */
+function devolverFoco(origen: HTMLElement | null) {
+  if (origen?.isConnected) origen.focus()
+  else document.getElementById('contenido')?.focus()
+  // Si la acción retira el control de origen (p. ej. una fila anulada), el foco no debe quedar perdido en <body>.
+  setTimeout(() => {
+    const a = document.activeElement
+    if (!a || a === document.body || !a.isConnected) document.getElementById('contenido')?.focus()
+  }, 500)
+}
+
 const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }
 
 /** Diálogo modal accesible. Se muestra sobre la página de origen para conservar el contexto. */
@@ -27,7 +38,7 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', chi
         <Dialog.Content
           onCloseAutoFocus={(e) => {
             e.preventDefault()
-            origen?.focus()
+            devolverFoco(origen)
           }}
           className={cn(
             'fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-line bg-surface shadow-xl',
@@ -67,11 +78,19 @@ interface ConfirmProps {
 
 /** Confirmación previa para acciones destructivas o que afectan a varios registros. */
 export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, danger, loading, onConfirm }: ConfirmProps) {
+  // El diálogo está siempre montado: el origen se captura justo antes de que Radix mueva el foco al abrir.
+  const [origen, setOrigen] = useState<HTMLElement | null>(null)
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/50" />
-        <AlertDialog.Content className="fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-lg border border-line bg-surface p-6 shadow-xl">
+        <AlertDialog.Content
+          onOpenAutoFocus={() => setOrigen(document.activeElement as HTMLElement | null)}
+          onCloseAutoFocus={(e) => {
+            e.preventDefault()
+            devolverFoco(origen)
+          }}
+          className="fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-lg border border-line bg-surface p-6 shadow-xl">
           <AlertDialog.Title className="font-display text-lg font-bold">{title}</AlertDialog.Title>
           <AlertDialog.Description asChild>
             <div className="text-sm text-muted">{description}</div>

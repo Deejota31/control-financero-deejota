@@ -15,7 +15,10 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:seed": "node scripts/verificar-seed.mjs",
+    "verify:security": "node scripts/verificar-seguridad.mjs",
+    "test:all": "npm run check && npm run db:test && npm run test:e2e && npm run verify:seed && npm run verify:security"
   },
   "repository": {
     "type": "git",
@@ -55,6 +58,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",

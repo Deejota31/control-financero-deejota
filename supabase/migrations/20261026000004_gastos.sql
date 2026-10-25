@@ -198,6 +198,10 @@ begin
   if tg_table_name = 'expenses' and tg_op = 'UPDATE' and v_old ->> 'status' is distinct from v_new ->> 'status' then
     v_action := case v_new ->> 'status' when 'annulled' then 'annul' else 'restore' end;
   end if;
+  -- Si el hogar ya no existe (borrado en cascada de una cuenta), no hay a qué asociar la auditoría.
+  if not exists (select 1 from public.households h where h.id = (v_row ->> 'household_id')::uuid) then
+    return null;
+  end if;
   insert into public.audit_logs (household_id, user_id, entity, entity_id, action, before_state, after_state)
   values ((v_row ->> 'household_id')::uuid, (select auth.uid()), tg_table_name, (v_row ->> 'id')::uuid, v_action, v_old, v_new);
   return null;

@@ -26,6 +26,8 @@ interface ComboboxProps {
   searchable?: boolean
   invalid?: boolean
   'aria-describedby'?: string
+  /** Nombre accesible cuando no hay una etiqueta <label> asociada. */
+  'aria-label'?: string
   className?: string
 }
 
@@ -89,6 +91,7 @@ export function Combobox({
             aria-controls={open ? listId : undefined}
             aria-invalid={invalid || undefined}
             aria-describedby={aria['aria-describedby']}
+            aria-label={aria['aria-label']}
             disabled={disabled}
             className={cn(
               'flex w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-bad',
@@ -104,6 +107,7 @@ export function Combobox({
           <Popover.Content
             align="start"
             sideOffset={4}
+            aria-label={`Opciones: ${placeholder}`}
             className="z-[80] w-[var(--radix-popover-trigger-width)] min-w-56 rounded-md border border-line bg-surface p-1 shadow-lg"
           >
             {searchable && (

@@ -8,6 +8,7 @@ import { useHogar } from '@/features/dashboard/useDashboard'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { useTema } from '@/features/tema/ThemeProvider'
 import { ThemeToggle } from '@/features/tema/ThemeToggle'
+import { procesarLimpieza } from '@/features/gastos/comprobantes'
 import { MODULOS } from './modulos'
 
 export function AppLayout() {
@@ -24,6 +25,11 @@ export function AppLayout() {
   useEffect(() => {
     if (temaPerfil === 'claro' || temaPerfil === 'oscuro') setTema(temaPerfil)
   }, [temaPerfil, setTema])
+
+  // Reintenta borrar comprobantes huérfanos pendientes (el servidor descarta los que estén asociados a un gasto).
+  useEffect(() => {
+    void procesarLimpieza()
+  }, [])
 
   const actual = MODULOS.find((m) => (m.path === '/' ? pathname === '/' : pathname.startsWith(m.path)))
   const nombre = perfil.data?.display_name || user?.email || ''
@@ -75,7 +81,7 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-between gap-3 border-b border-line bg-surface px-4 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <p className="truncate font-display text-lg font-bold">{actual?.label ?? 'Gasto Deejota'}</p>
+            <h1 className="truncate font-display text-lg font-bold">{actual?.label ?? 'Gasto Deejota'}</h1>
             {hogar.data?.is_demo && <span className="shrink-0 rounded-md bg-acc-soft px-2 py-0.5 text-xs font-semibold text-warn" title="Los datos de este hogar son de demostración">Datos DEMO</span>}
           </div>
           <div className="flex items-center gap-2">
@@ -84,7 +90,7 @@ export function AppLayout() {
               type="button"
               onClick={cerrarSesion}
               disabled={saliendo}
-              aria-label="Cerrar sesión"
+              aria-label="Salir (cerrar sesión)"
               className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-medium hover:bg-surface-2 disabled:opacity-60"
             >
               <LogOut className="size-4" aria-hidden="true" />
@@ -92,7 +98,7 @@ export function AppLayout() {
             </button>
           </div>
         </header>
-        <main id="contenido" className="p-4 pb-24 md:p-8 md:pb-8">
+        <main id="contenido" tabIndex={-1} className="p-4 pb-24 md:p-8 md:pb-8">
           <Outlet />
         </main>
       </div>

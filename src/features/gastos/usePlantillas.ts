@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { usePerfil } from '@/features/perfil/usePerfil'
+import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
 import type { Plantilla } from '@/lib/tipos'
@@ -22,12 +23,11 @@ export function useEstadoLote(periodId: string | undefined, desde: string, hasta
     enabled: Boolean(periodId),
     queryFn: async () => {
       const [g, b] = await Promise.all([
-        supabase.from('expenses').select('template_id').eq('status', 'active').not('template_id', 'is', null).gte('expense_date', desde).lte('expense_date', hasta),
+        leerTodo<{ template_id: string | null }>((d, h) => supabase.from('expenses').select('template_id', { count: 'exact' }).eq('status', 'active').not('template_id', 'is', null).gte('expense_date', desde).lte('expense_date', hasta).order('id').range(d, h)),
         supabase.from('template_batches').select('created_at, template_batch_items(template_id, outcome)').eq('period_id', periodId!).order('created_at'),
       ])
-      if (g.error) throw g.error
       if (b.error) throw b.error
-      const registradas = new Set((g.data ?? []).map((x) => x.template_id as string))
+      const registradas = new Set(g.map((x) => x.template_id as string))
       // Prevalece la decisión más reciente de cada plantilla.
       const ultimo = new Map<string, string>()
       for (const lote of b.data ?? []) for (const it of lote.template_batch_items ?? []) ultimo.set(it.template_id, it.outcome)

@@ -501,6 +501,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"storage_cleanup_tasks": {
+                  Row: {
+                    "attempts": number,"bucket": string,"created_at": string,"household_id": string,"id": string,"last_error": string | null,"not_before": string,"path": string,"reason": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"bucket"?: string,"created_at"?: string,"household_id": string,"id"?: string,"last_error"?: string | null,"not_before"?: string,"path": string,"reason": string
+                  }
+                  Update: {
+                    "attempts"?: number,"bucket"?: string,"created_at"?: string,"household_id"?: string,"id"?: string,"last_error"?: string | null,"not_before"?: string,"path"?: string,"reason"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "storage_cleanup_tasks_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"subcategorias": {
                   Row: {
                     "categoria_id": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
@@ -612,6 +632,9 @@ isOneToOne: false
 "close_period":
 { Args: { "p_period": string }; Returns: undefined
                            },
+"completar_limpieza":
+{ Args: { "p_ids": (string)[] }; Returns: number
+                           },
 "count_changed":
 { Args: { "p_after": Json,"p_before": Json }; Returns: number
                            },
@@ -620,6 +643,9 @@ isOneToOne: false
                            },
 "current_household_id":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"dashboard_resumen":
+{ Args: { "p_desde": string,"p_hasta": string,"p_prev_desde": string,"p_prev_hasta": string }; Returns: Json
                            },
 "ensure_period":
 { Args: { "hid": string,"p_date": string }; Returns: string
@@ -643,6 +669,9 @@ isOneToOne: false
 "expense_report":
 { Args: { "p_expense": string }; Returns: Json
                            },
+"fallo_limpieza":
+{ Args: { "p_error": string,"p_ids": (string)[] }; Returns: undefined
+                           },
 "fund_admits":
 { Args: { "p_ambito": string,"p_cat": string,"p_fund": string,"p_method": string,"p_sub": string }; Returns: boolean
                            },
@@ -664,6 +693,11 @@ isOneToOne: false
 "is_valid_icon":
 { Args: { "k": string }; Returns: boolean
                            },
+"listar_limpieza":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "id": string,"path": string
+            }[]
+                           },
 "open_consumption":
 { Args: { "hid": string }; Returns: Json
                            },
@@ -672,6 +706,9 @@ isOneToOne: false
                            },
 "recalc_period":
 { Args: { "p_period": string }; Returns: undefined
+                           },
+"registrar_limpieza":
+{ Args: { "p_demora_min"?: number,"p_paths": (string)[],"p_reason": string }; Returns: number
                            },
 "reorder_catalog":
 { Args: { "p_ids": (string)[],"p_kind": string }; Returns: undefined

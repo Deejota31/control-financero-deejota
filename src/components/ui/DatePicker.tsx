@@ -20,6 +20,7 @@ interface DatePickerProps {
   invalid?: boolean
   disabled?: boolean
   'aria-describedby'?: string
+  'aria-label'?: string
 }
 
 const DIAS = ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do']
@@ -37,6 +38,8 @@ export function DatePicker({ id, value, onChange, formato = 'dd/MM/yyyy', placeh
     start: startOfWeek(startOfMonth(view), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(view), { weekStartsOn: 1 }),
   })
+
+  const semanas = Array.from({ length: days.length / 7 }, (_, i) => days.slice(i * 7, i * 7 + 7))
 
   const disabledDay = (d: Date) => Boolean((min && toIso(d) < min) || (max && toIso(d) > max))
 
@@ -88,6 +91,7 @@ export function DatePicker({ id, value, onChange, formato = 'dd/MM/yyyy', placeh
           disabled={disabled}
           aria-invalid={invalid || undefined}
           aria-describedby={aria['aria-describedby']}
+          aria-label={aria['aria-label'] ? `${aria['aria-label']}: ${value ? formatFecha(value, formato) : placeholder}` : undefined}
           aria-haspopup="dialog"
           className="flex w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-left text-sm disabled:opacity-60 aria-[invalid=true]:border-bad"
         >
@@ -96,7 +100,15 @@ export function DatePicker({ id, value, onChange, formato = 'dd/MM/yyyy', placeh
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="start" sideOffset={4} className="z-[80] w-72 rounded-md border border-line bg-surface p-3 shadow-lg" aria-label="Calendario">
+        <Popover.Content
+          align="start"
+          sideOffset={4}
+          onOpenAutoFocus={(e) => {
+            // El foco entra directamente en el día seleccionado (o el de hoy) para operar con flechas.
+            e.preventDefault()
+            requestAnimationFrame(() => gridRef.current?.querySelector<HTMLButtonElement>('[role="gridcell"][tabindex="0"]')?.focus())
+          }}
+          className="z-[80] w-72 rounded-md border border-line bg-surface p-3 shadow-lg" aria-label="Calendario">
           <div className="mb-2 flex items-center justify-between">
             <button type="button" aria-label="Mes anterior" onClick={() => setView(addMonths(view, -1))} className="grid size-8 place-items-center rounded-md hover:bg-surface-2">
               <ChevronLeft className="size-4" aria-hidden="true" />
@@ -106,38 +118,43 @@ export function DatePicker({ id, value, onChange, formato = 'dd/MM/yyyy', placeh
               <ChevronRight className="size-4" aria-hidden="true" />
             </button>
           </div>
-          <div className="grid grid-cols-7 text-center text-xs uppercase text-muted">
-            {DIAS.map((d) => (
-              <span key={d} className="py-1">{d}</span>
+          {/* Estructura ARIA completa: grid > row > columnheader/gridcell */}
+          <div ref={gridRef} role="grid" aria-label={title} onKeyDown={onGridKey} className="flex flex-col gap-y-0.5">
+            <div role="row" className="grid grid-cols-7 text-center text-xs uppercase text-muted">
+              {DIAS.map((d) => (
+                <span key={d} role="columnheader" className="py-1">{d}</span>
+              ))}
+            </div>
+            {semanas.map((semana) => (
+              <div key={toIso(semana[0])} role="row" className="grid grid-cols-7">
+                {semana.map((d) => {
+                  const sel = selected && isSameDay(d, selected)
+                  const out = !isSameMonth(d, view)
+                  const isFocus = isSameDay(d, focus)
+                  return (
+                    <button
+                      key={toIso(d)}
+                      type="button"
+                      role="gridcell"
+                      data-date={toIso(d)}
+                      tabIndex={isFocus ? 0 : -1}
+                      aria-selected={Boolean(sel)}
+                      aria-label={format(d, "d 'de' MMMM yyyy", { locale: es })}
+                      disabled={disabledDay(d)}
+                      onClick={() => pick(d)}
+                      className={cn(
+                        'mx-auto grid size-9 place-items-center rounded-md text-sm num disabled:opacity-30',
+                        out && 'text-muted',
+                        isSameDay(d, today) && !sel && 'border border-pri',
+                        sel ? 'bg-pri font-semibold text-pri-fg' : 'hover:bg-surface-2',
+                      )}
+                    >
+                      {d.getDate()}
+                    </button>
+                  )
+                })}
+              </div>
             ))}
-          </div>
-          <div ref={gridRef} role="grid" onKeyDown={onGridKey} className="grid grid-cols-7 gap-y-0.5">
-            {days.map((d) => {
-              const sel = selected && isSameDay(d, selected)
-              const out = !isSameMonth(d, view)
-              const isFocus = isSameDay(d, focus)
-              return (
-                <button
-                  key={toIso(d)}
-                  type="button"
-                  role="gridcell"
-                  data-date={toIso(d)}
-                  tabIndex={isFocus ? 0 : -1}
-                  aria-selected={sel || undefined}
-                  aria-label={format(d, "d 'de' MMMM yyyy", { locale: es })}
-                  disabled={disabledDay(d)}
-                  onClick={() => pick(d)}
-                  className={cn(
-                    'mx-auto grid size-9 place-items-center rounded-md text-sm num disabled:opacity-30',
-                    out && 'text-muted',
-                    isSameDay(d, today) && !sel && 'border border-pri',
-                    sel ? 'bg-pri font-semibold text-pri-fg' : 'hover:bg-surface-2',
-                  )}
-                >
-                  {d.getDate()}
-                </button>
-              )
-            })}
           </div>
           <div className="mt-3 flex gap-2 border-t border-line pt-3">
             <button type="button" onClick={() => pick(today)} className="flex-1 rounded-md border border-line px-2 py-1.5 text-sm font-medium hover:bg-surface-2">

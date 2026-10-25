@@ -9,6 +9,7 @@ interface MoneyInputProps {
   invalid?: boolean
   disabled?: boolean
   'aria-describedby'?: string
+  'aria-label'?: string
   placeholder?: string
 }
 
@@ -32,6 +33,7 @@ export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, pla
         disabled={disabled}
         aria-invalid={invalid || undefined}
         aria-describedby={aria['aria-describedby']}
+        aria-label={aria['aria-label']}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => {
           const n = parseImporte(value)

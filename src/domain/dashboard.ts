@@ -53,7 +53,12 @@ export interface PuntoDiario {
   proyeccion: number | null
 }
 
-export function serieDiaria(gastos: GastoBasico[], desde: string, hasta: string, hoy: string, presupuesto: number | null): PuntoDiario[] {
+export interface MontoDia {
+  expense_date: string
+  amount: number | string
+}
+
+export function serieDiaria(gastos: MontoDia[], desde: string, hasta: string, hoy: string, presupuesto: number | null): PuntoDiario[] {
   const dias = diasEnRango(desde, hasta)
   const porDia = new Map<string, number>()
   for (const g of gastos) porDia.set(g.expense_date, (porDia.get(g.expense_date) ?? 0) + Number(g.amount))

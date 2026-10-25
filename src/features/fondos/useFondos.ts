@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns'
 import type { CambioFondos } from '@/domain/fondos'
+import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
 import type { Periodo } from '@/lib/tipos'
@@ -43,11 +44,7 @@ export function usePresupuestosPeriodo(periodId: string | undefined) {
   return useQuery({
     queryKey: ['fondos', 'presupuestos', periodId],
     enabled: Boolean(periodId),
-    queryFn: async () => {
-      const { data, error } = await supabase.from('fund_period_budgets').select('*').eq('period_id', periodId!)
-      if (error) throw error
-      return data
-    },
+    queryFn: () => leerTodo((d, h) => supabase.from('fund_period_budgets').select('*', { count: 'exact' }).eq('period_id', periodId!).order('id').range(d, h)),
   })
 }
 
@@ -55,11 +52,7 @@ export function useAsignacionesPeriodo(periodId: string | undefined) {
   return useQuery({
     queryKey: ['fondos', 'asignaciones', periodId],
     enabled: Boolean(periodId),
-    queryFn: async () => {
-      const { data, error } = await supabase.from('expense_fund_allocations').select('*').eq('period_id', periodId!)
-      if (error) throw error
-      return data
-    },
+    queryFn: () => leerTodo((d, h) => supabase.from('expense_fund_allocations').select('*', { count: 'exact' }).eq('period_id', periodId!).order('id').range(d, h)),
   })
 }
 
