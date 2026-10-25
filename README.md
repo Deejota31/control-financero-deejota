@@ -76,3 +76,4 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 - [Reglas de asignación de fondos](docs/reglas-fondos.md)
 - [Decisiones técnicas](docs/decisiones.md)
 - [Preparación para publicar](docs/despliegue.md) (pendiente de tu aprobación)
+- [Rediseño del Catálogo: propuestas A/B/C](docs/catalogo-propuestas.md) (solo diseño; prototipos en `prototipos/catalogo/`)

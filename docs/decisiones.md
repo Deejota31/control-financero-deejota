@@ -29,3 +29,10 @@
 | Usuario E2E propio y reinicio por prueba | `dev_reset_user` (solo local, en `seed.sql`) aísla las pruebas del seed demo. |
 | Auditoría axe sin excepciones | Ver [accesibilidad.md](accesibilidad.md). El tono verde `--ok` se oscureció para cumplir contraste. |
 | `verify:security` | Comprueba secretos, migraciones sin datos demo y un build de producción sin URLs locales. |
+| Dashboard con filtros cruzados en la URL | Una sola fuente de verdad (`useFiltrosDashboard`) y una sola RPC (`dashboard_panel`) alimentan KPIs, gráficos, Top 5, recientes y fondos: no pueden divergir y las respuestas atrasadas no sobrescriben a las recientes (clave de consulta con filtros + cancelación). |
+| Presupuesto consolidado con filtros | El presupuesto es siempre el del período completo; el gasto con filtros se muestra aparte («no se puede repartir por los filtros»). Registrar gastos nunca se bloquea por exceso. |
+| Tooltip de la dona externo | El detalle del segmento se muestra fuera del anillo (lateral) para no tapar el total central; también se activa por teclado desde la leyenda. |
+| Animaciones solo al abrir | `.anim-*` se desactivan en `data-state=closed` para que Radix no retenga la capa (un Escape rápido debe cerrar el diálogo). |
+| Exportaciones en el navegador | CSV (`gasto-deejota-gastos-AAAA-MM-DD.csv`) y respaldo JSON (`…-respaldo-…json`, `version_esquema` 1) se arman con la sesión del usuario (RLS) leyendo por tandas con `leerTodo`; excluyen autoría, rutas de comprobantes, tokens y claves; las celdas CSV neutralizan fórmulas. Sin `service_role`. |
+| Actividad de solo lectura | Se lee `audit_logs` (propietario) con paginación y filtros; los eventos sin usuario (semillas/cargas) son «sistema» y se ocultan por defecto. No hay escritura ni borrado desde la app. |
+| Catálogo: rediseño en pausa | Tres prototipos aislados en `prototipos/catalogo/`; sin migraciones ni código de producción hasta que se elija propuesta. Ver [catalogo-propuestas.md](catalogo-propuestas.md). |

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo C · Administración compacta</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .barra { display: flex; gap: 10px; align-items: center; margin: 16px 0 12px; flex-wrap: wrap; }
+  .barra .busca { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); width: 280px; color: var(--muted); }
+  .barra .busca input { border: 0; background: none; outline: none; flex: 1; color: var(--fg); }
+  .barra label { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); }
+  .espacio { flex: 1; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  td { padding: 6px 12px; border-bottom: 1px solid var(--line); height: 46px; vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+  tr.off td { opacity: .55; } tr.off td:last-child, tr.off td:nth-last-child(2) { opacity: 1; }
+  tr.grupo td { background: var(--surface-2); font-weight: 700; height: 38px; }
+  tr.sub td:first-child { padding-left: 56px; }
+  .nombre { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .color { display: flex; align-items: center; gap: 8px; }
+  .color .hex { color: var(--muted); font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+  .acc { display: flex; justify-content: flex-end; }
+  .asa { color: var(--muted); display: inline-grid; place-items: center; }
+  .tbl { overflow: hidden; }
+  .desp { background: none; border: 0; color: var(--muted); display: inline-grid; place-items: center; width: 22px; height: 22px; } .desp .ico { transition: transform .12s; } .desp[aria-expanded='true'] .ico { transform: rotate(90deg); }
+</style>
+</head>
+<body>
+<script src="shared.js"></script>
+<script>
+  barraPrototipo('C · Administración compacta')
+  marcoApp('Catálogo', 'Gestión rápida en tablas densas.', '')
+  let vista = param('vista') || 'ambitos'
+  const expandidas = new Set(['c1', 'c4'])
+  let verInactivos = true
+
+  const colorCelda = (item, tipo) => { const c = colorEfectivo(item, tipo); return `<div class="color" style="${estiloColor(c.hex)}"><span class="punto"></span><span>${nombreColor(c.hex)}</span><span class="hex">${c.hex.toUpperCase()}</span>${c.origen === 'heredado' ? `<span class="origen">${ui('enlace')} ${esc(c.de)}</span>` : ''}</div>` }
+  const fila = (item, tipo, i, total, extra = '') => {
+    const c = colorEfectivo(item, tipo)
+    return `<tr class="${item.activo ? '' : 'off'}" data-id="${item.id}" data-tipo="${tipo}" style="${estiloColor(c.hex)}">
+      <td><div class="nombre"><span class="asa" aria-hidden="true">${ui('arrastrar')}</span>${tipo === 'categoria' ? `<button class="desp" aria-expanded="${expandidas.has(item.id)}" aria-label="${item.subs.length ? 'Mostrar subcategorías de ' + esc(item.nombre) : 'Sin subcategorías'}" data-exp="${item.id}" ${item.subs.length ? '' : 'disabled'}>${ui('flecha')}</button>` : ''}${insignia(item, tipo, 'p')}<span>${esc(item.nombre)}</span>${item.fijoAlFinal ? `<span class="candado">${ui('candado')} al final</span>` : ''}</div></td>
+      ${extra}<td>${colorCelda(item, tipo)}</td><td class="num">${item.gastos}</td>
+      <td>${interruptor(item.activo, item.nombre, item.fijoAlFinal)}</td><td><div class="acc">${botonesFila(item, tipo, i, total)}</div></td></tr>`
+  }
+  const cabecera = (extra = '') => `<thead><tr><th>Nombre</th>${extra}<th>Color</th><th>Gastos</th><th>Activo</th><th style="text-align:right">Acciones</th></tr></thead>`
+
+  function dibujar() {
+    const v = document.getElementById('vista')
+    let html = pestanas(vista)
+    if (vista === 'ambitos') {
+      const L = DATOS.ambitos
+      html += `<div class="barra"><div class="busca">${ui('buscar')}<input placeholder="Buscar ámbito…" aria-label="Buscar"></div><span class="espacio"></span><button class="btn btn-pri" data-nuevo="ambito">${ui('mas')} Nuevo ámbito</button></div>
+        <div class="tarjeta tbl"><table>${cabecera('<th>Categorías</th>')}<tbody>${L.map((a, i) => fila(a, 'ambito', i, L.length, `<td class="num">${DATOS.categorias.filter((c) => c.ambito === a.id).length}</td>`)).join('')}</tbody></table></div>`
+    } else if (vista === 'categorias') {
+      const L = DATOS.categorias
+      html += `<div class="barra"><div class="busca">${ui('buscar')}<input placeholder="Buscar categoría o subcategoría…" aria-label="Buscar"></div>
+        <label><input type="checkbox" ${verInactivos ? 'checked' : ''} id="inact"> Mostrar inactivas</label><span class="espacio"></span><button class="btn">${ui('mas')} Subcategoría</button><button class="btn btn-pri" data-nuevo="categoria">${ui('mas')} Nueva categoría</button></div>
+        <div class="tarjeta tbl"><table>${cabecera()}<tbody>${DATOS.ambitos.map((a) => {
+          const cats = L.filter((c) => c.ambito === a.id && (verInactivos || c.activo))
+          if (!cats.length) return ''
+          return `<tr class="grupo" style="${estiloColor(a.color)}"><td colspan="5"><div class="nombre">${insignia(a, 'ambito', 'p')} ${esc(a.nombre)} <span class="origen">· ${cats.length} categorías</span></div></td></tr>` +
+            cats.map((c) => fila(c, 'categoria', L.indexOf(c), L.length) + (expandidas.has(c.id) ? c.subs.map((s) => `<tr class="sub" style="${estiloColor(colorEfectivo(c, 'categoria').hex)}"><td><div class="nombre" style="font-weight:500"><span class="punto"></span>${esc(s)}</div></td><td><span class="origen">${ui('enlace')} hereda de ${esc(c.nombre)}</span></td><td class="num">—</td><td>${interruptor(true, s, false)}</td><td><div class="acc"><button class="btn-ico" aria-label="Editar ${esc(s)}">${ui('editar')}</button><button class="btn-ico" aria-label="Eliminar ${esc(s)}">${ui('papelera')}</button></div></td></tr>`).join('') : '')).join('')
+        }).join('')}</tbody></table></div>`
+    } else {
+      const L = DATOS.medios
+      html += `<div class="barra"><div class="busca">${ui('buscar')}<input placeholder="Buscar medio de pago…" aria-label="Buscar"></div><span class="espacio"></span><button class="btn btn-pri" data-nuevo="medio">${ui('mas')} Nuevo medio de pago</button></div>
+        <div class="tarjeta tbl"><table>${cabecera()}<tbody>${L.map((m, i) => fila(m, 'medio', i, L.length)).join('')}</tbody></table></div>`
+    }
+    v.innerHTML = html
+    v.querySelectorAll('[data-vista]').forEach((b) => b.addEventListener('click', () => { vista = b.dataset.vista; dibujar() }))
+    v.querySelectorAll('[data-exp]').forEach((b) => b.addEventListener('click', () => { expandidas.has(b.dataset.exp) ? expandidas.delete(b.dataset.exp) : expandidas.add(b.dataset.exp); dibujar() }))
+    v.querySelector('#inact')?.addEventListener('change', (e) => { verInactivos = e.target.checked; dibujar() })
+  }
+  manejarAcciones(document.getElementById('vista'), dibujar)
+  document.addEventListener('tema', dibujar)
+  dibujar()
+</script>
+</body>
+</html>
