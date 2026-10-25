@@ -19,8 +19,7 @@
 | Sesi√≥n "vencida" distinta de "cerrada" | Un `SIGNED_OUT` sin cierre expl√≠cito del usuario lleva a `/sesion-expirada`. |
 | Proyecci√≥n de cierre y ritmo ideal | Se muestran como estimaciones. |
 | Sin conversi√≥n USD | El prompt original no permite inventar tipos de cambio. |
-| Flujo de medios de pago (Sankey) | Pedido posterior del usuario; sustituye la exclusi√≥n del prompt original. |
-| Dashboard sin gr·fico por medios de pago | El ˙ltimo prompt lo excluye de nuevo (el Sankey de la referencia no se implementÛ). |
-| ComparaciÛn con el mes calendario anterior | Si el rango es un mes completo se compara con el mes previo; si no, con un rango de igual duraciÛn. |
-| Reordenar prioridad con simulaciÛn | eorder_funds admite dry-run: se explica el efecto antes de aplicar. |
-| Foco al cerrar di·logos | Modal devuelve el foco al control que lo abriÛ. |
+| Flujo de medios de pago (Sankey) | Se mostr√≥ en la propuesta visual a pedido del usuario, pero el √∫ltimo prompt vuelve a excluir gr√°ficos por medios de pago: **no se implement√≥**. |
+| Comparaci√≥n con el mes calendario anterior | Si el rango es un mes completo se compara con el mes previo; si no, con un rango de igual duraci√≥n. |
+| Reordenar prioridad con simulaci√≥n | `reorder_funds` admite dry-run: se explica el efecto antes de aplicar. |
+| Foco al cerrar di√°logos | `Modal` devuelve el foco al control que lo abri√≥. |
