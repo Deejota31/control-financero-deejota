@@ -118,7 +118,7 @@ export function DashboardPage() {
   const totalAmbitos = porAmbito.reduce((s, a) => s + a.total, 0)
   const segmentos: SegmentoDona[] = porAmbito.map((a) => {
     const amb = catalogo.ambitos.find((x) => x.id === a.id)
-    return { id: a.id, nombre: amb?.name ?? 'Ámbito', valor: a.total, cantidad: a.cantidad, fill: colorVar(amb?.color_token) }
+    return { id: a.id, nombre: amb?.name ?? 'Ámbito', valor: a.total, cantidad: a.cantidad, fill: colorVar(amb?.color_css) }
   })
   const listaTop = topModo === 'categorias' ? panel?.por_categoria : panel?.por_subcategoria
   const top = useMemo(() => (listaTop ?? []).slice(0, 5).map((t) => ({ ...t, total: Number(t.total), cantidad: Number(t.cantidad) })), [listaTop])
@@ -277,7 +277,7 @@ export function DashboardPage() {
                             onBlur={() => setHoverAmbito(null)}
                             className={cn('flex w-full items-center gap-3 rounded-lg border border-transparent p-1.5 text-left transition-colors hover:bg-surface-2', sel && 'border-pri bg-pri-soft', filtros.ambito && !sel && 'opacity-60')}
                           >
-                            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={amb?.icon_key} color={amb?.color_token} /></span>
+                            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={amb?.icon_key} color={amb?.color_css} /></span>
                             <span className="min-w-0 flex-1"><span className="block truncate font-medium">{amb?.name}</span><span className="block text-xs text-muted">{a.cantidad} {a.cantidad === 1 ? 'movimiento' : 'movimientos'}</span></span>
                             <span className="text-right"><span className="num block font-medium">{formatSoles(a.total)}</span><span className="num block text-xs text-muted">{totalAmbitos > 0 ? ((a.total / totalAmbitos) * 100).toFixed(1) : '0.0'}%</span></span>
                           </button>
@@ -308,7 +308,7 @@ export function DashboardPage() {
                     const sub = topModo === 'subcategorias' ? catalogo.subcategorias.find((s) => s.id === t.id) : null
                     const item = cat ?? sub
                     const padreCat = cat ?? catalogo.categorias.find((c) => c.id === sub?.categoria_id)
-                    const color = padreCat?.color_token ?? 'c1'
+                    const color = padreCat?.color_css ?? '#3A3FA6'
                     const sel = topModo === 'categorias' ? filtros.categoria === t.id : filtros.subcategoria === t.id
                     const hayEleccion = topModo === 'categorias' ? Boolean(filtros.categoria) : Boolean(filtros.subcategoria)
                     const ambNombre = catalogo.ambitos.find((a) => a.id === padreCat?.ambito_id)?.name
@@ -374,7 +374,7 @@ export function DashboardPage() {
                     const cat = catalogo.categorias.find((c) => c.id === g.categoria_id)
                     return (
                       <li key={g.id} className="flex items-center gap-3 py-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={cat?.icon_key} color={cat?.color_token} /></span>
+                        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={cat?.icon_key} color={cat?.color_css} /></span>
                         <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{g.description}</span><span className="block text-xs text-muted">{formatFecha(g.expense_date, formato)} · {cat?.name}</span></span>
                         <span className="num text-sm font-medium">{formatSoles(Number(g.amount))}</span>
                       </li>

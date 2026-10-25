@@ -217,7 +217,7 @@ export function FondoForm({
                     <div className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
                       <button type="button" aria-expanded={abierto} onClick={() => alternarAbierto(claveA)} className="flex flex-1 items-center gap-2 text-left">
                         <ChevronRight className={cn('size-4 shrink-0 transition-transform', abierto && 'rotate-90')} aria-hidden="true" />
-                        <ItemIcon name={a.icon_key} color={a.color_token} />
+                        <ItemIcon name={a.icon_key} color={a.color_css} />
                         <span className="flex-1 text-sm font-semibold">{a.name}</span>
                       </button>
                       <SelectorRegla nombre={a.name} value={alcance[claveA] ?? 'none'} onChange={(v) => setRegla(claveA, v)} />
@@ -232,7 +232,7 @@ export function FondoForm({
                               <div className="flex items-center gap-2 rounded-md px-2 py-1 hover:bg-surface-2">
                                 <button type="button" aria-expanded={abiertoC} disabled={subs.length === 0} onClick={() => alternarAbierto(claveC)} className="flex flex-1 items-center gap-2 text-left disabled:opacity-60">
                                   <ChevronRight className={cn('size-4 shrink-0 transition-transform', abiertoC && 'rotate-90', subs.length === 0 && 'invisible')} aria-hidden="true" />
-                                  <ItemIcon name={c.icon_key} color={c.color_token} />
+                                  <ItemIcon name={c.icon_key} color={c.color_css} />
                                   <span className="flex-1 text-sm">{c.name}</span>
                                 </button>
                                 <SelectorRegla nombre={`${a.name} › ${c.name}`} value={alcance[claveC] ?? 'none'} onChange={(v) => setRegla(claveC, v)} />
@@ -263,7 +263,7 @@ export function FondoForm({
             <div className="flex flex-col gap-1 rounded-md border border-line p-2">
               {catalogo.medios.map((m) => (
                 <div key={m.id} className="flex items-center gap-2 px-2 py-1">
-                  <ItemIcon name={m.icon_key} color={m.color_token} />
+                  <ItemIcon name={m.icon_key} color={m.color_css} />
                   <span className="flex-1 text-sm">{m.name}</span>
                   <SelectorRegla nombre={m.name} value={medios[m.id] ?? 'none'} onChange={(v) => setMedios((x) => ({ ...x, [m.id]: v }))} />
                 </div>

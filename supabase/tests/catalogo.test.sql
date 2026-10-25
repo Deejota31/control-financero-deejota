@@ -88,6 +88,16 @@ select is((select count(*)::int from public.ambitos where name = 'Hackeado'), 0,
 select lives_ok($$update public.ambitos set name = 'Pareja' where name = 'Familia'$$, 'A edita su propio ámbito');
 select lives_ok($$select public.reorder_catalog('ambitos', (select array_agg(id order by name desc) from public.ambitos))$$, 'reordena el catálogo de forma atómica');
 
+-- Color libre (HEX) y herencia
+select lives_ok($$update public.ambitos set color_hex = '#5B5BD6' where name = 'Hogar'$$, 'acepta un HEX válido en mayúsculas');
+select throws_ok($$update public.ambitos set color_hex = '#5b5bd6' where name = 'Hogar'$$, '23514', null, 'rechaza HEX en minúsculas');
+select throws_ok($$update public.ambitos set color_hex = 'rojo' where name = 'Hogar'$$, '23514', null, 'rechaza un valor que no es HEX');
+select throws_ok($$update public.medios_pago set color_hex = '#12345' where name = 'Efectivo'$$, '23514', null, 'rechaza HEX incompleto en medios de pago');
+select lives_ok($$update public.categorias set color_mode = 'inherit', color_hex = null where name = 'Alimentación'$$, 'una categoría puede heredar el color');
+select throws_ok($$update public.categorias set color_mode = 'inherit', color_hex = '#112233' where name = 'Alimentación'$$, '23514', null, 'heredar y tener color propio a la vez se rechaza');
+select throws_ok($$update public.categorias set color_mode = 'otro' where name = 'Alimentación'$$, '23514', null, 'modo de color inválido');
+select lives_ok($$update public.categorias set color_mode = 'own', color_hex = '#16A34A' where name = 'Alimentación'$$, 'color propio en categoría');
+
 -- Los gastos no se escriben directamente
 select throws_ok(
   $$insert into public.expenses (household_id, expense_date, amount, description, ambito_id, categoria_id, payment_method_id)

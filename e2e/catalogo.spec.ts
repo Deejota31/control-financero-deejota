@@ -1,5 +1,9 @@
+import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
 import { email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+
+const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
+const guardado = (page: import('@playwright/test').Page) => expect(page.getByText('Cambios guardados', { exact: true }).first()).toBeVisible()
 
 test.describe('Catálogo', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
@@ -9,7 +13,8 @@ test.describe('Catálogo', () => {
     await iniciarSesion(page)
     await page.getByRole('link', { name: 'Catálogo' }).first().click()
     await expect(page.getByRole('tab', { name: 'Ámbitos' })).toHaveAttribute('aria-selected', 'true')
-    await expect(page.getByText('Personal', { exact: true })).toBeVisible()
+    const lista = page.getByRole('list', { name: 'Lista de ámbitos' })
+    await expect(lista.getByText('Personal', { exact: true })).toBeVisible()
 
     const nombre = `Prueba ${sufijo()}`
     await page.getByRole('button', { name: 'Nuevo ámbito' }).click()
@@ -18,17 +23,22 @@ test.describe('Catálogo', () => {
     await dialogo.getByRole('radio', { name: 'Avión' }).click()
     await dialogo.getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByText('Ámbito creado.')).toBeVisible()
-    await expect(page.getByText(nombre, { exact: true })).toBeVisible()
+    await expect(lista.getByText(nombre, { exact: true })).toBeVisible()
 
-    // editar
+    // editar en el panel en línea
     const editado = `${nombre} B`
     await page.getByRole('button', { name: `Editar ${nombre}` }).click()
-    await page.getByRole('dialog').getByLabel('Nombre').fill(editado)
-    await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText(editado, { exact: true })).toBeVisible()
+    const nombreCampo = page.getByRole('form', { name: 'Editar ámbito' }).getByLabel('Nombre')
+    await expect(nombreCampo).toBeFocused()
+    await expect(page.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled()
+    await nombreCampo.fill(editado)
+    await expect(page.getByText('Hay cambios sin guardar')).toBeVisible()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await guardado(page)
+    await expect(lista.getByText(editado, { exact: true })).toBeVisible()
 
     // ordenar: subir un puesto
-    const filas = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Subir / }) })
+    const filas = lista.getByRole('listitem')
     const antes = await filas.allTextContents()
     expect(antes.at(-1)).toContain(editado)
     await page.getByRole('button', { name: `Subir ${editado}` }).click()
@@ -38,13 +48,13 @@ test.describe('Catálogo', () => {
 
     // desactivar
     await page.getByRole('button', { name: `Desactivar ${editado}` }).click()
-    await expect(page.getByRole('listitem').filter({ hasText: editado }).getByText('Inactivo')).toBeVisible()
+    await expect(filas.filter({ hasText: editado }).getByText('Inactivo')).toBeVisible()
 
     // eliminar (sin uso)
     await page.getByRole('button', { name: `Eliminar ${editado}` }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Eliminar' }).click()
     await expect(page.getByText(`${editado} eliminado.`)).toBeVisible()
-    await expect(page.getByText(editado, { exact: true })).toHaveCount(0)
+    await expect(lista.getByText(editado, { exact: true })).toHaveCount(0)
     expect(errores).toEqual([])
   })
 
@@ -54,7 +64,7 @@ test.describe('Catálogo', () => {
     await page.getByRole('button', { name: 'Eliminar Hogar' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Eliminar' }).click()
     await expect(page.getByText(/está en uso/)).toBeVisible()
-    await expect(page.getByText('Hogar', { exact: true })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lista de ámbitos' }).getByText('Hogar', { exact: true })).toBeVisible()
   })
 
   test('los medios de pago nuevos quedan antes de "Otro"', async ({ page }) => {
@@ -65,8 +75,9 @@ test.describe('Catálogo', () => {
     await page.getByRole('button', { name: 'Nuevo medio de pago' }).click()
     await page.getByRole('dialog').getByLabel('Nombre').fill(nombre)
     await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText(nombre, { exact: true })).toBeVisible()
-    const filas = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: /^Subir / }) })
+    const lista = page.getByRole('list', { name: 'Lista de medios de pago' })
+    await expect(lista.getByText(nombre, { exact: true })).toBeVisible()
+    const filas = lista.getByRole('listitem')
     await expect.poll(async () => (await filas.allTextContents()).at(-1)).toContain('Otro')
     await expect.poll(async () => (await filas.allTextContents()).at(-2)).toContain(nombre)
     await page.getByRole('button', { name: `Eliminar ${nombre}` }).click()
@@ -92,6 +103,116 @@ test.describe('Catálogo', () => {
     await page.getByRole('tab', { name: 'Subcategorías' }).click()
     await expect(page.getByRole('combobox', { name: 'Ámbito' })).toBeVisible()
     await expect(page.getByRole('combobox', { name: 'Categoría' })).toBeVisible()
-    await expect(page.getByText('Comidas fuera')).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lista de subcategorías' }).getByText('Comidas fuera')).toBeVisible()
+  })
+
+  test('elegir un color de la paleta actualiza la vista previa (claro y oscuro) y se guarda', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('link', { name: 'Catálogo' }).first().click()
+    await page.getByRole('button', { name: 'Editar Trabajo' }).click()
+    const panel = page.getByRole('form', { name: 'Editar ámbito' })
+    const previa = page.getByLabel('Vista previa del color')
+    await expect(previa.getByText('Tema claro')).toBeVisible()
+    await expect(previa.getByText('Tema oscuro')).toBeVisible()
+    const etiqueta = previa.locator('span.rounded-full').first()
+    const antes = await etiqueta.evaluate((e) => getComputedStyle(e).backgroundColor)
+    await panel.getByRole('radio', { name: /^Rojo #DC2626/ }).click()
+    await expect(panel.getByRole('radio', { name: /^Rojo #DC2626/ })).toHaveAttribute('aria-checked', 'true')
+    await expect.poll(() => etiqueta.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(antes)
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await guardado(page)
+    expect(sqlLocal(`select color_hex from public.ambitos where household_id = ${HID} and name = 'Trabajo'`)).toBe('#DC2626')
+    await page.reload()
+    await page.getByRole('button', { name: 'Editar Trabajo' }).click()
+    await expect(page.getByRole('radio', { name: /^Rojo #DC2626/ })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('color personalizado: HEX y RGB sincronizados, validación, contraste y vuelta a la paleta', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('link', { name: 'Catálogo' }).first().click()
+    await page.getByRole('tab', { name: 'Medios de pago' }).click()
+    await page.getByRole('button', { name: 'Editar Efectivo' }).click()
+    await page.getByRole('button', { name: /Color personalizado/ }).click()
+    const hex = page.getByLabel('HEX', { exact: true })
+    await hex.fill('5b5bd6')
+    await expect(page.getByLabel('R', { exact: true })).toHaveValue('91')
+    await expect(page.getByLabel('G', { exact: true })).toHaveValue('91')
+    await expect(page.getByLabel('B', { exact: true })).toHaveValue('214')
+    await page.getByLabel('B', { exact: true }).fill('200')
+    await expect(hex).toHaveValue('#5B5BC8')
+    await hex.fill('zzz')
+    await expect(page.getByText('Usa 6 dígitos hexadecimales')).toBeVisible()
+    await page.getByLabel('R', { exact: true }).fill('300')
+    await expect(page.getByText('Cada canal RGB va de 0 a 255.')).toBeVisible()
+    await hex.fill('#5B5BD6')
+    await expect(page.getByText(/Tema claro: texto/)).toContainText('(mín. 4.5)')
+    await expect(page.getByText('Cumple').first()).toBeVisible()
+    // el teclado mueve el selector de saturación y brillo
+    const antes = await hex.inputValue()
+    await page.getByRole('slider', { name: 'Saturación y brillo' }).focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(hex).not.toHaveValue(antes)
+    await hex.fill('#5B5BD6')
+    await page.getByRole('button', { name: 'Volver a la paleta' }).click()
+    await expect(page.getByRole('radiogroup', { name: 'Paleta de colores' })).toBeVisible()
+    await page.getByRole('button', { name: /Color personalizado/ }).click()
+    await page.getByLabel('HEX', { exact: true }).fill('#5B5BD6')
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await guardado(page)
+    expect(sqlLocal(`select color_hex from public.medios_pago where household_id = ${HID} and name = 'Efectivo'`)).toBe('#5B5BD6')
+  })
+
+  test('una categoría puede heredar el color de su ámbito y lo sigue cuando cambia', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('link', { name: 'Catálogo' }).first().click()
+    await page.getByRole('tab', { name: 'Categorías', exact: true }).click()
+    await page.getByRole('combobox', { name: 'Ámbito' }).click()
+    await page.getByRole('option', { name: 'Hogar', exact: true }).click()
+    await page.getByRole('button', { name: 'Editar Servicios' }).click()
+    const panel = page.getByRole('form', { name: 'Editar categoría' })
+    await panel.getByRole('radio', { name: /Heredar de/ }).click()
+    await expect(panel.getByText(/Si el ámbito cambia de color/)).toBeVisible()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await guardado(page)
+    expect(sqlLocal(`select color_mode || '|' || coalesce(color_hex, 'null') from public.categorias where household_id = ${HID} and name = 'Servicios'`)).toBe('inherit|null')
+    // cambia el color del ámbito → la categoría lo sigue
+    sqlLocal(`update public.ambitos set color_hex = '#DB2777' where household_id = ${HID} and name = 'Hogar'`)
+    await page.reload()
+    await page.getByRole('tab', { name: 'Categorías', exact: true }).click()
+    await page.getByRole('combobox', { name: 'Ámbito' }).click()
+    await page.getByRole('option', { name: 'Hogar', exact: true }).click()
+    const fila = page.getByRole('list', { name: 'Lista de categorías' }).getByRole('listitem').filter({ hasText: 'Servicios' })
+    await expect(fila.locator('span.rounded-lg').first()).toHaveAttribute('style', /rgb\(219, 39, 119\)/) // #DB2777
+    // pasar a color propio guarda el HEX y quita la herencia
+    await page.getByRole('button', { name: 'Editar Servicios' }).click()
+    await panel.getByRole('radio', { name: 'Color propio' }).click()
+    await panel.getByRole('radio', { name: /^Verde #16A34A/ }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await guardado(page)
+    expect(sqlLocal(`select color_mode || '|' || color_hex from public.categorias where household_id = ${HID} and name = 'Servicios'`)).toBe('own|#16A34A')
+  })
+
+  test('Armonizar paleta asigna colores distintos y se puede deshacer', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.getByRole('link', { name: 'Catálogo' }).first().click()
+    const q = `select string_agg(coalesce(color_hex, '-'), ',' order by sort_order) from public.ambitos where household_id = ${HID}`
+    const antes = sqlLocal(q)
+    await page.getByRole('button', { name: 'Armonizar paleta' }).click()
+    await expect(page.getByRole('alertdialog')).toContainText('«Otros» no cambia')
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Armonizar' }).click()
+    await expect(page.getByText('Paleta armonizada.')).toBeVisible()
+    await expect.poll(() => sqlLocal(q)).not.toBe(antes)
+    const distintos = sqlLocal(`select count(distinct color_hex) from public.ambitos where household_id = ${HID} and color_hex is not null`)
+    expect(Number(distintos)).toBeGreaterThanOrEqual(4)
+    await page.getByRole('button', { name: 'Deshacer' }).click()
+    await expect.poll(() => sqlLocal(q)).toBe(antes)
+  })
+
+  test('el color nuevo se refleja en el Dashboard', async ({ page }) => {
+    sqlLocal(`update public.ambitos set color_hex = '#DC2626' where household_id = ${HID} and name = 'Hogar'`)
+    await iniciarSesion(page)
+    const fila = page.getByLabel('Ámbitos').getByRole('button', { name: /^Hogar/ })
+    await expect(fila).toBeVisible()
+    await expect(fila.locator('[style*="DC2626"]').first()).toBeVisible()
   })
 })

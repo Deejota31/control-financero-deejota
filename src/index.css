@@ -24,6 +24,8 @@
   --c3: #1e8a8a;
   --c4: #a8478f;
   --c5: #8a8a2e;
+  --k-mix: 100%;
+  --k-tint: #000000;
 }
 
 :root[data-theme='dark'] {
@@ -50,6 +52,8 @@
   --c3: #5fd0d0;
   --c4: #e58bd0;
   --c5: #c9c95a;
+  --k-mix: 68%;
+  --k-tint: #ffffff;
 }
 
 @theme inline {

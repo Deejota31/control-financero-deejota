@@ -34,21 +34,21 @@ test.describe('Integración entre módulos', () => {
     await page.getByRole('dialog').getByLabel('Nombre').fill(medio)
     await page.getByRole('dialog').getByRole('radio', { name: 'Avión' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText(medio, { exact: true })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lista de medios de pago' }).getByText(medio, { exact: true })).toBeVisible()
 
     // Ámbito nuevo con una categoría
     await page.getByRole('tab', { name: 'Ámbitos' }).click()
     await page.getByRole('button', { name: 'Nuevo ámbito' }).click()
     await page.getByRole('dialog').getByLabel('Nombre').fill(ambito)
     await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText(ambito, { exact: true })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lista de ámbitos' }).getByText(ambito, { exact: true })).toBeVisible()
     await page.getByRole('tab', { name: 'Categorías', exact: true }).click()
     await page.getByRole('combobox', { name: 'Ámbito', exact: true }).click()
     await page.getByRole('option', { name: ambito, exact: true }).click()
     await page.getByRole('button', { name: 'Nueva categoría' }).click()
     await page.getByRole('dialog').getByLabel('Nombre').fill('E2E Categoría')
     await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText('E2E Categoría', { exact: true })).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Lista de categorías' }).getByText('E2E Categoría', { exact: true })).toBeVisible()
 
     // El formulario de gastos los ofrece, con su icono y encadenados
     await page.goto('/gastos')

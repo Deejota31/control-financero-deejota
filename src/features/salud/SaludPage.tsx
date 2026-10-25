@@ -185,7 +185,7 @@ export function SaludPage() {
               <>
                 <p className="text-sm text-muted">Base de comparación: {analisis.porCategoria.mesesBase} {analisis.porCategoria.mesesBase === 1 ? 'mes anterior' : 'meses anteriores'} con datos.</p>
                 {analisis.porCategoria.aumentando.length === 0 ? <Alert tone="success">Ninguna categoría sube de forma notable frente a tu promedio.</Alert> : (
-                  <TablaTendencia titulo="Categorías" filas={analisis.porCategoria.aumentando.map((f) => ({ ...f, nombre: etiquetaCat(f.id), icono: nombreCat(f.id)?.icon_key, color: nombreCat(f.id)?.color_token }))} />
+                  <TablaTendencia titulo="Categorías" filas={analisis.porCategoria.aumentando.map((f) => ({ ...f, nombre: etiquetaCat(f.id), icono: nombreCat(f.id)?.icon_key, color: nombreCat(f.id)?.color_css }))} />
                 )}
                 {analisis.porSub.aumentando.length > 0 && (
                   <TablaTendencia titulo="Subcategorías" filas={analisis.porSub.aumentando.slice(0, 5).map((f) => ({ ...f, nombre: nombreSub(f.id)?.name ?? 'Subcategoría', icono: nombreSub(f.id)?.icon_key, color: undefined }))} />
@@ -211,7 +211,7 @@ export function SaludPage() {
                     <tbody>
                       {analisis.variables.filas.map((f) => (
                         <tr key={f.id} className="border-t border-line">
-                          <td className="py-2"><span className="inline-flex items-center gap-2"><ItemIcon name={nombreCat(f.id)?.icon_key} color={nombreCat(f.id)?.color_token} />{etiquetaCat(f.id)}</span></td>
+                          <td className="py-2"><span className="inline-flex items-center gap-2"><ItemIcon name={nombreCat(f.id)?.icon_key} color={nombreCat(f.id)?.color_css} />{etiquetaCat(f.id)}</span></td>
                           <td className="num py-2 text-right">{formatSoles(f.promedio)}</td>
                           <td className="num py-2 text-right">{f.participacion.toFixed(1)}%</td>
                           <td className="num py-2 text-right font-medium">{formatSoles(ahorroPosible(f.promedio, pctAhorro))}</td>

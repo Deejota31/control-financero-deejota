@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "ambitos": {
                   Row: {
-                    "color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
+                    "color_hex": string | null,"color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
+                    "color_hex"?: string | null,"color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
+                    "color_hex"?: string | null,"color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -85,14 +85,14 @@ isOneToOne: false
                   ]
                 },"categorias": {
                   Row: {
-                    "ambito_id": string,"color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
+                    "ambito_id": string,"color_hex": string | null,"color_mode": string,"color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ambito_id": string,"color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
+                    "ambito_id": string,"color_hex"?: string | null,"color_mode"?: string,"color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "ambito_id"?: string,"color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
+                    "ambito_id"?: string,"color_hex"?: string | null,"color_mode"?: string,"color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -431,14 +431,14 @@ isOneToOne: false
                   ]
                 },"medios_pago": {
                   Row: {
-                    "color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
+                    "color_hex": string | null,"color_token": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
+                    "color_hex"?: string | null,"color_token"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
+                    "color_hex"?: string | null,"color_token"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {

@@ -48,8 +48,8 @@ test.describe('restablecimiento de contraseña (Mailpit local)', () => {
     await page.getByRole('button', { name: 'Cambiar contraseña' }).click()
     await expect(page.getByText('Contraseña actualizada.')).toBeVisible()
 
-    // La original vuelve a funcionar.
     await page.getByRole('button', { name: 'Cerrar sesión' }).first().click()
+    await expect(page).toHaveURL(/acceso/)
     await page.getByLabel('Correo').fill(email!)
     await page.getByLabel('Contraseña').fill(password!)
     await page.getByRole('button', { name: 'Entrar' }).click()

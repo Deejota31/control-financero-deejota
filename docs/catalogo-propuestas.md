@@ -1,6 +1,8 @@
 # Rediseño del Catálogo · propuestas de diseño
 
-> **Estado: solo diseño.** No hay migraciones, modelos ni componentes de producción para esto. Los prototipos viven en `prototipos/catalogo/` (HTML/CSS/JS aislado, fuera de `src/` y del build, con datos de ejemplo y sin base de datos). La implementación espera tu aprobación.
+> **Actualización: se eligió la propuesta G («Estudio de color») y ya está implementada en la app** (ver [decisiones.md](decisiones.md)). Las demás quedan como referencia. El texto siguiente describe el diseño original.
+>
+> **Estado original: solo diseño.** No hay migraciones, modelos ni componentes de producción para esto. Los prototipos viven en `prototipos/catalogo/` (HTML/CSS/JS aislado, fuera de `src/` y del build, con datos de ejemplo y sin base de datos). La implementación espera tu aprobación.
 
 ## Cómo verlo
 

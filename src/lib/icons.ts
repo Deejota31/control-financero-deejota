@@ -60,6 +60,11 @@ export function iconFor(key: string | null | undefined): LucideIcon {
 export const COLOR_TOKENS = ['c1', 'c2', 'c3', 'c4', 'c5', 'pri', 'acc', 'muted'] as const
 export type ColorToken = (typeof COLOR_TOKENS)[number]
 
+/**
+ * Color CSS de un token heredado o de un HEX libre (#RRGGBB). Los HEX se aclaran en tema oscuro con `--k-mix` y
+ * `--k-tint` (definidos en index.css) para conservar el contraste sobre superficies oscuras.
+ */
 export function colorVar(token: string | null | undefined): string {
+  if (token && /^#[0-9A-Fa-f]{6}$/.test(token)) return `color-mix(in srgb, ${token} var(--k-mix), var(--k-tint))`
   return `var(--${token && (COLOR_TOKENS as readonly string[]).includes(token) ? token : 'muted'})`
 }

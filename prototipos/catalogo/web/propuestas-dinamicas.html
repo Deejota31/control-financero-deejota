@@ -1,0 +1,1003 @@
+<title>Propuestas de Catálogo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* PROTOTIPO DE DISEÑO (no se compila con la app). Tokens = paleta B «Índigo» de la aplicación. */
+:root {
+  --bg: #f6f6fa; --surface: #fff; --surface-2: #ececf4; --line: #d9d9e6; --fg: #17172b; --muted: #58587a;
+  --pri: #3a3fa6; --pri-fg: #fff; --pri-soft: #e0e1f7; --bad: #b3261e; --ok: #12663a; --ok-soft: #dcf2e4; --bad-soft: #f9dedc;
+  --shadow: 0 12px 28px -8px rgba(23,23,43,.22), 0 2px 8px rgba(23,23,43,.08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) {
+  --bg: #0f0f1c; --surface: #181829; --surface-2: #222238; --line: #34344f; --fg: #ececf8; --muted: #a5a5c8;
+  --pri: #9ea3ff; --pri-fg: #101030; --pri-soft: #26264a; --bad: #ff8f86; --ok: #5ad08a; --ok-soft: #14301f; --bad-soft: #3f1b18;
+  --shadow: 0 14px 32px -8px rgba(0,0,0,.65), 0 2px 10px rgba(0,0,0,.45);
+  color-scheme: dark;
+} }
+:root[data-theme='dark'] {
+  --bg: #0f0f1c; --surface: #181829; --surface-2: #222238; --line: #34344f; --fg: #ececf8; --muted: #a5a5c8;
+  --pri: #9ea3ff; --pri-fg: #101030; --pri-soft: #26264a; --bad: #ff8f86; --ok: #5ad08a; --ok-soft: #14301f; --bad-soft: #3f1b18;
+  --shadow: 0 14px 32px -8px rgba(0,0,0,.65), 0 2px 10px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 'Inter', 'Segoe UI', system-ui, sans-serif; }
+h1, h2, h3 { font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif; margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+:focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
+.ico { width: 18px; height: 18px; flex: none; }
+.num { font-variant-numeric: tabular-nums; }
+code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+
+.barra-proto { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 24px; background: var(--fg); color: var(--bg); font-size: 12px; }
+.barra-proto a { color: inherit; margin-right: 14px; }
+.barra-acc { display: flex; align-items: center; }
+.barra-acc .btn { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 40%, transparent); padding: 3px 10px; display: inline-flex; gap: 6px; align-items: center; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-weight: 600; }
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn-pri { background: var(--pri); color: var(--pri-fg); border-color: var(--pri); }
+.btn-pri:hover:not(:disabled) { background: var(--pri); filter: brightness(1.08); }
+.btn-ico { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); }
+.btn-ico:hover:not(:disabled) { background: var(--surface-2); color: var(--fg); }
+.enlace { background: none; border: 0; color: var(--pri); font-weight: 600; display: inline-flex; gap: 6px; align-items: center; padding: 4px 0; width: fit-content; }
+.sw { width: 38px; height: 22px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); padding: 2px; display: inline-flex; }
+.sw span { width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform .15s; }
+.sw[aria-checked='true'] { background: var(--pri); border-color: var(--pri); }
+.sw[aria-checked='true'] span { transform: translateX(16px); background: var(--pri-fg); }
+
+/* Color de elementos: variables --k-* calculadas en JS por tema */
+.insignia { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--k-soft); border: 1px solid var(--k-borde); color: var(--k-icono); flex: none; }
+.insignia.g { width: 52px; height: 52px; border-radius: 14px; }
+.insignia.p { width: 28px; height: 28px; border-radius: 8px; }
+.insignia.p .ico { width: 15px; height: 15px; }
+.punto { width: 10px; height: 10px; border-radius: 50%; background: var(--k-base); flex: none; display: inline-block; }
+.pildora { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--k-borde); background: var(--k-soft); color: var(--k-texto); font-size: 12px; font-weight: 600; }
+.pildora.neutra { --k-borde: var(--line); --k-soft: var(--surface-2); --k-texto: var(--muted); }
+.estado { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.estado.on { background: var(--ok-soft); color: var(--ok); } .estado.off { background: var(--surface-2); color: var(--muted); }
+.origen { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.origen .ico { width: 13px; height: 13px; }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; background: rgba(8,8,20,.55); backdrop-filter: blur(2px); display: grid; place-items: center; z-index: 50; padding: 24px; }
+.modal { width: min(860px, 100%); max-height: 94vh; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.m-cab { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.m-cab h2 { font-size: 18px; }
+.m-cuerpo { overflow: auto; min-height: 0; display: grid; grid-template-columns: 1fr 260px; gap: 22px; padding: 22px; }
+.m-form { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.m-pie { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); }
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo > span { font-weight: 600; font-size: 13px; }
+.campo input { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.campo input[aria-invalid='true'] { border-color: var(--bad); }
+.campo.mini { width: 96px; } .campo.mini:first-child { width: 120px; }
+.iconos { display: flex; flex-wrap: wrap; gap: 6px; }
+.iconos button { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); }
+.iconos button[aria-checked='true'] { border-color: var(--pri); background: var(--pri-soft); color: var(--pri); }
+.segmento { display: inline-flex; padding: 3px; background: var(--surface-2); border-radius: 10px; width: fit-content; gap: 2px; }
+.segmento button { display: inline-flex; gap: 6px; align-items: center; padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-weight: 600; }
+.segmento button[aria-checked='true'] { background: var(--surface); color: var(--pri); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.paleta { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; }
+.paleta.inactiva { opacity: .45; }
+.muestra { aspect-ratio: 1; border-radius: 10px; border: 2px solid var(--k-borde); background: var(--k-base); display: grid; place-items: center; padding: 0; color: #fff; }
+.muestra i { display: grid; place-items: center; }
+.muestra[aria-checked='true'] { outline: 2px solid var(--fg); outline-offset: 2px; }
+.muestra .ico { width: 16px; height: 16px; stroke-width: 3; }
+.nota { color: var(--muted); font-size: 12px; margin: 4px 0 0; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.error { color: var(--bad); font-size: 12px; margin: 0; }
+.m-previa { background: var(--surface-2); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; align-self: start; }
+.m-previa h3 { font-size: 13px; }
+.previa { border-radius: 10px; padding: 10px; border: 1px solid var(--line); }
+.previa.claro { background: #fff; color: #17172b; } .previa.oscuro { background: #181829; color: #ececf8; }
+.previa-fila { display: flex; align-items: center; gap: 10px; }
+.previa-fila div { flex: 1; min-width: 0; } .previa-fila b { display: block; } .previa-fila small { opacity: .7; }
+.picker { display: flex; flex-direction: column; gap: 10px; }
+.sv { position: relative; height: 170px; border-radius: 12px; cursor: crosshair; touch-action: none; background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(var(--h) 100% 50%)); border: 1px solid var(--line); }
+.sv i { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.4); }
+.hue { -webkit-appearance: none; appearance: none; height: 14px; border-radius: 8px; background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); border: 1px solid var(--line); }
+.hue::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; background: transparent; box-shadow: 0 0 0 1px rgba(0,0,0,.5); }
+.entradas { display: flex; gap: 10px; align-items: flex-end; }
+.contraste { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.c-fila { display: flex; gap: 10px; align-items: center; }
+.c-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; } .c-badge.ok { background: var(--ok-soft); color: var(--ok); } .c-badge.mal { background: var(--bad-soft); color: var(--bad); }
+.fila-btn { display: flex; gap: 10px; }
+
+/* Tabla de reglas de administración */
+.candado { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tabs button { padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; background: none; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected='true'] { color: var(--pri); border-color: var(--pri); }
+
+/* Estructura de la aplicación */
+.app { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 38px); }
+.lateral { border-right: 1px solid var(--line); background: var(--surface); padding: 18px 16px; display: flex; flex-direction: column; gap: 22px; }
+.marca { display: flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 17px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--pri); color: var(--pri-fg); display: grid; place-items: center; font-weight: 800; }
+.lateral nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.lateral nav a { display: flex; gap: 12px; align-items: center; padding: 9px 12px; border-radius: 10px; color: var(--fg); text-decoration: none; font-weight: 500; }
+.lateral nav a[aria-current='page'] { background: var(--pri-soft); color: var(--pri); font-weight: 600; }
+.usuario { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; font-size: 13px; } .usuario small { color: var(--muted); }
+.contenido { padding: 26px 32px 40px; max-width: 1200px; width: 100%; }
+.cab-pagina { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
+.cab-pagina h1 { font-size: 26px; } .cab-pagina p { margin: 2px 0 0; color: var(--muted); }
+.tarjeta { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+
+/* Propuestas dinámicas (se ensambla con shared.css en un solo archivo para la web) */
+body { padding-block: 0; }
+.pagina { max-width: 1320px; margin: 0 auto; padding-block: 18px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.d-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.d-cab h1 { font-size: 24px; text-wrap: balance; }
+.d-cab p { margin: 2px 0 0; color: var(--muted); max-width: 62ch; }
+.d-cab .acc { display: flex; gap: 8px; flex-wrap: wrap; }
+.d-vars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 18px 0 14px; }
+.d-var { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: transform .15s, border-color .15s, background .15s; min-width: 0; }
+.d-var:hover { transform: translateY(-2px); border-color: var(--pri); }
+.d-var[aria-pressed='true'] { background: var(--pri-soft); border-color: var(--pri); }
+.d-var b { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.d-var .l { width: 24px; height: 24px; border-radius: 8px; background: var(--pri); color: var(--pri-fg); display: grid; place-items: center; font-weight: 800; font-size: 13px; flex: none; }
+.d-var small { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.d-barra { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.d-barra .tabs { overflow-x: auto; max-width: 100%; }
+.d-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.d-tools .segmento button { padding: 5px 10px; }
+.d-stage { position: relative; animation: entrada .28s ease-out; }
+@keyframes entrada { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.d-split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.d-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; min-width: 0; }
+.pista { color: var(--muted); font-size: 12px; margin: 8px 2px 0; }
+
+/* Detalle común */
+.d-det { display: flex; flex-direction: column; gap: 14px; }
+.d-det-cab { display: flex; gap: 12px; align-items: center; } .d-det-cab > div:nth-child(2) { flex: 1; min-width: 0; }
+.d-det-cab h3 { font-size: 18px; } .d-det-cab p { margin: 2px 0 6px; color: var(--muted); }
+.d-qc { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.d-sw { aspect-ratio: 1; border-radius: 8px; border: 2px solid transparent; background: var(--k-base); padding: 0; transition: transform .12s; }
+.d-sw:hover { transform: scale(1.18); } .d-sw[aria-pressed='true'] { outline: 2px solid var(--fg); outline-offset: 2px; }
+.d-her { grid-column: 1 / -1; display: inline-flex; gap: 6px; align-items: center; justify-content: center; padding: 6px; border: 1px dashed var(--line); border-radius: 8px; background: none; color: var(--muted); font-weight: 600; }
+.d-her[aria-pressed='true'] { border-color: var(--pri); color: var(--pri); background: var(--pri-soft); }
+.d-tonos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.d-tono { border-radius: 10px; border: 1px solid var(--line); padding: 8px; font-size: 12px; } .d-tono.claro { background: #fff; color: #17172b; } .d-tono.oscuro { background: #181829; color: #ececf8; }
+.d-tono .f { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.d-acc { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ins { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--k-soft); border: 1px solid var(--k-borde); color: var(--k-icono); flex: none; transition: background .35s, border-color .35s, color .35s; }
+.ins.g { width: 52px; height: 52px; border-radius: 14px; } .ins.p { width: 26px; height: 26px; border-radius: 8px; } .ins.p .ico { width: 14px; height: 14px; }
+[data-cid] { transition: background-color .35s, border-color .35s, fill .35s, color .35s; }
+
+/* B · explorador */
+.arbol { display: flex; flex-direction: column; gap: 2px; }
+.nodo { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: 10px; background: none; text-align: left; }
+.nodo:hover { background: var(--surface-2); } .nodo[aria-selected='true'] { background: var(--pri-soft); border-color: var(--pri); }
+.nodo .cnt { margin-left: auto; color: var(--muted); font-size: 12px; } .nodo.off { opacity: .5; }
+.hijos { margin-left: 20px; padding-left: 8px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.chev { transition: transform .15s; color: var(--muted); } .chev[data-abierto='true'] { transform: rotate(90deg); }
+
+/* D · mosaico */
+.d-lienzo { position: relative; width: 100%; aspect-ratio: 100 / 66; border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+.d-teja { position: absolute; padding: 0; border: 0; background: none; transition: left .55s cubic-bezier(.3,.8,.3,1), top .55s cubic-bezier(.3,.8,.3,1), width .55s cubic-bezier(.3,.8,.3,1), height .55s cubic-bezier(.3,.8,.3,1); }
+.d-teja > span { position: absolute; inset: 2px; border-radius: 10px; background: var(--k-soft); border: 1.5px solid var(--k-borde); color: var(--k-texto); display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 2px; padding: 8px 10px; overflow: hidden; text-align: left; transition: transform .15s, box-shadow .15s, background .35s, border-color .35s; }
+.d-teja:hover > span { transform: scale(1.02); box-shadow: var(--shadow); z-index: 3; }
+.d-teja[aria-pressed='true'] > span { border-width: 3px; border-color: var(--k-base); box-shadow: var(--shadow); }
+.d-teja.off > span { opacity: .5; background-image: repeating-linear-gradient(135deg, transparent 0 8px, rgba(128,128,128,.14) 8px 10px); }
+.d-teja .ico { color: var(--k-icono); } .d-teja b { font-size: 13px; line-height: 1.15; } .d-teja small { opacity: .85; font-size: 11px; }
+.d-teja[data-s='s'] small, .d-teja[data-s='xs'] small, .d-teja[data-s='xs'] b, .d-teja[data-s='xs'] .ico { display: none; }
+.d-grupo { position: absolute; transition: all .55s cubic-bezier(.3,.8,.3,1); border-radius: 12px; border: 1.5px dashed var(--k-borde); pointer-events: none; }
+.d-grupo i { position: absolute; top: 4px; left: 10px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--k-texto); text-transform: uppercase; letter-spacing: .05em; }
+
+/* E · tablero */
+.d-tablero { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; align-items: flex-start; }
+.d-col { flex: 1 0 210px; min-width: 210px; background: var(--surface-2); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 140px; transition: background .15s, outline-color .15s; outline: 2px dashed transparent; }
+.d-col.sobre { outline-color: var(--pri); background: var(--pri-soft); }
+.d-col h3 { font-size: 13px; display: flex; align-items: center; gap: 8px; } .d-col h3 span:last-child { margin-left: auto; color: var(--muted); font-weight: 500; }
+.d-fila { display: flex; flex-direction: row; flex-wrap: wrap; } .d-fila .d-card { flex: 1 0 200px; }
+.d-card { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--k-base); border-radius: 12px; cursor: grab; text-align: left; transition: transform .15s, box-shadow .15s, opacity .15s; }
+.d-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.d-card[aria-pressed='true'] { border-color: var(--pri); box-shadow: 0 0 0 2px var(--pri); }
+.d-card.arrastrando { opacity: .35; transform: scale(.97); } .d-card.fijo { cursor: default; background: var(--surface-2); }
+.d-card.antes { box-shadow: 0 -4px 0 0 var(--pri); } .d-col.final::after { content: ''; height: 4px; border-radius: 4px; background: var(--pri); }
+.d-card .fila { display: flex; align-items: center; gap: 8px; } .d-card b { flex: 1; min-width: 0; }
+.d-card small { color: var(--muted); }
+
+/* F · anillos */
+.d-anillos { position: relative; max-width: 560px; margin: 0 auto; }
+.d-anillos svg { width: 100%; height: auto; display: block; }
+.arco { fill: var(--k-base); stroke: var(--surface); stroke-width: 2; cursor: pointer; transition: fill .35s, opacity .25s, transform .25s; outline: none; }
+.arco:hover, .arco:focus-visible { filter: brightness(1.15); }
+.arco.dim { opacity: .28; } .arco.off { opacity: .45; }
+.arco:focus-visible { stroke: var(--fg); stroke-width: 3; }
+.d-centro { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; text-align: center; }
+.d-centro b { display: block; font-size: 17px; max-width: 110px; } .d-centro small { color: var(--muted); }
+.d-tip { position: absolute; z-index: 4; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 8px 10px; font-size: 12px; min-width: 130px; opacity: 0; transition: opacity .12s; }
+.d-tip.on { opacity: 1; }
+
+/* G · estudio */
+.d-estudio { display: grid; grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+.d-lista { display: flex; flex-direction: column; gap: 2px; }
+.d-pvs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.d-pv { border-radius: 14px; padding: 12px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; min-width: 0; font-size: 12px; }
+.d-pv.claro { background: #fff; color: #17172b; } .d-pv.oscuro { background: #181829; color: #ececf8; }
+.d-pv h4 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .7; }
+.d-pv svg { width: 100%; max-width: 130px; margin: 0 auto; display: block; }
+.pc-seg { fill: none; stroke: var(--b, #888); stroke-width: 14; transition: stroke .5s; }
+.pc-chip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 99px; background: var(--s); border: 1px solid var(--o); color: var(--t); font-weight: 600; transition: all .5s; font-size: 11px; }
+.pc-barra { height: 8px; border-radius: 6px; background: var(--b); transition: background .5s, width .5s; }
+.pc-fila { display: flex; align-items: center; gap: 6px; }
+.pc-ins { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--s); border: 1px solid var(--o); color: var(--i); flex: none; transition: all .5s; } .pc-ins .ico { width: 12px; height: 12px; }
+.pc-leyenda { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* H · lista viva */
+.d-h { display: flex; flex-direction: column; gap: 4px; }
+.d-hfila { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transition: box-shadow .15s, opacity .2s, transform .2s; animation: entrada .22s ease-out; }
+.d-hfila:focus-within, .d-hfila.foco { box-shadow: 0 0 0 2px var(--pri); }
+.d-hfila.arrastrando { opacity: .35; } .d-hfila.antes { box-shadow: 0 -4px 0 0 var(--pri); }
+.d-hfila.off { opacity: .55; } .d-hfila .asa { cursor: grab; color: var(--muted); display: grid; place-items: center; }
+.d-hfila .nom { flex: 1; min-width: 0; border: 1px solid transparent; border-radius: 8px; background: none; padding: 4px 6px; font-weight: 600; text-align: left; }
+.d-hfila .nom:hover { border-color: var(--line); } .d-hfila input.nom { border-color: var(--pri); background: var(--surface); }
+.d-punto { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface); background: var(--k-base); box-shadow: 0 0 0 1.5px var(--k-borde); padding: 0; transition: transform .12s; }
+.d-punto:hover { transform: scale(1.2); }
+.d-pop { position: absolute; z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 10px; width: 232px; animation: entrada .15s ease-out; }
+.d-pop .d-qc { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.d-hsub { margin-left: 34px; } .d-hgrupo { margin-top: 10px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; display: flex; gap: 8px; align-items: center; }
+.d-nuevo { display: flex; gap: 8px; } .d-nuevo input { flex: 1; padding: 9px 12px; border: 1px dashed var(--line); border-radius: 12px; background: var(--surface); }
+.d-buscar { display: flex; gap: 8px; align-items: center; padding: 7px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); } .d-buscar input { border: 0; outline: none; background: none; flex: 1; min-width: 0; }
+mark { background: var(--pri-soft); color: var(--pri); border-radius: 3px; padding: 0 1px; }
+.d-toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 12px; display: flex; gap: 14px; align-items: center; z-index: 60; box-shadow: var(--shadow); animation: entrada .2s ease-out; }
+.d-toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; }
+
+@media (max-width: 1100px) { .d-vars { grid-template-columns: repeat(3, 1fr); } .d-estudio { grid-template-columns: 1fr; } .d-split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .d-vars { grid-template-columns: repeat(2, 1fr); } .d-qc { grid-template-columns: repeat(5, 1fr); } .d-pvs { grid-template-columns: 1fr; } .m-cuerpo { grid-template-columns: 1fr; } .paleta { grid-template-columns: repeat(5, 1fr); } .overlay { padding: 10px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+</style>
+<script>
+/* PROTOTIPO DE DISEÑO: no forma parte de la aplicación ni se compila. Sin base de datos: datos de ejemplo. */
+'use strict'
+
+/* ---------- Paleta de 20 colores ---------- */
+const COLORES = [
+  ['Índigo', '#4F46E5'], ['Azul', '#2563EB'], ['Celeste', '#0EA5E9'], ['Turquesa', '#06B6D4'], ['Teal', '#0D9488'],
+  ['Esmeralda', '#059669'], ['Verde', '#16A34A'], ['Lima', '#65A30D'], ['Oliva', '#7C8B2A'], ['Amarillo', '#CA8A04'],
+  ['Ámbar', '#D97706'], ['Naranja', '#EA580C'], ['Coral', '#F0614E'], ['Rojo', '#DC2626'], ['Carmesí', '#BE123C'],
+  ['Rosa', '#DB2777'], ['Magenta', '#C026D3'], ['Violeta', '#7C3AED'], ['Púrpura', '#7E22CE'], ['Pizarra', '#64748B'],
+].map(([nombre, hex]) => ({ nombre, hex }))
+
+/* ---------- Color: conversiones y contraste ---------- */
+const hexARgb = (h) => { const m = /^#?([0-9a-f]{6})$/i.exec(h); if (!m) return null; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] }
+const rgbAHex = ([r, g, b]) => '#' + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('').toUpperCase()
+const mezcla = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t) /* t = proporción de b */
+function rgbAHsv([r, g, b]) {
+  r /= 255; g /= 255; b /= 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min
+  let h = 0
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+  return [(h * 60 + 360) % 360, max ? d / max : 0, max]
+}
+function hsvARgb([h, s, v]) {
+  const f = (n) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)) }
+  return [f(5) * 255, f(3) * 255, f(1) * 255]
+}
+function luminancia([r, g, b]) {
+  const c = [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 })
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+}
+function contraste(a, b) {
+  const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p)
+  return (x + 0.05) / (y + 0.05)
+}
+/** Ajusta el brillo del color base hacia el extremo indicado hasta alcanzar el contraste mínimo contra el fondo. */
+function ajustarContraste(rgb, fondo, minimo, haciaOscuro) {
+  let c = rgb
+  for (let i = 0; i < 40 && contraste(c, fondo) < minimo; i++) c = mezcla(c, haciaOscuro ? [0, 0, 0] : [255, 255, 255], 0.06)
+  return c
+}
+
+const BASE = { claro: [255, 255, 255], oscuro: [24, 24, 41] } /* superficies de la aplicación */
+
+/**
+ * Tratamiento de un color en cada tema (misma regla para la paleta y para colores personalizados):
+ *  claro  → fondo suave = 10 % de color sobre blanco · borde = 35 % · icono = color · texto = color oscurecido hasta 4.5:1
+ *  oscuro → fondo suave = 22 % de color sobre la superficie · borde = 50 % · icono = color aclarado · texto aclarado hasta 4.5:1
+ */
+function tonos(hex, tema) {
+  const rgb = hexARgb(hex)
+  if (!rgb) return null
+  const base = BASE[tema]
+  const soft = mezcla(base, rgb, tema === 'claro' ? 0.1 : 0.22)
+  const borde = mezcla(base, rgb, tema === 'claro' ? 0.35 : 0.5)
+  const texto = ajustarContraste(rgb, soft, 4.5, tema === 'claro')
+  const icono = ajustarContraste(rgb, tema === 'claro' ? base : soft, 3, tema === 'claro')
+  return { soft: rgbAHex(soft), borde: rgbAHex(borde), icono: rgbAHex(icono), texto: rgbAHex(texto), cTexto: contraste(texto, soft), cIcono: contraste(icono, tema === 'claro' ? base : soft) }
+}
+/** Variables CSS inline para pintar un elemento con un color en el tema actual. */
+function estiloColor(hex) {
+  const t = tonos(hex, temaActual())
+  return t ? `--k-soft:${t.soft};--k-borde:${t.borde};--k-icono:${t.icono};--k-texto:${t.texto};--k-base:${hex}` : ''
+}
+
+/* ---------- Tema ---------- */
+function temaActual() { const t = document.documentElement.dataset.theme; if (t) return t === 'dark' ? 'oscuro' : 'claro'; return matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro' }
+function fijarTema(t) { document.documentElement.dataset.theme = t === 'oscuro' ? 'dark' : 'light'; document.dispatchEvent(new CustomEvent('tema')) }
+
+/* ---------- Iconos (trazos propios, 24×24) ---------- */
+const ICONOS = {
+  casa: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  usuario: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+  familia: '<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.500 6 6"/><path d="M15.500 14.200c3 0 5.500 2 5.500 5"/>',
+  maletin: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M3 13h18"/>',
+  comida: '<path d="M7 3v8a2 2 0 0 0 2 2v8"/><path d="M5 3v6M9 3v6"/><path d="M17 3c-2 2-3 5-3 8h3v10"/>',
+  auto: '<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.500" cy="16" r="0.800"/><circle cx="16.500" cy="16" r="0.800"/>',
+  corazon: '<path d="M12 20s-8-5-8-11a4.500 4.500 0 0 1 8-2.800A4.500 4.500 0 0 1 20 9c0 6-8 11-8 11z"/>',
+  billetera: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><circle cx="16.500" cy="14.500" r="1"/>',
+  tarjeta: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+  telefono: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+  efectivo: '<rect x="3" y="7" width="18" height="10" rx="1.500"/><circle cx="12" cy="12" r="2.500"/>',
+  libro: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+  bolsa: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  rayo: '<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>',
+  juego: '<rect x="3" y="8" width="18" height="10" rx="5"/><path d="M8 11v4M6 13h4M16 12h.01M18 14h.01"/>',
+  etiqueta: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.500" cy="8.500" r="1"/>',
+  puntos: '<circle cx="6" cy="12" r="1.200"/><circle cx="12" cy="12" r="1.200"/><circle cx="18" cy="12" r="1.200"/>',
+}
+const svg = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n] ?? ICONOS.etiqueta}</svg>`
+const UI = {
+  mas: '<path d="M12 5v14M5 12h14"/>', editar: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.500 6.500 4 4"/>', subir: '<path d="m6 14 6-6 6 6"/>', bajar: '<path d="m6 10 6 6 6-6"/>',
+  papelera: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', candado: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  check: '<path d="m5 12 5 5 9-10"/>', cerrar: '<path d="m6 6 12 12M18 6 6 18"/>', buscar: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/>',
+  enlace: '<path d="M10 14a4 4 0 0 0 5.700 0l3-3a4 4 0 0 0-5.700-5.700l-1 1"/><path d="M14 10a4 4 0 0 0-5.700 0l-3 3a4 4 0 0 0 5.700 5.700l1-1"/>',
+  flecha: '<path d="m9 6 6 6-6 6"/>', sol: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600l1.400 1.400M17 17l1.400 1.400M5.600 18.400 7 17M17 7l1.400-1.400"/>',
+  luna: '<path d="M20 14.500A8 8 0 0 1 9.500 4 8 8 0 1 0 20 14.500z"/>', gota: '<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>', arrastrar: '<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>',
+}
+const ui = (n, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI[n]}</svg>`
+
+/* ---------- Datos de ejemplo (mismas formas que el catálogo real; nada de esto se persiste) ---------- */
+const ICONOS_ELEGIBLES = ['casa', 'usuario', 'familia', 'maletin', 'comida', 'auto', 'corazon', 'billetera', 'libro', 'bolsa', 'rayo', 'juego', 'etiqueta']
+const DATOS = {
+  ambitos: [
+    { id: 'a1', nombre: 'Hogar', icono: 'casa', color: '#4F46E5', activo: true, gastos: 412 },
+    { id: 'a2', nombre: 'Personal', icono: 'usuario', color: '#0D9488', activo: true, gastos: 286 },
+    { id: 'a3', nombre: 'Familia', icono: 'familia', color: '#EA580C', activo: true, gastos: 198 },
+    { id: 'a4', nombre: 'Trabajo', icono: 'maletin', color: '#2563EB', activo: true, gastos: 64 },
+    { id: 'a5', nombre: 'Otros', icono: 'puntos', color: '#64748B', activo: true, gastos: 21, fijoAlFinal: true },
+  ],
+  categorias: [
+    { id: 'c1', ambito: 'a1', nombre: 'Servicios', icono: 'rayo', color: null, activo: true, gastos: 96, subs: ['Luz', 'Agua', 'Internet', 'Gas'] },
+    { id: 'c2', ambito: 'a1', nombre: 'Alimentación', icono: 'comida', color: '#16A34A', activo: true, gastos: 188, subs: ['Mercado', 'Supermercado', 'Restaurantes'] },
+    { id: 'c3', ambito: 'a1', nombre: 'Mantenimiento', icono: 'casa', color: null, activo: true, gastos: 14, subs: ['Reparaciones'] },
+    { id: 'c4', ambito: 'a2', nombre: 'Ocio', icono: 'juego', color: '#7C3AED', activo: true, gastos: 74, subs: ['Streaming', 'Salidas', 'Hobbies'] },
+    { id: 'c5', ambito: 'a2', nombre: 'Salud', icono: 'corazon', color: null, activo: true, gastos: 38, subs: ['Consultas', 'Farmacia'] },
+    { id: 'c6', ambito: 'a3', nombre: 'Educación', icono: 'libro', color: '#DB2777', activo: true, gastos: 52, subs: ['Colegio', 'Útiles'] },
+    { id: 'c7', ambito: 'a3', nombre: 'Transporte', icono: 'auto', color: null, activo: false, gastos: 0, subs: [] },
+    { id: 'c8', ambito: 'a5', nombre: 'Otros', icono: 'puntos', color: null, activo: true, gastos: 21, subs: [], fijoAlFinal: true },
+  ],
+  medios: [
+    { id: 'm1', nombre: 'Yape', icono: 'telefono', color: '#7E22CE', activo: true, gastos: 244 },
+    { id: 'm2', nombre: 'Tarjeta de crédito', icono: 'tarjeta', color: '#2563EB', activo: true, gastos: 301 },
+    { id: 'm3', nombre: 'Efectivo', icono: 'efectivo', color: '#059669', activo: true, gastos: 118 },
+    { id: 'm4', nombre: 'Tarjeta de débito', icono: 'tarjeta', color: '#06B6D4', activo: true, gastos: 87 },
+    { id: 'm5', nombre: 'Transferencia', icono: 'billetera', color: '#D97706', activo: false, gastos: 0 },
+    { id: 'm6', nombre: 'Otros', icono: 'puntos', color: '#64748B', activo: true, gastos: 9, fijoAlFinal: true },
+  ],
+}
+/** Color efectivo: el propio, o el heredado del ámbito padre (herencia solo diseñada: no hay columna que la guarde hoy). */
+function colorEfectivo(item, tipo) {
+  if (item.color) return { hex: item.color, origen: 'propio' }
+  if (tipo === 'categoria') { const a = DATOS.ambitos.find((x) => x.id === item.ambito); return { hex: a.color, origen: 'heredado', de: a.nombre } }
+  return { hex: '#64748B', origen: 'propio' }
+}
+const nombreColor = (hex) => COLORES.find((c) => c.hex.toLowerCase() === (hex || '').toLowerCase())?.nombre ?? 'Personalizado'
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+
+/* ---------- Piezas comunes ---------- */
+function insignia(item, tipo, extra = '') {
+  const c = colorEfectivo(item, tipo)
+  return `<span class="insignia ${extra}" style="${estiloColor(c.hex)}">${svg(item.icono)}</span>`
+}
+function eliminable(item, tipo) {
+  if (item.fijoAlFinal) return { ok: false, motivo: 'Es el elemento «Otros»: siempre queda al final y no se elimina.' }
+  const n = item.gastos ?? 0
+  const hijos = tipo === 'categoria' ? item.subs.length : tipo === 'ambito' ? DATOS.categorias.filter((c) => c.ambito === item.id).length : 0
+  if (n > 0) return { ok: false, motivo: `Tiene ${n} gastos asociados: solo se puede desactivar.` }
+  if (hijos > 0) return { ok: false, motivo: `Contiene ${hijos} elementos: elimina o mueve su contenido primero.` }
+  return { ok: true, motivo: 'Sin gastos asociados: se puede eliminar.' }
+}
+function botonesFila(item, tipo, i, total) {
+  const el = eliminable(item, tipo)
+  const finalFijo = item.fijoAlFinal
+  return `
+    <button class="btn-ico" data-accion="subir" aria-label="Subir ${esc(item.nombre)}" ${i === 0 || finalFijo ? 'disabled' : ''}>${ui('subir')}</button>
+    <button class="btn-ico" data-accion="bajar" aria-label="Bajar ${esc(item.nombre)}" ${finalFijo || i >= total - 2 ? 'disabled' : ''}>${ui('bajar')}</button>
+    <button class="btn-ico" data-accion="editar" aria-label="Editar ${esc(item.nombre)}">${ui('editar')}</button>
+    <button class="btn-ico" data-accion="borrar" aria-label="Eliminar ${esc(item.nombre)}" title="${esc(el.motivo)}" ${el.ok ? '' : 'disabled'}>${ui('papelera')}</button>`
+}
+const interruptor = (activo, nombre, bloqueado) =>
+  `<button class="sw" role="switch" aria-checked="${activo}" aria-label="${activo ? 'Desactivar' : 'Activar'} ${esc(nombre)}" ${bloqueado ? 'disabled' : ''}><span></span></button>`
+
+/* ---------- Selector de color (normal + avanzado) y modal de crear/editar ---------- */
+let estadoModal = null
+
+function abrirModal({ tipo, item, onGuardar }) {
+  const nuevo = !item
+  const ambito = tipo === 'categoria' ? DATOS.ambitos.find((a) => a.id === (item?.ambito ?? 'a1')) : null
+  estadoModal = {
+    tipo, nuevo, nombre: item?.nombre ?? '', icono: item?.icono ?? 'etiqueta',
+    modoColor: tipo === 'categoria' && !item?.color ? 'heredar' : 'propio',
+    color: item?.color ?? (ambito ? ambito.color : '#4F46E5'), vista: 'paleta', ambito,
+  }
+  const fondo = document.createElement('div')
+  fondo.className = 'overlay'
+  fondo.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-titulo"></div>'
+  document.body.appendChild(fondo)
+  const modal = fondo.firstElementChild
+  const cerrar = () => { fondo.remove(); document.removeEventListener('keydown', teclas); document.removeEventListener('tema', pintar) }
+  const teclas = (e) => { if (e.key === 'Escape') cerrar() }
+  document.addEventListener('keydown', teclas)
+  document.addEventListener('tema', pintar)
+
+  const etiquetaTipo = { ambito: 'ámbito', categoria: 'categoría', medio: 'medio de pago' }[tipo]
+  function pintar() {
+    const s = estadoModal
+    const efectivo = s.modoColor === 'heredar' ? s.ambito.color : s.color
+    modal.innerHTML = `
+      <header class="m-cab"><h2 id="m-titulo">${s.nuevo ? 'Nueva' : 'Editar'} ${etiquetaTipo === 'medio de pago' ? 'medio de pago' : etiquetaTipo}</h2><button class="btn-ico" data-cerrar aria-label="Cerrar">${ui('cerrar')}</button></header>
+      <div class="m-cuerpo">
+        <div class="m-form">
+          <label class="campo"><span>Nombre</span><input id="m-nombre" value="${esc(s.nombre)}" maxlength="40" placeholder="Ej. ${tipo === 'ambito' ? 'Mascotas' : tipo === 'categoria' ? 'Suscripciones' : 'Billetera digital'}"></label>
+          <div class="campo"><span>Ícono</span><div class="iconos" role="radiogroup" aria-label="Ícono">${ICONOS_ELEGIBLES.map((n) => `<button type="button" role="radio" aria-checked="${n === s.icono}" aria-label="${n}" data-icono="${n}">${svg(n)}</button>`).join('')}</div></div>
+          ${s.vista === 'paleta' ? selectorNormal(s) : selectorAvanzado(s)}
+        </div>
+        <aside class="m-previa" aria-label="Vista previa">
+          <h3>Vista previa</h3>
+          ${['claro', 'oscuro'].map((t) => { const k = tonos(efectivo, t); return `<div class="previa ${t}"><div class="previa-fila"><span class="insignia" style="--k-soft:${k.soft};--k-borde:${k.borde};--k-icono:${k.icono}">${svg(s.icono)}</span><div><b style="color:${k.texto}">${esc(s.nombre || 'Nombre')}</b><small>${t === 'claro' ? 'Tema claro' : 'Tema oscuro'}</small></div><span class="pildora" style="background:${k.soft};border-color:${k.borde};color:${k.texto}">S/ 128.50</span></div></div>` }).join('')}
+          ${s.modoColor === 'heredar' ? `<p class="nota">${ui('enlace')} Hereda el color de <b>${esc(s.ambito.nombre)}</b>. Si el ámbito cambia de color, esta categoría lo seguirá.</p>` : `<p class="nota">Color propio: <b>${nombreColor(s.color)}</b> <code>${s.color.toUpperCase()}</code></p>`}
+        </aside>
+      </div>
+      <footer class="m-pie"><button class="btn" data-cerrar>Cancelar</button><button class="btn btn-pri" data-guardar ${s.nombre.trim() ? '' : 'disabled'}>Guardar</button></footer>`
+    enlazar()
+  }
+
+  function selectorNormal(s) {
+    const heredable = s.tipo === 'categoria'
+    return `
+      <div class="campo"><span>Color</span>
+        ${heredable ? `<div class="segmento" role="radiogroup" aria-label="Origen del color">
+          <button type="button" role="radio" aria-checked="${s.modoColor === 'heredar'}" data-modo="heredar">${ui('enlace')} Heredar de ${esc(s.ambito.nombre)}</button>
+          <button type="button" role="radio" aria-checked="${s.modoColor === 'propio'}" data-modo="propio">${ui('gota')} Color propio</button></div>` : ''}
+        <div class="paleta ${s.modoColor === 'heredar' ? 'inactiva' : ''}" role="radiogroup" aria-label="Paleta de colores">
+          ${COLORES.map((c) => { const t = tonos(c.hex, temaActual()); const sel = s.modoColor === 'propio' && s.color.toLowerCase() === c.hex.toLowerCase(); return `<button type="button" role="radio" class="muestra" aria-checked="${sel}" aria-label="${c.nombre} ${c.hex}" title="${c.nombre} · ${c.hex}" data-color="${c.hex}" ${s.modoColor === 'heredar' ? 'tabindex="-1"' : ''} style="--k-base:${c.hex};--k-soft:${t.soft};--k-borde:${t.borde}"><i>${sel ? ui('check') : ''}</i></button>` }).join('')}
+        </div>
+        <button type="button" class="enlace" data-avanzado>${ui('gota')} Color personalizado (HEX / RGB)…</button>
+        ${s.modoColor === 'propio' && !COLORES.some((c) => c.hex.toLowerCase() === s.color.toLowerCase()) ? `<p class="nota">Color personalizado activo: <code>${s.color.toUpperCase()}</code></p>` : ''}
+      </div>`
+  }
+
+  function selectorAvanzado(s) {
+    const rgb = hexARgb(s.color) ?? [91, 91, 214]
+    const [h, sat, v] = rgbAHsv(rgb)
+    const k = tonos(s.color, temaActual())
+    const okTexto = k.cTexto >= 4.5, okIcono = k.cIcono >= 3
+    return `
+      <div class="campo avanzado"><span>Color personalizado</span>
+        <div class="picker">
+          <div class="sv" id="sv" role="slider" tabindex="0" aria-label="Saturación y brillo" aria-valuetext="Saturación ${Math.round(sat * 100)}%, brillo ${Math.round(v * 100)}%" style="--h:${h}"><i style="left:${sat * 100}%;top:${(1 - v) * 100}%"></i></div>
+          <input id="hue" class="hue" type="range" min="0" max="360" value="${Math.round(h)}" aria-label="Tono">
+        </div>
+        <div class="entradas">
+          <label class="campo mini"><span>HEX</span><input id="hex" value="${s.color.toUpperCase()}" maxlength="7" spellcheck="false" aria-describedby="hex-err"></label>
+          ${['R', 'G', 'B'].map((l, i) => `<label class="campo mini num"><span>${l}</span><input id="rgb-${l}" type="number" min="0" max="255" value="${Math.round(rgb[i])}"></label>`).join('')}
+        </div>
+        <p id="hex-err" class="error" role="alert" hidden>Usa 6 dígitos hexadecimales, por ejemplo #5B5BD6.</p>
+        <p class="nota">Ejemplo: <code>#5B5BD6</code> ↔ <code>91, 91, 214</code>. Los tres campos se mantienen sincronizados.</p>
+        <div class="contraste" aria-live="polite">
+          <div class="c-fila"><span class="c-badge ${okTexto ? 'ok' : 'mal'}">${okTexto ? 'Cumple' : 'No cumple'}</span><span>Texto sobre fondo suave (claro): <b class="num">${k.cTexto.toFixed(1)}:1</b> · mínimo 4.5:1</span></div>
+          <div class="c-fila"><span class="c-badge ${okIcono ? 'ok' : 'mal'}">${okIcono ? 'Cumple' : 'No cumple'}</span><span>Ícono sobre superficie: <b class="num">${k.cIcono.toFixed(1)}:1</b> · mínimo 3:1</span></div>
+          <p class="nota">El texto y el ícono se ajustan automáticamente para llegar al contraste mínimo; el color base se conserva en bordes y muestras.</p>
+        </div>
+        <div class="fila-btn"><button type="button" class="btn" data-paleta>← Volver a la paleta</button><button type="button" class="btn btn-pri" data-usar>Usar este color</button></div>
+      </div>`
+  }
+
+  function enlazar() {
+    const s = estadoModal
+    modal.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', cerrar))
+    modal.querySelector('#m-nombre').addEventListener('input', (e) => { s.nombre = e.target.value; modal.querySelector('[data-guardar]').disabled = !s.nombre.trim(); actualizarPrevia() })
+    modal.querySelectorAll('[data-icono]').forEach((b) => b.addEventListener('click', () => { s.icono = b.dataset.icono; pintar() }))
+    modal.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('click', () => { s.modoColor = b.dataset.modo; pintar() }))
+    modal.querySelectorAll('[data-color]').forEach((b) => b.addEventListener('click', () => { s.color = b.dataset.color; s.modoColor = 'propio'; pintar() }))
+    modal.querySelector('[data-avanzado]')?.addEventListener('click', () => { s.vista = 'avanzado'; s.modoColor = 'propio'; pintar(); modal.querySelector('#sv')?.focus() })
+    modal.querySelector('[data-paleta]')?.addEventListener('click', () => { s.vista = 'paleta'; pintar() })
+    modal.querySelector('[data-usar]')?.addEventListener('click', () => { s.vista = 'paleta'; pintar() })
+    modal.querySelector('[data-guardar]').addEventListener('click', () => { onGuardar?.({ ...s, color: s.modoColor === 'heredar' ? null : s.color }); cerrar() })
+    if (s.vista === 'avanzado') enlazarPicker()
+  }
+  function actualizarPrevia() {
+    const s = estadoModal
+    modal.querySelectorAll('.previa b').forEach((b) => (b.textContent = s.nombre || 'Nombre'))
+  }
+  function enlazarPicker() {
+    const s = estadoModal
+    const err = modal.querySelector('#hex-err')
+    const aplicar = (rgb, { conservarTono } = {}) => { s.color = rgbAHex(rgb); err.hidden = true; const h = conservarTono ?? null; pintar(); if (h !== null) { modal.querySelector('#hue').value = h; modal.querySelector('#sv').style.setProperty('--h', h) } }
+    const sv = modal.querySelector('#sv')
+    const mover = (e) => {
+      const r = sv.getBoundingClientRect()
+      const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
+      const h = Number(modal.querySelector('#hue').value)
+      aplicar(hsvARgb([h, x, 1 - y]), { conservarTono: h }); modal.querySelector('#sv').focus()
+    }
+    sv.addEventListener('pointerdown', (e) => { sv.setPointerCapture(e.pointerId); mover(e); const m = (ev) => mover(ev); const u = () => { document.removeEventListener('pointermove', m); document.removeEventListener('pointerup', u) }; document.addEventListener('pointermove', m); document.addEventListener('pointerup', u) })
+    sv.addEventListener('keydown', (e) => {
+      const d = { ArrowLeft: [-0.02, 0], ArrowRight: [0.02, 0], ArrowUp: [0, 0.02], ArrowDown: [0, -0.02] }[e.key]
+      if (!d) return
+      e.preventDefault()
+      const [h, sa, v] = rgbAHsv(hexARgb(s.color))
+      const hh = Number(modal.querySelector('#hue').value)
+      aplicar(hsvARgb([hh, Math.min(1, Math.max(0, sa + d[0])), Math.min(1, Math.max(0, v + d[1]))]), { conservarTono: hh }); modal.querySelector('#sv').focus()
+    })
+    modal.querySelector('#hue').addEventListener('input', (e) => { const [, sa, v] = rgbAHsv(hexARgb(s.color)); aplicar(hsvARgb([Number(e.target.value), sa || 0.6, v || 0.8]), { conservarTono: Number(e.target.value) }); modal.querySelector('#hue').focus() })
+    modal.querySelector('#hex').addEventListener('input', (e) => {
+      let t = e.target.value.trim(); if (t && t[0] !== '#') t = '#' + t
+      const rgb = hexARgb(t)
+      if (rgb) { s.color = rgbAHex(rgb); err.hidden = true; refrescarSinReemplazar('hex') } else { err.hidden = false; e.target.setAttribute('aria-invalid', 'true') }
+    })
+    ;['R', 'G', 'B'].forEach((l, i) => modal.querySelector(`#rgb-${l}`).addEventListener('input', (e) => {
+      const rgb = hexARgb(s.color) ?? [0, 0, 0]
+      const n = Number(e.target.value)
+      if (Number.isNaN(n) || n < 0 || n > 255) { err.textContent = 'Cada canal RGB va de 0 a 255.'; err.hidden = false; return }
+      rgb[i] = n; s.color = rgbAHex(rgb); err.hidden = true; refrescarSinReemplazar(`rgb-${l}`)
+    }))
+  }
+  /** Re-pinta conservando el foco en el campo que se está escribiendo. */
+  function refrescarSinReemplazar(idActivo) {
+    const pos = modal.querySelector(`#${idActivo}`)?.selectionStart
+    pintar()
+    const el = modal.querySelector(`#${idActivo}`)
+    if (el) { el.focus(); try { el.setSelectionRange(pos, pos) } catch { /* number */ } }
+  }
+  pintar()
+  modal.querySelector('#m-nombre').focus()
+}
+
+/* ---------- Barra común (tema + marca de prototipo) ---------- */
+function barraPrototipo(titulo) {
+  const b = document.createElement('div')
+  b.className = 'barra-proto'
+  b.innerHTML = `<span><b>PROTOTIPO · ${esc(titulo)}</b> · Solo diseño, datos de ejemplo. No guarda nada.</span>
+    <span class="barra-acc"><a href="indice.html">Todas las propuestas</a><button class="btn" id="tema-btn" aria-label="Cambiar tema"></button></span>`
+  document.body.prepend(b)
+  const btn = b.querySelector('#tema-btn')
+  const pintarBtn = () => { btn.innerHTML = temaActual() === 'claro' ? `${ui('luna')} Oscuro` : `${ui('sol')} Claro` }
+  btn.addEventListener('click', () => fijarTema(temaActual() === 'claro' ? 'oscuro' : 'claro'))
+  document.addEventListener('tema', pintarBtn)
+  pintarBtn()
+}
+const param = (k) => new URLSearchParams(location.search).get(k)
+if (param('tema') === 'oscuro') fijarTema('oscuro')
+
+/* ---------- Estructura de la aplicación (barra lateral) para dar contexto a los prototipos ---------- */
+function marcoApp(titulo, descripcion, accionHtml) {
+  const nav = [['Dashboard', 'casa'], ['Gastos', 'billetera'], ['Fondos', 'tarjeta'], ['Catálogo', 'etiqueta'], ['Salud financiera', 'corazon'], ['Configuración', 'puntos']]
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="app">
+      <aside class="lateral"><div class="marca"><span class="logo">G</span><b>Gasto Deejota</b></div>
+        <nav aria-label="Principal">${nav.map(([n, i]) => `<a href="#" ${n === 'Catálogo' ? 'aria-current="page"' : ''}>${svg(i)} ${n}</a>`).join('')}</nav>
+        <div class="usuario"><b>Usuario E2E</b><small>e2e@gastodeejota.local</small></div></aside>
+      <main class="contenido" id="contenido"><header class="cab-pagina"><div><h1>${esc(titulo)}</h1><p>${esc(descripcion)}</p></div><div>${accionHtml ?? ''}</div></header><div id="vista"></div></main>
+    </div>`)
+}
+
+/* ---------- Acciones comunes (editar, ordenar, activar, eliminar) sobre los datos de ejemplo ---------- */
+function listaDe(tipo) { return tipo === 'ambito' ? DATOS.ambitos : tipo === 'categoria' ? DATOS.categorias : DATOS.medios }
+function manejarAcciones(raiz, redibujar) {
+  raiz.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-accion], .sw, [data-nuevo]')
+    if (!b || b.disabled) return
+    if (b.dataset.nuevo) { abrirModal({ tipo: b.dataset.nuevo, onGuardar: (r) => { listaDe(r.tipo).splice(listaDe(r.tipo).length - 1, 0, { id: 'n' + Date.now(), nombre: r.nombre, icono: r.icono, color: r.color, activo: true, gastos: 0, subs: [], ambito: 'a1' }); redibujar() } }); return }
+    const fila = b.closest('[data-id]')
+    const id = fila?.dataset.id, tipo = fila?.dataset.tipo
+    if (!id) return
+    const lista = listaDe(tipo), i = lista.findIndex((x) => x.id === id)
+    if (b.classList.contains('sw')) { lista[i].activo = !lista[i].activo; redibujar(); return }
+    const a = b.dataset.accion
+    if (a === 'editar') abrirModal({ tipo, item: lista[i], onGuardar: (r) => { Object.assign(lista[i], { nombre: r.nombre, icono: r.icono, color: r.color }); redibujar() } })
+    if (a === 'subir' && i > 0) { [lista[i - 1], lista[i]] = [lista[i], lista[i - 1]]; redibujar() }
+    if (a === 'bajar' && i < lista.length - 2) { [lista[i + 1], lista[i]] = [lista[i], lista[i + 1]]; redibujar() }
+    if (a === 'borrar' && eliminable(lista[i], tipo).ok) { lista.splice(i, 1); redibujar() }
+  })
+}
+const NOMBRE_VISTA = { ambitos: 'Ámbitos', categorias: 'Categorías y subcategorías', medios: 'Medios de pago' }
+function pestanas(actual) {
+  return `<div class="tabs" role="tablist" aria-label="Secciones del catálogo">${Object.entries(NOMBRE_VISTA).map(([k, n]) => `<button role="tab" aria-selected="${k === actual}" data-vista="${k}">${n}</button>`).join('')}</div>`
+}
+
+</script>
+<script>
+/* Propuestas dinámicas del Catálogo: B (se mantiene) + D, E, F, G, H. Requiere shared.js. Solo diseño. */
+'use strict'
+
+const APP = { v: 'B', sec: 'categorias', sel: null, metrica: 'gastos' }
+const SEC_TIPO = { ambitos: 'ambito', categorias: 'categoria', medios: 'medio' }
+const SEC_NOMBRE = { ambitos: 'Ámbitos', categorias: 'Categorías y subcategorías', medios: 'Medios de pago' }
+const VARIANTES = [
+  ['B', 'Explorador jerárquico', 'Árbol y panel de detalle. La que ya viste.'],
+  ['D', 'Mosaico proporcional', 'Cada elemento ocupa espacio según sus gastos.'],
+  ['E', 'Tablero arrastrable', 'Arrastra tarjetas para ordenar o cambiar de ámbito.'],
+  ['F', 'Anillos', 'Ámbitos y categorías en círculos que se animan.'],
+  ['G', 'Estudio de color', 'Cambia un color y mira cómo queda la app, en claro y oscuro.'],
+  ['H', 'Lista viva', 'Renombra, ordena, colorea y elimina sin salir de la lista.'],
+]
+const DATOS_INICIALES = JSON.stringify(DATOS)
+const historial = []
+const $ = (s, r = document) => r.querySelector(s)
+const itemDe = (t, id) => listaDe(t).find((x) => x.id === id)
+const tipoSec = () => SEC_TIPO[APP.sec]
+const valorDe = (it) => (APP.metrica === 'igual' ? 1 : Math.max(it.gastos, 8))
+const colorHex = (it, tipo) => colorEfectivo(it, tipo).hex
+/** Insignia sin estilo propio: hereda las variables --k-* del ancestro con data-cid. */
+const ins = (it, cls = '') => `<span class="ins ${cls}">${svg(it.icono)}</span>`
+
+function pintarTodo() {
+  document.querySelectorAll('[data-cid]').forEach((el) => {
+    const [t, id] = el.dataset.cid.split(':')
+    const it = itemDe(t, id)
+    if (!it) return
+    estiloColor(colorHex(it, t)).split(';').filter(Boolean).forEach((kv) => { const i = kv.indexOf(':'); el.style.setProperty(kv.slice(0, i), kv.slice(i + 1)) })
+  })
+  pintarPreview()
+}
+function validarSel() {
+  const t = tipoSec(), l = listaDe(t)
+  if (!APP.sel || APP.sel.tipo !== t || !l.some((x) => x.id === APP.sel.id)) APP.sel = { tipo: t, id: (l.find((x) => x.activo) ?? l[0])?.id ?? null }
+}
+function guardarSnap() { historial.push(JSON.stringify(DATOS)); if (historial.length > 30) historial.shift() }
+
+/* ---------- Detalle común ---------- */
+function detalleHtml() {
+  const { tipo, id } = APP.sel
+  const it = itemDe(tipo, id)
+  if (!it) return '<p class="pista">Selecciona un elemento.</p>'
+  const c = colorEfectivo(it, tipo), lista = listaDe(tipo), i = lista.indexOf(it), el = eliminable(it, tipo)
+  const pad = tipo === 'categoria' ? DATOS.ambitos.find((a) => a.id === it.ambito) : null
+  return `<div class="d-det" data-id="${it.id}" data-tipo="${tipo}" data-cid="${tipo}:${it.id}">
+    <div class="d-det-cab">${ins(it, 'g')}<div><h3>${esc(it.nombre)}</h3><p>${pad ? esc(pad.nombre) + ' · ' : ''}<span class="num">${it.gastos}</span> gastos · ${it.activo ? 'Activo' : 'Inactivo'}</p>
+      <span class="pildora"><span class="punto"></span> ${nombreColor(c.hex)} <span class="num">${c.hex.toUpperCase()}</span></span>${c.origen === 'heredado' ? ` <span class="origen">${ui('enlace')} hereda de ${esc(c.de)}</span>` : ''}</div>${interruptor(it.activo, it.nombre, it.fijoAlFinal)}</div>
+    <div class="d-qc" role="group" aria-label="Cambiar color de ${esc(it.nombre)}">
+      ${tipo === 'categoria' ? `<button class="d-her" data-qc="heredar" aria-pressed="${!it.color}">${ui('enlace')} Heredar color del ámbito</button>` : ''}
+      ${COLORES.map((k) => `<button class="d-sw" data-qc="${k.hex}" style="--k-base:${k.hex}" aria-label="${k.nombre}" title="${k.nombre}" aria-pressed="${!!it.color && it.color.toLowerCase() === k.hex.toLowerCase() || (!it.color && tipo !== 'categoria' && c.hex.toLowerCase() === k.hex.toLowerCase())}"></button>`).join('')}
+    </div>
+    <div class="d-tonos">${['claro', 'oscuro'].map((t) => { const k = tonos(c.hex, t); return `<div class="d-tono ${t}"><small>${t === 'claro' ? 'Tema claro' : 'Tema oscuro'}</small><div class="f"><span class="insignia p" style="--k-soft:${k.soft};--k-borde:${k.borde};--k-icono:${k.icono}">${svg(it.icono)}</span><b style="color:${k.texto}">${esc(it.nombre)}</b></div></div>` }).join('')}</div>
+    <div class="d-acc"><button class="btn btn-pri" data-accion="editar">${ui('editar')} Editar…</button>${botonesFila(it, tipo, i, lista.length)}</div>
+    <p class="pista" style="margin:0">${it.fijoAlFinal ? ui('candado') + ' ' : ''}${esc(el.motivo)}</p></div>`
+}
+function refrescarDetalle() { const d = $('#detalle'); if (d) { d.innerHTML = detalleHtml(); pintarTodo() } }
+function seleccionar(tipo, id) { APP.sel = { tipo, id }; document.querySelectorAll('[data-sel-id]').forEach((e) => e.setAttribute(e.dataset.selAttr || 'aria-pressed', String(e.dataset.selId === id))); refrescarDetalle(); document.dispatchEvent(new CustomEvent('seleccion')) }
+
+/* ---------- Arrastrar y soltar genérico ---------- */
+function activarDnd(raiz, onDrop) {
+  let arr = null
+  const limpiar = () => raiz.querySelectorAll('.antes, .sobre, .final, .arrastrando').forEach((e) => e.classList.remove('antes', 'sobre', 'final', 'arrastrando'))
+  const destino = (e, zona) => {
+    const cartas = [...zona.querySelectorAll('[data-drag]')].filter((c) => c.dataset.id !== arr && c.dataset.fijo !== '1')
+    const horiz = zona.dataset.eje === 'x'
+    return cartas.find((c) => { const r = c.getBoundingClientRect(); return horiz ? e.clientX < r.left + r.width / 2 || e.clientY < r.top : e.clientY < r.top + r.height / 2 }) ?? null
+  }
+  raiz.addEventListener('dragstart', (e) => { const c = e.target.closest('[data-drag]'); if (!c || c.dataset.fijo === '1') { e.preventDefault(); return } arr = c.dataset.id; e.dataTransfer.setData('text/plain', arr); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => c.classList.add('arrastrando'), 0) })
+  raiz.addEventListener('dragend', () => { arr = null; limpiar() })
+  raiz.addEventListener('dragover', (e) => {
+    const zona = e.target.closest('[data-zona]'); if (!zona || !arr) return
+    e.preventDefault(); limpiar(); zona.classList.add('sobre')
+    const d = destino(e, zona); if (d) d.classList.add('antes'); else zona.classList.add('final')
+  })
+  raiz.addEventListener('drop', (e) => {
+    const zona = e.target.closest('[data-zona]'); if (!zona || !arr) return
+    e.preventDefault(); const d = destino(e, zona); const id = arr; arr = null; limpiar(); onDrop(id, zona.dataset.zona, d?.dataset.id ?? null)
+  })
+}
+function mover(lista, id, antesId, extra) {
+  const i = lista.findIndex((x) => x.id === id); if (i < 0) return
+  const [it] = lista.splice(i, 1); Object.assign(it, extra || {})
+  let j = antesId ? lista.findIndex((x) => x.id === antesId) : -1
+  if (j < 0) { const fin = lista.findIndex((x) => x.fijoAlFinal && (!extra?.ambito || x.ambito === extra.ambito)); j = fin >= 0 ? fin : lista.length }
+  lista.splice(j, 0, it)
+}
+function aviso(texto, deshacer) {
+  document.querySelector('.d-toast')?.remove()
+  const t = document.createElement('div'); t.className = 'd-toast'; t.setAttribute('role', 'status')
+  t.innerHTML = `<span>${esc(texto)}</span>${deshacer ? '<button>Deshacer</button>' : ''}`
+  document.body.appendChild(t)
+  t.querySelector('button')?.addEventListener('click', () => { deshacer(); t.remove() })
+  setTimeout(() => t.remove(), 5000)
+}
+
+/* ---------- B · Explorador jerárquico ---------- */
+const abiertos = new Set(['a1', 'c2'])
+function renderB(host) {
+  const arbol = () => {
+    const nodo = (it, tipo, hijos) => {
+      const ab = abiertos.has(it.id)
+      return `<div><button class="nodo ${it.activo ? '' : 'off'}" role="treeitem" aria-selected="${APP.sel.id === it.id}" ${hijos ? `aria-expanded="${ab}"` : ''} data-n="${tipo}:${it.id}" data-cid="${tipo}:${it.id}">
+        ${hijos ? `<span class="chev" data-abierto="${ab}" data-tog="${it.id}">${ui('flecha')}</span>` : '<span style="width:18px"></span>'}${ins(it, 'p')}<span>${esc(it.nombre)}</span><span class="cnt num">${it.gastos}</span></button>
+        ${hijos && ab ? `<div class="hijos" role="group">${hijos}</div>` : ''}</div>`
+    }
+    if (APP.sec === 'medios') return DATOS.medios.map((m) => nodo(m, 'medio', '')).join('')
+    if (APP.sec === 'ambitos') return DATOS.ambitos.map((a) => nodo(a, 'ambito', '')).join('')
+    return DATOS.ambitos.map((a) => nodo(a, 'ambito', DATOS.categorias.filter((c) => c.ambito === a.id).map((c) => nodo(c, 'categoria', c.subs.map((s) => `<button class="nodo" data-padre="${c.id}" data-cid="categoria:${c.id}"><span class="punto"></span><span>${esc(s)}</span></button>`).join(''))).join(''))).join('')
+  }
+  host.innerHTML = `<div class="d-split"><div class="d-panel"><div class="arbol" role="tree" aria-label="Catálogo">${arbol()}</div></div><div class="d-panel" id="detalle">${detalleHtml()}</div></div>
+    <p class="pista">Haz clic en un nodo para ver y cambiar su color al instante. La flecha abre y cierra.</p>`
+  host.querySelectorAll('[data-n]').forEach((b) => b.addEventListener('click', (e) => {
+    const [t, id] = b.dataset.n.split(':')
+    if (e.target.closest('[data-tog]')) { abiertos.has(id) ? abiertos.delete(id) : abiertos.add(id); APP.sel = { tipo: t, id }; redibujar(); return }
+    APP.sel = { tipo: t, id }; redibujar()
+  }))
+  host.querySelectorAll('[data-padre]').forEach((b) => b.addEventListener('click', () => { APP.sel = { tipo: 'categoria', id: b.dataset.padre }; redibujar() }))
+}
+
+/* ---------- D · Mosaico proporcional (treemap animado) ---------- */
+function squarify(items, x, y, w, h) {
+  const out = [], total = items.reduce((s, i) => s + i.v, 0); if (!total) return out
+  const k = (w * h) / total; let rest = [...items].sort((a, b) => b.v - a.v), X = x, Y = y, W = w, H = h
+  while (rest.length) {
+    const lado = Math.min(W, H)
+    const peor = (r) => { const s = r.reduce((a, i) => a + i.v * k, 0), mx = Math.max(...r.map((i) => i.v * k)), mn = Math.min(...r.map((i) => i.v * k)); return Math.max((lado * lado * mx) / (s * s), (s * s) / (lado * lado * mn)) }
+    let fila = [rest[0]], n = 1
+    while (n < rest.length && peor(rest.slice(0, n + 1)) <= peor(fila)) { fila = rest.slice(0, n + 1); n++ }
+    const area = fila.reduce((a, i) => a + i.v * k, 0), grosor = area / lado; let off = 0
+    for (const it of fila) { const largo = (it.v * k) / grosor; out.push(W >= H ? { it: it.it, x: X, y: Y + off, w: grosor, h: largo } : { it: it.it, x: X + off, y: Y, w: largo, h: grosor }); off += largo }
+    if (W >= H) { X += grosor; W -= grosor } else { Y += grosor; H -= grosor }
+    rest = rest.slice(fila.length)
+  }
+  return out
+}
+function renderD(host) {
+  host.innerHTML = `<div class="d-tools" style="margin-bottom:10px"><span class="pista" style="margin:0">Tamaño según:</span><div class="segmento" role="radiogroup" aria-label="Tamaño según">
+    <button role="radio" aria-checked="${APP.metrica === 'gastos'}" data-m="gastos">Gastos</button><button role="radio" aria-checked="${APP.metrica === 'igual'}" data-m="igual">Todos iguales</button></div></div>
+    <div class="d-split"><div class="d-panel"><div class="d-lienzo" id="lienzo" role="group" aria-label="Mosaico del catálogo"></div><p class="pista">El tamaño cambia con la métrica y los colores con cada elección. Pasa el cursor o usa Tab para recorrer.</p></div><div class="d-panel" id="detalle">${detalleHtml()}</div></div>`
+  const lienzo = $('#lienzo'), W = 100, H = 66
+  const nodos = new Map()
+  const crear = (it, tipo) => {
+    const k = `${tipo}:${it.id}`; if (nodos.has(k)) return nodos.get(k)
+    const b = document.createElement('button'); b.className = 'd-teja'; b.dataset.cid = k; b.dataset.selId = it.id
+    b.innerHTML = `<span>${svg(it.icono)}<b>${esc(it.nombre)}</b><small class="num">${it.gastos} gastos</small></span>`
+    b.addEventListener('click', () => { seleccionar(tipo, it.id) })
+    lienzo.appendChild(b); nodos.set(k, b); return b
+  }
+  const grupos = new Map()
+  const colocar = () => {
+    const rects = []
+    const tipo = tipoSec()
+    if (APP.sec === 'categorias') {
+      const amb = DATOS.ambitos.map((a) => ({ it: a, v: Math.max(14, DATOS.categorias.filter((c) => c.ambito === a.id).reduce((s, c) => s + valorDe(c), 0)) }))
+      for (const r of squarify(amb, 0, 0, W, H)) {
+        let g = grupos.get(r.it.id); if (!g) { g = document.createElement('div'); g.className = 'd-grupo'; g.dataset.cid = `ambito:${r.it.id}`; g.innerHTML = `<i>${esc(r.it.nombre)}</i>`; lienzo.appendChild(g); grupos.set(r.it.id, g) }
+        Object.assign(g.style, { left: r.x + '%', top: (r.y / H) * 100 + '%', width: r.w + '%', height: (r.h / H) * 100 + '%' })
+        const cats = DATOS.categorias.filter((c) => c.ambito === r.it.id)
+        const inset = 5.2
+        for (const c of squarify(cats.map((c) => ({ it: c, v: valorDe(c) })), r.x + 0.6, r.y + inset, Math.max(1, r.w - 1.2), Math.max(1, r.h - inset - 0.6))) rects.push({ ...c, tipo: 'categoria' })
+      }
+    } else {
+      grupos.forEach((g) => g.remove()); grupos.clear()
+      for (const r of squarify(listaDe(tipo).map((it) => ({ it, v: valorDe(it) })), 0, 0, W, H)) rects.push({ ...r, tipo })
+    }
+    const vivos = new Set()
+    for (const r of rects) {
+      const b = crear(r.it, r.tipo); vivos.add(b.dataset.cid)
+      Object.assign(b.style, { left: r.x + '%', top: (r.y / H) * 100 + '%', width: r.w + '%', height: (r.h / H) * 100 + '%' })
+      b.dataset.s = r.w * r.h < 90 ? 'xs' : r.w * r.h < 210 ? 's' : 'm'
+      b.classList.toggle('off', !r.it.activo); b.setAttribute('aria-pressed', String(APP.sel.id === r.it.id)); b.setAttribute('aria-label', `${r.it.nombre}, ${r.it.gastos} gastos`)
+    }
+    nodos.forEach((b, k) => { if (!vivos.has(k)) { b.remove(); nodos.delete(k) } })
+    pintarTodo()
+  }
+  colocar()
+  host.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { APP.metrica = b.dataset.m; host.querySelectorAll('[data-m]').forEach((x) => x.setAttribute('aria-checked', String(x === b))); colocar() }))
+}
+
+/* ---------- E · Tablero arrastrable ---------- */
+function renderE(host) {
+  const tarjeta = (it, tipo, extra = '') => {
+    const fijo = it.fijoAlFinal
+    return `<div class="d-card ${fijo ? 'fijo' : ''}" role="button" tabindex="0" ${fijo ? '' : 'draggable="true"'} data-drag data-id="${it.id}" data-fijo="${fijo ? 1 : 0}" data-cid="${tipo}:${it.id}" data-sel-id="${it.id}" aria-pressed="${APP.sel.id === it.id}"
+      aria-label="${esc(it.nombre)}. ${fijo ? 'Siempre al final.' : 'Alt y flechas para mover.'}"><div class="fila">${ins(it, 'p')}<b>${esc(it.nombre)}</b>${fijo ? ui('candado') : ''}${it.activo ? '' : '<span class="estado off">Inactivo</span>'}</div><small class="num">${it.gastos} gastos${extra}</small></div>`
+  }
+  let cuerpo
+  if (APP.sec === 'categorias') {
+    cuerpo = `<div class="d-tablero">${DATOS.ambitos.map((a) => `<section class="d-col" data-zona="${a.id}" data-eje="y" data-cid="ambito:${a.id}" aria-label="Ámbito ${esc(a.nombre)}"><h3>${ins(a, 'p')}<span>${esc(a.nombre)}</span><span class="num">${DATOS.categorias.filter((c) => c.ambito === a.id).length}</span></h3>
+      ${DATOS.categorias.filter((c) => c.ambito === a.id).map((c) => tarjeta(c, 'categoria', ` · ${c.subs.length} subcategorías`)).join('')}</section>`).join('')}</div>`
+  } else {
+    const tipo = tipoSec()
+    cuerpo = `<div class="d-tablero"><section class="d-col d-fila" data-zona="lista" data-eje="x" style="flex:1" aria-label="${SEC_NOMBRE[APP.sec]}">${listaDe(tipo).map((it) => tarjeta(it, tipo)).join('')}</section></div>`
+  }
+  host.innerHTML = `<div class="d-split"><div class="d-panel">${cuerpo}<p class="pista">Arrastra una tarjeta para ordenar${APP.sec === 'categorias' ? ' o moverla a otro ámbito' : ''}. Con teclado: enfoca una tarjeta y usa <b>Alt</b> + flechas. «Otros» queda siempre al final.</p></div><div class="d-panel" id="detalle">${detalleHtml()}</div></div>`
+  const tipo = tipoSec(), lista = listaDe(tipo)
+  activarDnd(host.querySelector('.d-tablero'), (id, zona, antes) => { guardarSnap(); mover(lista, id, antes, tipo === 'categoria' ? { ambito: zona } : undefined); APP.sel = { tipo, id }; redibujar() })
+  host.querySelectorAll('.d-card').forEach((c) => {
+    c.addEventListener('click', () => seleccionar(tipo, c.dataset.id))
+    c.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionar(tipo, c.dataset.id); return }
+      if (!e.altKey || c.dataset.fijo === '1') return
+      const id = c.dataset.id, it = itemDe(tipo, id)
+      const grupo = tipo === 'categoria' ? lista.filter((x) => x.ambito === it.ambito) : lista, gi = grupo.findIndex((x) => x.id === id)
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' && tipo !== 'categoria') { if (gi > 0) { e.preventDefault(); guardarSnap(); mover(lista, id, grupo[gi - 1].id, tipo === 'categoria' ? { ambito: it.ambito } : undefined) } }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight' && tipo !== 'categoria') { if (grupo[gi + 1] && !grupo[gi + 1].fijoAlFinal) { e.preventDefault(); guardarSnap(); mover(lista, id, grupo[gi + 2]?.id ?? null, tipo === 'categoria' ? { ambito: it.ambito } : undefined) } }
+      else if (tipo === 'categoria' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { const ai = DATOS.ambitos.findIndex((a) => a.id === it.ambito) + (e.key === 'ArrowRight' ? 1 : -1); if (DATOS.ambitos[ai]) { e.preventDefault(); guardarSnap(); mover(lista, id, null, { ambito: DATOS.ambitos[ai].id }) } }
+      else return
+      APP.sel = { tipo, id }; redibujar(); document.querySelector(`.d-card[data-id="${id}"]`)?.focus()
+    })
+  })
+}
+
+/* ---------- F · Anillos ---------- */
+function renderF(host) {
+  host.innerHTML = `<div class="d-tools" style="margin-bottom:10px"><div class="segmento" role="radiogroup" aria-label="Tamaño según"><button role="radio" aria-checked="${APP.metrica === 'gastos'}" data-m="gastos">Por gastos</button><button role="radio" aria-checked="${APP.metrica === 'igual'}" data-m="igual">Partes iguales</button></div></div>
+    <div class="d-split"><div class="d-panel"><div class="d-anillos" id="anillos"><svg viewBox="0 0 420 420" role="group" aria-label="Anillos del catálogo"></svg><div class="d-centro"><div id="centro"></div></div><div class="d-tip" id="tip"></div></div>
+    <p class="pista">Pasa el cursor para ver el detalle, haz clic para elegir. El anillo interior son los ámbitos y el exterior las categorías.</p></div><div class="d-panel" id="detalle">${detalleHtml()}</div></div>`
+  const svgEl = $('svg', host), tip = $('#tip'), caja = $('#anillos')
+  const geometria = () => {
+    const g = new Map(), tipo = tipoSec(), GAP = 0.025
+    const reparte = (items, a0, a1, r0, r1, t) => { const tot = items.reduce((s, i) => s + i.v, 0); let a = a0; for (const i of items) { const da = ((a1 - a0) * i.v) / tot; g.set(`${t}:${i.it.id}`, { r0, r1, a0: a + GAP, a1: Math.max(a + GAP + 0.01, a + da - GAP), it: i.it, t }); a += da } }
+    const A0 = -Math.PI / 2, A1 = A0 + Math.PI * 2
+    if (APP.sec === 'categorias') {
+      const amb = DATOS.ambitos.map((a) => ({ it: a, v: Math.max(valorDe({ gastos: 8 }), DATOS.categorias.filter((c) => c.ambito === a.id).reduce((s, c) => s + valorDe(c), 0)) }))
+      reparte(amb, A0, A1, 62, 118, 'ambito')
+      for (const a of amb) { const ga = g.get(`ambito:${a.it.id}`); const cats = DATOS.categorias.filter((c) => c.ambito === a.it.id); if (cats.length) reparte(cats.map((c) => ({ it: c, v: valorDe(c) })), ga.a0 - GAP, ga.a1 + GAP, 124, 186, 'categoria') }
+    } else reparte(listaDe(tipo).map((it) => ({ it, v: valorDe(it) })), A0, A1, 82, 186, tipo)
+    return g
+  }
+  const arco = (r0, r1, a0, a1) => { const P = (r, a) => [210 + r * Math.cos(a), 210 + r * Math.sin(a)], L = a1 - a0 > Math.PI ? 1 : 0, [x0, y0] = P(r1, a0), [x1, y1] = P(r1, a1), [x2, y2] = P(r0, a1), [x3, y3] = P(r0, a0); return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r1} ${r1} 0 ${L} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}A${r0} ${r0} 0 ${L} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z` }
+  let actual = geometria()
+  const total = () => listaDe(tipoSec()).reduce((s, i) => s + i.gastos, 0)
+  const centro = () => { const it = APP.sel && itemDe(APP.sel.tipo, APP.sel.id); $('#centro').innerHTML = it ? `<b>${esc(it.nombre)}</b><small class="num">${it.gastos} gastos</small>` : `<b>Catálogo</b><small class="num">${total()} gastos</small>` }
+  const pintarSel = () => { if (!svgEl.isConnected) return; const sel = APP.sel; const padre = sel?.tipo === 'categoria' ? itemDe('categoria', sel.id)?.ambito : sel?.tipo === 'ambito' ? sel.id : null
+    svgEl.querySelectorAll('.arco').forEach((p) => { const [t, id] = p.dataset.cid.split(':'); const it = itemDe(t, id); const esSel = sel && sel.id === id; let dim = false
+      if (APP.sec === 'categorias' && padre) dim = t === 'ambito' ? id !== padre : it.ambito !== padre
+      p.classList.toggle('dim', dim); p.classList.toggle('off', !it.activo)
+      const a = actual.get(p.dataset.cid); const m = (a.a0 + a.a1) / 2; p.style.transform = esSel ? `translate(${(Math.cos(m) * 9).toFixed(1)}px, ${(Math.sin(m) * 9).toFixed(1)}px)` : ''
+      p.setAttribute('aria-pressed', String(esSel)) }); centro() }
+  actual.forEach((a, k) => { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('class', 'arco'); p.setAttribute('d', arco(a.r0, a.r1, a.a0, a.a1)); p.dataset.cid = k; p.setAttribute('tabindex', '0'); p.setAttribute('role', 'button')
+    p.setAttribute('aria-label', `${a.it.nombre}, ${a.it.gastos} gastos`)
+    p.addEventListener('click', () => { seleccionar(a.t, a.it.id); pintarSel() })
+    p.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seleccionar(a.t, a.it.id); pintarSel() } })
+    const mostrar = (ev) => { const r = caja.getBoundingClientRect(); const sum = [...actual.values()].filter((x) => x.t === a.t).reduce((s, x) => s + x.it.gastos, 0); tip.innerHTML = `<b>${esc(a.it.nombre)}</b><br><span class="num">${a.it.gastos} gastos · ${sum ? Math.round((a.it.gastos / sum) * 100) : 0}%</span>`; tip.classList.add('on'); const x = ev.clientX ? ev.clientX - r.left : r.width / 2, y = ev.clientY ? ev.clientY - r.top : r.height / 2; tip.style.left = Math.min(r.width - 150, x + 14) + 'px'; tip.style.top = Math.max(0, y - 10) + 'px' }
+    p.addEventListener('mousemove', mostrar); p.addEventListener('focus', mostrar); p.addEventListener('mouseleave', () => tip.classList.remove('on')); p.addEventListener('blur', () => tip.classList.remove('on'))
+    svgEl.appendChild(p) })
+  pintarTodo(); pintarSel()
+  document.addEventListener('seleccion', pintarSel, { once: false })
+  host.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => {
+    APP.metrica = b.dataset.m; host.querySelectorAll('[data-m]').forEach((x) => x.setAttribute('aria-checked', String(x === b)))
+    const destino = geometria(), origen = new Map(actual), t0 = performance.now()
+    const paso = (t) => { const k = Math.min(1, (t - t0) / 450), e = 1 - (1 - k) ** 3
+      destino.forEach((d, key) => { const o = origen.get(key) ?? d; svgEl.querySelector(`[data-cid="${key}"]`)?.setAttribute('d', arco(d.r0, d.r1, o.a0 + (d.a0 - o.a0) * e, o.a1 + (d.a1 - o.a1) * e)) })
+      if (k < 1) requestAnimationFrame(paso); else { actual = destino; pintarSel() } }
+    requestAnimationFrame(paso)
+  }))
+}
+
+/* ---------- G · Estudio de color con vista previa viva ---------- */
+const GASTOS_EJEMPLO = [['Supermercado', 'c2', 'm2', 'S/ 184.30'], ['Recibo de luz', 'c1', 'm1', 'S/ 96.00'], ['Cine con amigos', 'c4', 'm3', 'S/ 42.00'], ['Útiles escolares', 'c6', 'm4', 'S/ 67.50']]
+function renderG(host) {
+  const tipo = tipoSec(), lista = listaDe(tipo)
+  const panelPrev = (t) => {
+    const total = DATOS.ambitos.reduce((s, a) => s + a.gastos, 0), R = 40, C = 2 * Math.PI * R; let acum = 0
+    const segs = DATOS.ambitos.map((a) => { const f = a.gastos / total, d = `<circle class="pc-seg d-pc" data-pc="ambito:${a.id}" data-pt="${t}" cx="60" cy="60" r="${R}" stroke-dasharray="${(f * C - 2).toFixed(1)} ${C}" stroke-dashoffset="${(-acum * C).toFixed(1)}" transform="rotate(-90 60 60)"/>`; acum += f; return d }).join('')
+    const top = DATOS.categorias.filter((c) => c.activo).sort((a, b) => b.gastos - a.gastos).slice(0, 4), mx = top[0].gastos
+    return `<div class="d-pv ${t}" data-pt="${t}"><h4>Tema ${t}</h4>
+      <div><h4>Gasto por ámbito</h4><svg viewBox="0 0 120 120" role="img" aria-label="Gasto por ámbito">${segs}</svg><div class="pc-leyenda">${DATOS.ambitos.map((a) => `<span class="pc-chip d-pc" data-pc="ambito:${a.id}" data-pt="${t}">${esc(a.nombre)}</span>`).join('')}</div></div>
+      <div><h4>Top categorías</h4>${top.map((c) => `<div style="margin:6px 0"><div class="pc-fila"><span class="pc-ins d-pc" data-pc="categoria:${c.id}" data-pt="${t}">${svg(c.icono)}</span><span style="flex:1">${esc(c.nombre)}</span><b class="num">${c.gastos}</b></div><div class="pc-barra d-pc" data-pc="categoria:${c.id}" data-pt="${t}" style="width:${(c.gastos / mx) * 100}%;margin-top:4px"></div></div>`).join('')}</div>
+      <div><h4>Últimos gastos</h4>${GASTOS_EJEMPLO.map(([d, c, m, imp]) => `<div class="pc-fila" style="margin:6px 0"><span class="pc-ins d-pc" data-pc="categoria:${c}" data-pt="${t}">${svg(itemDe('categoria', c).icono)}</span><span style="flex:1;min-width:0">${esc(d)}<br><span class="pc-chip d-pc" data-pc="medio:${m}" data-pt="${t}">${esc(itemDe('medio', m).nombre)}</span></span><b class="num">${imp}</b></div>`).join('')}</div></div>`
+  }
+  host.innerHTML = `<div class="d-tools" style="margin-bottom:10px"><button class="btn" id="g-arm">${ui('gota')} Armonizar paleta</button><button class="btn" id="g-mez">Mezclar al azar</button><button class="btn" id="g-und">Deshacer</button><span class="pista" style="margin:0">Cambia un color y mira abajo cómo queda la app en claro y oscuro.</span></div>
+    <div class="d-estudio"><div class="d-panel d-lista" role="listbox" aria-label="${SEC_NOMBRE[APP.sec]}">${lista.map((it) => `<button class="nodo" role="option" data-cid="${tipo}:${it.id}" data-sel-id="${it.id}" data-sel-attr="aria-selected" aria-selected="${APP.sel.id === it.id}" data-g="${it.id}">${ins(it, 'p')}<span>${esc(it.nombre)}</span><span class="origen" style="margin-left:auto"><span class="punto"></span></span></button>`).join('')}</div>
+    <div class="d-panel" id="detalle">${detalleHtml()}</div><div class="d-pvs">${panelPrev('claro')}${panelPrev('oscuro')}</div></div>`
+  host.querySelectorAll('[data-g]').forEach((b) => b.addEventListener('click', () => seleccionar(tipo, b.dataset.g)))
+  const repartir = (orden) => { guardarSnap(); const base = orden === 'azar' ? [...COLORES].sort(() => Math.random() - 0.5) : COLORES; const paso = Math.max(1, Math.floor(COLORES.length / lista.length)); lista.forEach((it, i) => { if (!it.fijoAlFinal) it.color = base[(i * paso + (orden === 'azar' ? 0 : 0)) % COLORES.length].hex }); redibujar() }
+  $('#g-arm').addEventListener('click', () => repartir('uniforme')); $('#g-mez').addEventListener('click', () => repartir('azar'))
+  $('#g-und').addEventListener('click', () => { const s = historial.pop(); if (s) { Object.assign(DATOS, JSON.parse(s)); redibujar() } })
+}
+function pintarPreview() {
+  document.querySelectorAll('.d-pc').forEach((el) => {
+    const [t, id] = el.dataset.pc.split(':'), it = itemDe(t, id); if (!it) return
+    const k = tonos(colorHex(it, t), el.dataset.pt)
+    el.style.setProperty('--b', colorHex(it, t)); el.style.setProperty('--s', k.soft); el.style.setProperty('--o', k.borde); el.style.setProperty('--i', k.icono); el.style.setProperty('--t', k.texto)
+    if (el.classList.contains('pc-barra') || el.classList.contains('pc-seg')) el.style.setProperty('--b', k.icono)
+  })
+}
+
+/* ---------- H · Lista viva ---------- */
+function renderH(host) {
+  const tipo = tipoSec(), lista = listaDe(tipo)
+  let filtro = host.dataset.q || ''
+  host.innerHTML = `<div class="d-split"><div class="d-panel"><div class="d-tools" style="margin-bottom:10px"><div class="d-buscar" style="flex:1">${ui('buscar')}<input id="h-q" placeholder="Buscar… (la lista se filtra al escribir)" aria-label="Buscar" value="${esc(filtro)}"></div></div><div class="d-h" id="h-lista"></div>
+    <div class="d-nuevo" style="margin-top:12px"><input id="h-nuevo" placeholder="Escribe un nombre y pulsa Enter para añadir…" aria-label="Nuevo elemento"></div>
+    <p class="pista">Clic en un nombre para renombrar · punto de color para cambiarlo · arrastra el asa para ordenar · ↑ ↓ para moverte por las filas.</p></div><div class="d-panel" id="detalle">${detalleHtml()}</div></div>`
+  const cont = $('#h-lista')
+  const resaltar = (t) => { if (!filtro) return esc(t); const i = t.toLowerCase().indexOf(filtro.toLowerCase()); return i < 0 ? esc(t) : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + filtro.length)) + '</mark>' + esc(t.slice(i + filtro.length)) }
+  const coincide = (it) => !filtro || it.nombre.toLowerCase().includes(filtro.toLowerCase()) || (it.subs || []).some((s) => s.toLowerCase().includes(filtro.toLowerCase()))
+  const fila = (it) => `<div class="d-hfila ${it.activo ? '' : 'off'} ${APP.sel.id === it.id ? 'foco' : ''}" ${it.fijoAlFinal ? '' : 'draggable="true"'} data-drag data-id="${it.id}" data-fijo="${it.fijoAlFinal ? 1 : 0}" data-cid="${tipo}:${it.id}" data-hf>
+    <span class="asa" aria-hidden="true">${it.fijoAlFinal ? ui('candado') : ui('arrastrar')}</span><button class="d-punto" data-punto="${it.id}" aria-label="Cambiar color de ${esc(it.nombre)}" aria-haspopup="true"></button>${ins(it, 'p')}
+    <button class="nom" data-ren="${it.id}" aria-label="Renombrar ${esc(it.nombre)}">${resaltar(it.nombre)}</button><span class="num" style="color:var(--muted);font-size:12px">${it.gastos}</span><span data-id="${it.id}" data-tipo="${tipo}">${interruptor(it.activo, it.nombre, it.fijoAlFinal)}</span>
+    <button class="btn-ico" data-del="${it.id}" aria-label="Eliminar ${esc(it.nombre)}" title="${esc(eliminable(it, tipo).motivo)}" ${eliminable(it, tipo).ok ? '' : 'disabled'}>${ui('papelera')}</button></div>`
+  const pintarLista = () => {
+    if (tipo === 'categoria') cont.innerHTML = DATOS.ambitos.map((a) => { const cs = lista.filter((c) => c.ambito === a.id && coincide(c)); return cs.length ? `<div data-zona="${a.id}" data-eje="y"><div class="d-hgrupo" data-cid="ambito:${a.id}"><span class="punto"></span>${esc(a.nombre)}</div>${cs.map((c) => fila(c)).join('')}</div>` : '' }).join('') || '<p class="pista">Sin resultados.</p>'
+    else cont.innerHTML = `<div data-zona="lista" data-eje="y" style="display:flex;flex-direction:column;gap:4px">${lista.filter(coincide).map((it) => fila(it)).join('') || '<p class="pista">Sin resultados.</p>'}</div>`
+    pintarTodo()
+  }
+  pintarLista()
+  activarDnd(cont, (id, zona, antes) => { guardarSnap(); mover(lista, id, antes, tipo === 'categoria' ? { ambito: zona } : undefined); redibujar() })
+  $('#h-q').addEventListener('input', (e) => { filtro = host.dataset.q = e.target.value; pintarLista() })
+  $('#h-nuevo').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || !e.target.value.trim()) return
+    guardarSnap(); const col = COLORES[(lista.length * 3) % COLORES.length].hex
+    const nuevo = { id: 'n' + Date.now(), nombre: e.target.value.trim(), icono: 'etiqueta', color: tipo === 'categoria' ? null : col, activo: true, gastos: 0, subs: [], ambito: APP.sel.tipo === 'categoria' ? (itemDe('categoria', APP.sel.id)?.ambito ?? 'a1') : 'a1' }
+    const fin = lista.findIndex((x) => x.fijoAlFinal && (tipo !== 'categoria' || x.ambito === nuevo.ambito)); lista.splice(fin >= 0 ? fin : lista.length, 0, nuevo); APP.sel = { tipo, id: nuevo.id }; redibujar()
+  })
+  cont.addEventListener('click', (e) => {
+    const f = e.target.closest('[data-hf]'); if (!f) return
+    const id = f.dataset.id
+    const pt = e.target.closest('[data-punto]')
+    if (pt) { abrirPop(pt, id); return }
+    const rn = e.target.closest('[data-ren]')
+    if (rn) {
+      const it = itemDe(tipo, id), inp = document.createElement('input'); inp.className = 'nom'; inp.value = it.nombre; inp.maxLength = 40; inp.setAttribute('aria-label', 'Nuevo nombre'); rn.replaceWith(inp); inp.focus(); inp.select()
+      const fin = (ok) => { if (ok && inp.value.trim()) { guardarSnap(); it.nombre = inp.value.trim() } redibujar() }
+      inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') fin(true); if (ev.key === 'Escape') fin(false) }); inp.addEventListener('blur', () => fin(true)); return
+    }
+    const del = e.target.closest('[data-del]')
+    if (del && !del.disabled) { guardarSnap(); const antes = historial.pop(); const it = itemDe(tipo, id); lista.splice(lista.indexOf(it), 1); redibujar(); aviso(`«${it.nombre}» eliminado`, () => { Object.assign(DATOS, JSON.parse(antes)); redibujar() }); return }
+    if (!e.target.closest('.sw')) { APP.sel = { tipo, id }; refrescarDetalle(); cont.querySelectorAll('.d-hfila').forEach((r) => r.classList.toggle('foco', r.dataset.id === id)) }
+  })
+  host.addEventListener('keydown', (e) => {
+    if (e.target.matches('input')) return
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    const filas = [...cont.querySelectorAll('.d-hfila .nom')], i = filas.indexOf(document.activeElement); if (i < 0) return
+    e.preventDefault(); filas[Math.max(0, Math.min(filas.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))].focus()
+  })
+  function abrirPop(boton, id) {
+    document.querySelector('.d-pop')?.remove()
+    const it = itemDe(tipo, id), r = boton.getBoundingClientRect(), p = document.createElement('div'); p.className = 'd-pop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', `Color de ${it.nombre}`)
+    p.innerHTML = `<div class="d-qc">${COLORES.map((k) => `<button class="d-sw" style="--k-base:${k.hex}" data-c="${k.hex}" aria-label="${k.nombre}" title="${k.nombre}" aria-pressed="${(it.color || '').toLowerCase() === k.hex.toLowerCase()}"></button>`).join('')}</div>
+      ${tipo === 'categoria' ? `<button class="d-her" data-c="heredar" style="margin-top:8px;width:100%" aria-pressed="${!it.color}">${ui('enlace')} Heredar del ámbito</button>` : ''}`
+    p.style.left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - 248)) + 'px'; p.style.top = window.scrollY + r.bottom + 6 + 'px'
+    document.body.appendChild(p); p.querySelector('[data-c]').focus()
+    const cerrar = () => { p.remove(); document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc2) }
+    const fuera = (ev) => { if (!p.contains(ev.target) && ev.target !== boton) cerrar() }; const esc2 = (ev) => { if (ev.key === 'Escape') { cerrar(); boton.focus() } }
+    document.addEventListener('mousedown', fuera); document.addEventListener('keydown', esc2)
+    p.addEventListener('click', (ev) => { const c = ev.target.closest('[data-c]'); if (!c) return; guardarSnap(); it.color = c.dataset.c === 'heredar' ? null : c.dataset.c; cerrar(); pintarTodo(); refrescarDetalle(); pintarLista() })
+  }
+}
+
+/* ---------- Esqueleto de la página ---------- */
+const RENDER = { B: renderB, D: renderD, E: renderE, F: renderF, G: renderG, H: renderH }
+function cabecera() {
+  const v = VARIANTES.find((x) => x[0] === APP.v)
+  $('#d-vars').innerHTML = VARIANTES.map(([k, n, d]) => `<button class="d-var" data-v="${k}" aria-pressed="${APP.v === k}"><b><span class="l">${k}</span>${n}</b><small>${d}</small></button>`).join('')
+  $('#d-tabs').innerHTML = Object.entries(SEC_NOMBRE).map(([k, n]) => `<button role="tab" aria-selected="${APP.sec === k}" data-sec="${k}">${n}</button>`).join('')
+  const tema = temaActual(); $('#d-tema').innerHTML = tema === 'claro' ? `${ui('luna')} Oscuro` : `${ui('sol')} Claro`
+  document.title = `Propuestas de Catálogo · ${v[1]}`
+}
+function redibujar() {
+  validarSel(); cabecera(); const stage = $('#stage'); stage.innerHTML = ''; stage.style.animation = 'none'; void stage.offsetWidth; stage.style.animation = ''
+  RENDER[APP.v](stage); pintarTodo()
+}
+function iniciar() {
+  document.body.insertAdjacentHTML('afterbegin', `<div class="pagina"><header class="d-cab"><div><h1>Catálogo · propuestas dinámicas</h1><p>Prueba cada una con los mismos datos de ejemplo: cambia colores, ordena, activa, elimina. Nada se guarda; es solo diseño.</p></div>
+    <div class="acc"><button class="btn" id="d-reset">Restablecer datos</button><button class="btn" id="d-tema" aria-label="Cambiar tema"></button></div></header>
+    <nav class="d-vars" id="d-vars" aria-label="Propuestas"></nav>
+    <div class="d-barra"><div class="tabs" id="d-tabs" role="tablist" aria-label="Sección del catálogo"></div></div><section class="d-stage" id="stage" aria-live="polite"></section></div>`)
+  document.addEventListener('click', (e) => {
+    const v = e.target.closest('[data-v]'); if (v) { APP.v = v.dataset.v; redibujar(); return }
+    const s = e.target.closest('[data-sec]'); if (s) { APP.sec = s.dataset.sec; redibujar(); return }
+    if (e.target.closest('#d-tema')) { fijarTema(temaActual() === 'claro' ? 'oscuro' : 'claro'); return }
+    if (e.target.closest('#d-reset')) { Object.assign(DATOS, JSON.parse(DATOS_INICIALES)); historial.length = 0; redibujar(); return }
+    const q = e.target.closest('[data-qc]')
+    if (q) { const it = itemDe(APP.sel.tipo, APP.sel.id); guardarSnap(); it.color = q.dataset.qc === 'heredar' ? null : q.dataset.qc; pintarTodo(); refrescarDetalle(); document.dispatchEvent(new CustomEvent('seleccion')); const lista = $('.d-lista'); if (lista) pintarTodo() }
+  })
+  manejarAcciones($('#stage'), redibujar)
+  document.addEventListener('tema', redibujar)
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (!document.documentElement.dataset.theme) document.dispatchEvent(new CustomEvent('tema')) })
+  redibujar()
+}
+if (document.body) iniciar(); else document.addEventListener("DOMContentLoaded", iniciar)
+
+</script>
