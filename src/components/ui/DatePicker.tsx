@@ -108,7 +108,7 @@ export function DatePicker({ id, value, onChange, formato = 'dd/MM/yyyy', placeh
             e.preventDefault()
             requestAnimationFrame(() => gridRef.current?.querySelector<HTMLButtonElement>('[role="gridcell"][tabindex="0"]')?.focus())
           }}
-          className="z-[80] w-72 rounded-md border border-line bg-surface p-3 shadow-lg" aria-label="Calendario">
+          className="anim-pop z-[80] w-72 rounded-lg border border-line bg-surface p-3 shadow-pop" aria-label="Calendario">
           <div className="mb-2 flex items-center justify-between">
             <button type="button" aria-label="Mes anterior" onClick={() => setView(addMonths(view, -1))} className="grid size-8 place-items-center rounded-md hover:bg-surface-2">
               <ChevronLeft className="size-4" aria-hidden="true" />

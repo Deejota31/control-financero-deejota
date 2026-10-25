@@ -34,14 +34,14 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', chi
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
+        <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content
           onCloseAutoFocus={(e) => {
             e.preventDefault()
             devolverFoco(origen)
           }}
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-line bg-surface shadow-xl',
+            'anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-surface shadow-pop',
             SIZES[size],
           )}
         >
@@ -83,14 +83,14 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-black/50" />
+        <AlertDialog.Overlay className="anim-overlay fixed inset-0 z-[60] bg-black/50 backdrop-blur-[2px]" />
         <AlertDialog.Content
           onOpenAutoFocus={() => setOrigen(document.activeElement as HTMLElement | null)}
           onCloseAutoFocus={(e) => {
             e.preventDefault()
             devolverFoco(origen)
           }}
-          className="fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-lg border border-line bg-surface p-6 shadow-xl">
+          className="anim-dialog fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-line bg-surface p-6 shadow-pop">
           <AlertDialog.Title className="font-display text-lg font-bold">{title}</AlertDialog.Title>
           <AlertDialog.Description asChild>
             <div className="text-sm text-muted">{description}</div>

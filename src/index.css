@@ -18,6 +18,7 @@
   --warn: #8f5400;
   --bad: #b3261e;
   --bad-soft: #f9dedc;
+  --shadow-pop: 0 12px 28px -8px rgba(23, 23, 43, 0.22), 0 2px 8px rgba(23, 23, 43, 0.08);
   --c1: #3a3fa6;
   --c2: #e0622f;
   --c3: #1e8a8a;
@@ -43,6 +44,7 @@
   --warn: #f0b24a;
   --bad: #ff8f86;
   --bad-soft: #3f1b18;
+  --shadow-pop: 0 14px 32px -8px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
   --c1: #9ea3ff;
   --c2: #ff9a73;
   --c3: #5fd0d0;
@@ -70,6 +72,7 @@
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-sans: 'Figtree', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --shadow-pop: var(--shadow-pop);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -85,3 +88,37 @@ body {
   outline: 3px solid var(--pri);
   outline-offset: 2px;
 }
+
+/* ---- Componentes flotantes: entrada discreta y consistente (se desactiva con prefers-reduced-motion) ---- */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.anim-pop:not([data-state='closed']) { animation: pop-in 140ms ease-out; }
+.anim-dialog:not([data-state='closed']) { animation: dialog-in 160ms ease-out; }
+.anim-overlay:not([data-state='closed']) { animation: overlay-in 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-pop, .anim-dialog, .anim-overlay { animation: none; }
+}
+
+/* Notificaciones (sonner) con la paleta y la sombra del sistema */
+[data-sonner-toast] {
+  border-radius: 12px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--fg) !important;
+  box-shadow: var(--shadow-pop) !important;
+  font-family: var(--font-sans) !important;
+}
+[data-sonner-toast][data-type='success'] { border-left: 4px solid var(--ok) !important; }
+[data-sonner-toast][data-type='error'] { border-left: 4px solid var(--bad) !important; }
+[data-sonner-toast][data-type='warning'] { border-left: 4px solid var(--warn) !important; }
+[data-sonner-toast] [data-description] { color: var(--muted) !important; }

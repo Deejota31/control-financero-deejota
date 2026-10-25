@@ -108,7 +108,7 @@ export function Combobox({
             align="start"
             sideOffset={4}
             aria-label={`Opciones: ${placeholder}`}
-            className="z-[80] w-[var(--radix-popover-trigger-width)] min-w-56 rounded-md border border-line bg-surface p-1 shadow-lg"
+            className="anim-pop z-[80] w-[var(--radix-popover-trigger-width)] min-w-56 rounded-lg border border-line bg-surface p-1.5 shadow-pop"
           >
             {searchable && (
               <div className="flex items-center gap-2 border-b border-line px-2 pb-1.5 pt-1">

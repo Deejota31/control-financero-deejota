@@ -644,8 +644,26 @@ isOneToOne: false
 "current_household_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
-"dashboard_resumen":
-{ Args: { "p_desde": string,"p_hasta": string,"p_prev_desde": string,"p_prev_hasta": string }; Returns: Json
+"dashboard_panel":
+{ Args: { "p_ambito"?: string,"p_categoria"?: string,"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: string,"p_tipo"?: string }; Returns: Json
+                           },
+"dev_amb":
+{ Args: { "hid": string,"n": string }; Returns: string
+                           },
+"dev_cat":
+{ Args: { "a": string,"hid": string,"n": string }; Returns: string
+                           },
+"dev_med":
+{ Args: { "hid": string,"n": string }; Returns: string
+                           },
+"dev_reset_user":
+{ Args: { "p_email": string,"p_nombre": string,"p_password": string,"p_uid": string }; Returns: undefined
+                           },
+"dev_seed_user":
+{ Args: { "p_email": string,"p_nombre": string,"p_password": string,"p_uid": string }; Returns: undefined
+                           },
+"dev_sub":
+{ Args: { "a": string,"c": string,"hid": string,"n": string }; Returns: string
                            },
 "ensure_period":
 { Args: { "hid": string,"p_date": string }; Returns: string

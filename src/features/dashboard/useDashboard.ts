@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import type { FiltrosDashboard } from '@/domain/filtrosCruzados'
+import type { FondoPanel } from '@/domain/presupuesto'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 
@@ -8,36 +10,56 @@ export interface AgrupadoSql {
   cantidad: number
 }
 
-export interface ResumenDashboard {
+export interface PanelDashboard {
+  /** Con todos los filtros cruzados. */
   total: number
   cantidad: number
+  dias_con_gasto: number
+  mayor: { id: string; description: string; amount: number; expense_date: string } | null
+  recientes: { id: string; expense_date: string; description: string; amount: number; categoria_id: string; created_at: string }[]
   total_prev: number
   cantidad_prev: number
-  /** null cuando el rango no toca ningún período con presupuesto. */
-  presupuesto: number | null
-  serie: { fecha: string; monto: number }[]
+  serie: { fecha: string; monto: number; cantidad: number }[]
   por_ambito: AgrupadoSql[]
   por_categoria: AgrupadoSql[]
   por_subcategoria: AgrupadoSql[]
-  recientes: { id: string; expense_date: string; description: string; amount: number; categoria_id: string; created_at: string }[]
-  fondos: { fund_id: string; nombre: string; es_general: boolean; prioridad: number; asignado: number; consumido: number }[]
+  /** Presupuesto, gasto del rango y fondos: no dependen de los filtros cruzados. */
+  presupuesto: number | null
+  gasto_rango: number
+  imputado_rango: number
+  sin_fondo: number
+  fondos_periodo: number
+  fondos: FondoPanel[]
   excedente: number
 }
 
 /**
- * KPIs, series y distribuciones calculados en PostgreSQL para el rango pedido: incluyen todos los gastos,
- * sin depender del límite de filas del API. Las listas cortas (recientes) son listas, no métricas.
+ * Una única consulta alimenta KPIs, gráficos, presupuesto y recientes: no puede haber diferencias entre ellos.
+ * La clave incluye todos los filtros: al cambiarlos, TanStack Query cancela la petición anterior y una respuesta
+ * vieja nunca sobrescribe a una reciente. Mientras llega la nueva se conserva la vista anterior (sin parpadeos).
  */
-export function useResumenDashboard(desde: string, hasta: string, prev: { desde: string; hasta: string }, habilitado = true) {
+export function useDashboardPanel(f: FiltrosDashboard, prev: { desde: string; hasta: string }, habilitado = true) {
   return useQuery({
-    queryKey: ['dashboard', 'resumen', desde, hasta, prev.desde, prev.hasta],
+    queryKey: ['dashboard', 'panel', f, prev],
     enabled: habilitado,
+    placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
-        .rpc('dashboard_resumen', { p_desde: desde, p_hasta: hasta, p_prev_desde: prev.desde, p_prev_hasta: prev.hasta })
+        .rpc('dashboard_panel', {
+          p_desde: f.desde,
+          p_hasta: f.hasta,
+          p_prev_desde: prev.desde,
+          p_prev_hasta: prev.hasta,
+          p_ambito: f.ambito || undefined,
+          p_categoria: f.categoria || undefined,
+          p_subcategoria: f.subcategoria || undefined,
+          p_medio: f.medio || undefined,
+          p_tipo: f.tipo || undefined,
+          p_dia: f.dia || undefined,
+        })
         .abortSignal(signal)
       if (error) throw error
-      return data as unknown as ResumenDashboard
+      return data as unknown as PanelDashboard
     },
   })
 }

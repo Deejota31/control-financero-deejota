@@ -33,7 +33,7 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}', true);
 
 create temp table r on commit drop as
-select public.dashboard_resumen(
+select public.dashboard_panel(
   date_trunc('month', current_date)::date,
   (date_trunc('month', current_date) + interval '1 month - 1 day')::date,
   (date_trunc('month', current_date) - interval '1 month')::date,
@@ -51,12 +51,12 @@ select is((select (j ->> 'total_prev')::numeric from r), 0::numeric, 'sin gasto 
 select is((select (j -> 'presupuesto') = 'null'::jsonb from r), true, 'sin períodos no hay presupuesto (null, no 0 inventado)');
 
 -- Un rango invertido se rechaza
-select throws_ok($$select public.dashboard_resumen(current_date, current_date - 1, current_date, current_date)$$, '22023', null, 'rechaza rangos invertidos');
+select throws_ok($$select public.dashboard_panel(current_date, current_date - 1, current_date, current_date)$$, '22023', null, 'rechaza rangos invertidos');
 
 -- Anónimo
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select throws_ok($$select public.dashboard_resumen(current_date, current_date, current_date, current_date)$$, '42501', null, 'anon no puede pedir el resumen');
+select throws_ok($$select public.dashboard_panel(current_date, current_date, current_date, current_date)$$, '42501', null, 'anon no puede pedir el resumen');
 
 select * from finish();
 rollback;

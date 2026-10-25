@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
+import { HintProvider } from '@/components/ui/Hint'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RecoverPage } from '@/features/auth/RecoverPage'
@@ -22,7 +23,7 @@ const queryClient = new QueryClient({
 
 function Notificaciones() {
   const { tema } = useTema()
-  return <Toaster richColors position="top-right" theme={tema === 'oscuro' ? 'dark' : 'light'} />
+  return <Toaster position="top-right" closeButton theme={tema === 'oscuro' ? 'dark' : 'light'} />
 }
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
+            <HintProvider>
             <Routes>
               <Route element={<PublicOnly />}>
                 <Route path="/acceso" element={<LoginPage />} />
@@ -53,6 +55,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Notificaciones />
+            </HintProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>
