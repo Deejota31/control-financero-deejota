@@ -96,7 +96,7 @@ test.describe('con el usuario demo local', () => {
   test('guarda el perfil en Supabase y lo recupera tras recargar', async ({ page }) => {
     await iniciarSesion(page)
     await page.getByRole('link', { name: 'Configuración' }).first().click()
-    const nombre = page.getByLabel('Nombre')
+    const nombre = page.getByLabel('Nombre', { exact: true })
     await expect(nombre).toBeVisible()
     await nombre.fill('Perfil Prueba E2E')
     await page.getByLabel('Formato de fecha').selectOption('yyyy-MM-dd')
@@ -104,11 +104,11 @@ test.describe('con el usuario demo local', () => {
     await expect(page.getByText('Perfil guardado.')).toBeVisible()
 
     await page.reload()
-    await expect(page.getByLabel('Nombre')).toHaveValue('Perfil Prueba E2E')
+    await expect(page.getByLabel('Nombre', { exact: true })).toHaveValue('Perfil Prueba E2E')
     await expect(page.getByLabel('Formato de fecha')).toHaveValue('yyyy-MM-dd')
 
     // restaurar valores de demo
-    await page.getByLabel('Nombre').fill('Usuario Demo')
+    await page.getByLabel('Nombre', { exact: true }).fill('Usuario Demo')
     await page.getByLabel('Formato de fecha').selectOption('dd/MM/yyyy')
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
     await expect(page.getByText('Perfil guardado.').first()).toBeVisible()
@@ -117,6 +117,10 @@ test.describe('con el usuario demo local', () => {
   test('el tema claro/oscuro cambia, se guarda en el perfil y persiste', async ({ page }) => {
     await iniciarSesion(page)
     const html = page.locator('html')
+    await page.waitForLoadState('networkidle') // el perfil ya aplicó su tema
+    // Parte siempre del tema claro, sea cual sea el estado guardado en el perfil
+    if ((await html.getAttribute('data-theme')) === 'dark') await page.getByRole('button', { name: 'Cambiar a tema claro' }).click()
+    await expect(html).toHaveAttribute('data-theme', 'light')
     await page.getByRole('button', { name: 'Cambiar a tema oscuro' }).click()
     await expect(html).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(15, 15, 28)')

@@ -20,3 +20,7 @@
 | ProyecciÃ³n de cierre y ritmo ideal | Se muestran como estimaciones. |
 | Sin conversiÃ³n USD | El prompt original no permite inventar tipos de cambio. |
 | Flujo de medios de pago (Sankey) | Pedido posterior del usuario; sustituye la exclusiÃ³n del prompt original. |
+| Dashboard sin gráfico por medios de pago | El último prompt lo excluye de nuevo (el Sankey de la referencia no se implementó). |
+| Comparación con el mes calendario anterior | Si el rango es un mes completo se compara con el mes previo; si no, con un rango de igual duración. |
+| Reordenar prioridad con simulación | eorder_funds admite dry-run: se explica el efecto antes de aplicar. |
+| Foco al cerrar diálogos | Modal devuelve el foco al control que lo abrió. |

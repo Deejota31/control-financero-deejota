@@ -104,9 +104,6 @@ export function Combobox({
           <Popover.Content
             align="start"
             sideOffset={4}
-            onOpenAutoFocus={(e) => {
-              if (!searchable) e.preventDefault()
-            }}
             className="z-[80] w-[var(--radix-popover-trigger-width)] min-w-56 rounded-md border border-line bg-surface p-1 shadow-lg"
           >
             {searchable && (
@@ -128,7 +125,7 @@ export function Combobox({
                 />
               </div>
             )}
-            <ul id={listId} ref={listRef} role="listbox" tabIndex={searchable ? -1 : 0} onKeyDown={searchable ? undefined : onKeyDown} className="max-h-64 overflow-y-auto pt-1">
+            <ul id={listId} ref={listRef} role="listbox" tabIndex={searchable ? -1 : 0} aria-activedescendant={!searchable && filtered[active] ? `${listId}-${filtered[active].value}` : undefined} aria-label={placeholder} onKeyDown={searchable ? undefined : onKeyDown} className="max-h-64 overflow-y-auto pt-1">
               {filtered.length === 0 && <li className="px-3 py-2 text-sm text-muted">{emptyText}</li>}
               {filtered.map((o, i) => {
                 const isSel = o.value === value

@@ -1,7 +1,7 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from './Button'
 
@@ -18,11 +18,17 @@ const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl'
 
 /** Diálogo modal accesible. Se muestra sobre la página de origen para conservar el contexto. */
 export function Modal({ open, onOpenChange, title, description, size = 'md', children }: ModalProps) {
+  // Al cerrar, el foco vuelve al control que abrió el diálogo (se monta al abrir).
+  const [origen] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
         <Dialog.Content
+          onCloseAutoFocus={(e) => {
+            e.preventDefault()
+            origen?.focus()
+          }}
           className={cn(
             'fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-line bg-surface shadow-xl',
             SIZES[size],

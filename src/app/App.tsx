@@ -12,9 +12,9 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { FondosPage } from '@/features/fondos/FondosPage'
 import { GastosPage } from '@/features/gastos/GastosPage'
 import { ConfiguracionPage } from '@/features/perfil/ConfiguracionPage'
+import { SaludPage } from '@/features/salud/SaludPage'
 import { ThemeProvider, useTema } from '@/features/tema/ThemeProvider'
 import { AppLayout } from './AppLayout'
-import { ModuloPendiente } from './ModuloPendiente'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -45,7 +45,7 @@ export function App() {
                   <Route path="gastos" element={<GastosPage />} />
                   <Route path="fondos" element={<FondosPage />} />
                   <Route path="catalogo" element={<CatalogoPage />} />
-                  <Route path="salud" element={<ModuloPendiente nombre="Salud financiera" descripcion="Disponible, tendencias y compromisos mensuales." />} />
+                  <Route path="salud" element={<SaludPage />} />
                   <Route path="configuracion" element={<ConfiguracionPage />} />
                 </Route>
               </Route>

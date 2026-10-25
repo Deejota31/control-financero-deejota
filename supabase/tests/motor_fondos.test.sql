@@ -89,6 +89,13 @@ select lives_ok($$select public.create_expense(th.exp(date_trunc('month', curren
 select is((public.create_expense(th.exp(date_trunc('month', current_date)::date + 4, 10, 'Idem', 'Personal', 'Ocio', 'Salidas', 'Yape'), '00000000-0000-0000-0000-0000000000a1') ->> 'replayed')::boolean, true, 'el reintento con la misma clave se reconoce');
 select is((select count(*)::int from public.expenses where description = 'Idem'), 1, 'el reintento no duplica el gasto');
 
+-- Prioridad: la simulación informa el efecto y no persiste
+select is((public.reorder_funds(array[(select id from public.funds where name = 'Hogar 2'), (select id from public.funds where name = 'Hogar 1')], true) ->> 'changed_expenses')::int > 0, true, 'invertir la prioridad cambia la imputación de gastos');
+select is((select priority from public.funds where name = 'Hogar 1'), 10, 'la simulación de prioridad no se persiste');
+select lives_ok($$select public.reorder_funds(array[(select id from public.funds where name = 'Hogar 2'), (select id from public.funds where name = 'Hogar 1')])$$, 'aplica el nuevo orden');
+select is((select priority from public.funds where name = 'Hogar 2'), 10, 'Hogar 2 pasa a prioridad 10');
+select lives_ok($$select public.reorder_funds(array[(select id from public.funds where name = 'Hogar 1'), (select id from public.funds where name = 'Hogar 2')])$$, 'restaura el orden original');
+
 -- Cambiar reglas: simulación y efecto
 select is((public.save_fund(jsonb_build_object('id', (select id from public.funds where is_general), 'scope_rules', jsonb_build_array(jsonb_build_object('kind', 'ambito', 'ref', th.kid('amb:Personal'), 'effect', 'include'))), true) ->> 'changed_expenses')::int > 0, true, 'la simulación informa cuántos gastos cambian');
 select is((select count(*)::int from public.fund_scope_rules where fund_id = (select id from public.funds where is_general)), 0, 'la simulación no modifica las reglas');

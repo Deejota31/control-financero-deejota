@@ -139,7 +139,7 @@ export function DashboardPage() {
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Dashboard</h1>
+          <h1 className="sr-only">Dashboard</h1>
           <p className="text-sm text-muted">{etiquetaPeriodo} · todos los ámbitos y medios de pago</p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -249,9 +249,9 @@ export function DashboardPage() {
                       <li key={t.id}>
                         <button type="button" onClick={() => irAGastos(topModo === 'categorias' ? { categoria: t.id } : { categoria: sub!.categoria_id, subcategoria: t.id })} className="flex w-full items-center gap-3 rounded-md p-1 text-left hover:bg-surface-2">
                           <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={item?.icon_key} color={color} /></span>
-                          <span className="w-32 shrink-0 truncate font-medium">{item?.name}</span>
-                          <span className="h-3 min-w-16 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full" style={{ width: `${(t.total / top[0].total) * 100}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${colorVar(color)} 55%, transparent), ${colorVar(color)})` }} /></span>
-                          <span className="w-28 shrink-0 text-right"><span className="num block font-medium">{formatSoles(t.total)}</span><span className="num block text-xs text-muted">{((t.total / totalGasto) * 100).toFixed(1)}% · {t.cantidad} mov.</span></span>
+                          <span className="w-24 shrink-0 sm:w-32"><span className="block truncate font-medium">{item?.name}</span><span className="block truncate text-xs text-muted">{cat ? catalogo.ambitos.find((a) => a.id === cat.ambito_id)?.name : catalogo.categorias.find((c) => c.id === sub?.categoria_id)?.name}</span></span>
+                          <span className="h-3 min-w-8 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full" style={{ width: `${(t.total / top[0].total) * 100}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${colorVar(color)} 55%, transparent), ${colorVar(color)})` }} /></span>
+                          <span className="w-24 shrink-0 text-right sm:w-28"><span className="num block font-medium">{formatSoles(t.total)}</span><span className="num block text-xs text-muted">{((t.total / totalGasto) * 100).toFixed(1)}% · {t.cantidad} mov.</span></span>
                         </button>
                       </li>
                     )

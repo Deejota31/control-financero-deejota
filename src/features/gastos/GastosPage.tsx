@@ -134,7 +134,7 @@ export function GastosPage() {
     <div className="mx-auto flex max-w-[1400px] flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold">Gastos</h1>
+          <h1 className="sr-only">Gastos</h1>
           <p className="text-sm text-muted" aria-live="polite">{q.isPending ? 'Cargando…' : `${total} ${total === 1 ? 'movimiento' : 'movimientos'} con los filtros aplicados`}</p>
         </div>
         <div className="flex flex-wrap gap-2">
