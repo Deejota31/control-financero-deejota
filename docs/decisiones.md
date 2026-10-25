@@ -23,7 +23,7 @@
 | Comparación con el mes calendario anterior | Si el rango es un mes completo se compara con el mes previo; si no, con un rango de igual duración. |
 | Reordenar prioridad con simulación | `reorder_funds` admite dry-run: se explica el efecto antes de aplicar. |
 | Foco al cerrar diálogos | `Modal` devuelve el foco al control que lo abrió. |
-| Agregaciones del Dashboard en SQL | `dashboard_resumen`: ningún KPI depende del límite de 1000 filas del API. |
+| Agregaciones del Dashboard en SQL | `dashboard_panel` (antes `dashboard_resumen`): ningún KPI depende del límite de 1000 filas del API. |
 | `leerTodo` falla en lugar de truncar | Toda lectura que alimenta una cifra verifica el total declarado por el servidor. |
 | Limpieza compensatoria de comprobantes | Intención previa + borrado tras fallo + tareas reintentables; nunca se borra un archivo en uso. |
 | Usuario E2E propio y reinicio por prueba | `dev_reset_user` (solo local, en `seed.sql`) aísla las pruebas del seed demo. |

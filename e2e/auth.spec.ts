@@ -100,19 +100,19 @@ test.describe('con el usuario demo local', () => {
     const nombre = page.getByLabel('Nombre', { exact: true })
     await expect(nombre).toBeVisible()
     await nombre.fill('Perfil Prueba E2E')
-    await page.getByLabel('Formato de fecha').selectOption('yyyy-MM-dd')
+    await page.getByRole('radio', { name: /Año-mes-día/ }).click()
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
-    await expect(page.getByText('Perfil guardado.')).toBeVisible()
+    await expect(page.getByText('Cambios guardados')).toBeVisible()
 
     await page.reload()
     await expect(page.getByLabel('Nombre', { exact: true })).toHaveValue('Perfil Prueba E2E')
-    await expect(page.getByLabel('Formato de fecha')).toHaveValue('yyyy-MM-dd')
+    await expect(page.getByRole('radio', { name: /Año-mes-día/ })).toHaveAttribute('aria-checked', 'true')
 
     // restaurar valores de demo
     await page.getByLabel('Nombre', { exact: true }).fill('Usuario Demo')
-    await page.getByLabel('Formato de fecha').selectOption('dd/MM/yyyy')
+    await page.getByRole('radio', { name: /Día . mes . año/ }).click()
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
-    await expect(page.getByText('Perfil guardado.').first()).toBeVisible()
+    await expect(page.getByText('Cambios guardados')).toBeVisible()
   })
 
   test('el tema claro/oscuro cambia, se guarda en el perfil y persiste', async ({ page }) => {
@@ -136,6 +136,7 @@ test.describe('con el usuario demo local', () => {
   test('la validación de contraseña nueva funciona en Configuración', async ({ page }) => {
     await iniciarSesion(page)
     await page.getByRole('link', { name: 'Configuración' }).first().click()
+    await page.getByRole('tab', { name: /^Cuenta y seguridad/ }).click()
     await page.getByLabel('Contraseña nueva').fill('corta')
     await page.getByLabel('Repite la contraseña').fill('otra')
     await page.getByRole('button', { name: 'Cambiar contraseña' }).click()

@@ -172,11 +172,12 @@ test.describe('Gastos', () => {
 
     // ordenar por importe ascendente
     await page.getByRole('button', { name: /^Importe/ }).click()
+    await expect(page).toHaveURL(/orden=monto/) // el segundo clic debe ver ya el estado nuevo
     await page.getByRole('button', { name: /^Importe/ }).click()
-    await expect(page).toHaveURL(/orden=monto/)
     await expect(page).toHaveURL(/dir=asc/)
     await expect(page.getByText(/Página 1 de/)).toBeVisible()
 
+    await page.waitForLoadState('networkidle') // la tabla ya muestra el orden nuevo, no los datos previos
     // selección múltiple y exportación de la selección
     await page.getByRole('checkbox', { name: /^Seleccionar / }).nth(1).check()
     await page.getByRole('checkbox', { name: /^Seleccionar / }).nth(2).check()

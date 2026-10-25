@@ -42,6 +42,7 @@ test.describe('restablecimiento de contraseña (Mailpit local)', () => {
 
     // Restaurar la contraseña original desde Configuración.
     await page.getByRole('link', { name: 'Configuración' }).first().click()
+    await page.getByRole('tab', { name: /^Cuenta y seguridad/ }).click()
     await page.getByLabel('Contraseña nueva').fill(password!)
     await page.getByLabel('Repite la contraseña').fill(password!)
     await page.getByRole('button', { name: 'Cambiar contraseña' }).click()

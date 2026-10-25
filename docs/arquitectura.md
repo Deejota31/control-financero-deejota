@@ -33,7 +33,7 @@ Ver [reglas-fondos.md](reglas-fondos.md). Códigos de error propios `GD001`…`G
 
 PostgREST recorta cada respuesta en `max_rows` (1000) **sin avisar**. Reglas del proyecto:
 
-- Los KPIs y gráficos del Dashboard se calculan **en PostgreSQL** con `dashboard_resumen` (total, cantidad, serie diaria, distribución por ámbito/categoría/subcategoría, fondos, excedente) para el período y su comparativo. Incluyen todos los registros.
+- Los KPIs y gráficos del Dashboard se calculan **en PostgreSQL** con `dashboard_panel` (total, cantidad, serie diaria, distribución por ámbito/categoría/subcategoría, recientes, fondos, excedente) para el período, su comparativo y los filtros cruzados (ámbito, categoría, subcategoría, medio, tipo, día). Incluyen todos los registros.
 - Cualquier otra lectura que alimente una cifra (Fondos, Salud, estado de plantillas, exportaciones) usa `leerTodo`: pagina hasta agotar la consulta y **falla** si el servidor entrega menos de lo que declara (`ResultadoIncompletoError`), en lugar de devolver datos parciales.
 - La tabla de gastos sigue paginada en servidor, con total exacto y desempate único por `id` en el orden (sin él, filas con la misma fecha y `created_at` podían repetirse u omitirse entre páginas).
 - Las listas cortas (6 gastos recientes) son listas, no métricas.

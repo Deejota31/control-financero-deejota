@@ -56,7 +56,7 @@ const ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
 const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
 const ant = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
 const antFin = new Date(hoy.getFullYear(), hoy.getMonth(), 0)
-const r = await fetch(`${URL_API}/rest/v1/rpc/dashboard_resumen`, {
+const r = await fetch(`${URL_API}/rest/v1/rpc/dashboard_panel`, {
   method: 'POST',
   headers: { ...h, 'Content-Type': 'application/json' },
   body: JSON.stringify({ p_desde: iso(ini), p_hasta: iso(fin), p_prev_desde: iso(ant), p_prev_hasta: iso(antFin) }),
