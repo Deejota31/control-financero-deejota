@@ -98,16 +98,17 @@ body {
   from { opacity: 0; transform: translateY(-4px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* El diálogo se centra con la propiedad `translate` (Tailwind v4); aquí solo se anima `transform`, sin mover el centro. */
 @keyframes dialog-in {
-  from { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 @keyframes overlay-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 .anim-pop:not([data-state='closed']) { animation: pop-in 140ms ease-out; }
-.anim-dialog:not([data-state='closed']) { animation: dialog-in 160ms ease-out; }
+.anim-dialog:not([data-state='closed']) { animation: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .anim-overlay:not([data-state='closed']) { animation: overlay-in 160ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .anim-pop, .anim-dialog, .anim-overlay { animation: none; }

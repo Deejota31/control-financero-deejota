@@ -283,6 +283,43 @@ test.describe('Fondos presupuestales', () => {
     expect(sqlLocal(`select count(*) from public.funds where household_id = ${HID} and name = '${nombre}'`)).toBe('1')
   })
 
+test('el diálogo de fondo tiene altura fija (al desplegar ámbitos no crece) y todos los diálogos aparecen centrados sin saltar', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await iniciarSesion(page)
+    await page.getByRole('link', { name: 'Fondos' }).first().click()
+    // Muestrea el centro del diálogo durante la animación de entrada
+    await page.evaluate(() => {
+      const w = window as unknown as { __centros: { x: number; y: number }[] }
+      w.__centros = []
+      const t0 = performance.now()
+      const tick = () => {
+        const d = document.querySelector('[role="dialog"]')
+        if (d) { const r = d.getBoundingClientRect(); w.__centros.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 }) }
+        if (performance.now() - t0 < 900) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    })
+    await page.getByRole('button', { name: 'Nuevo fondo' }).click()
+    const d = page.getByRole('dialog', { name: 'Nuevo fondo' })
+    await expect(d).toBeVisible()
+    await page.waitForTimeout(700)
+    const centros = await page.evaluate(() => (window as unknown as { __centros: { x: number; y: number }[] }).__centros)
+    expect(centros.length).toBeGreaterThan(3)
+    for (const c of centros) {
+      expect(Math.abs(c.x - 720), 'centro horizontal').toBeLessThanOrEqual(3)
+      expect(Math.abs(c.y - 450), 'centro vertical').toBeLessThanOrEqual(6) // sin partir de arriba ni saltar
+    }
+    const alto = async () => Math.round((await d.boundingBox())!.height)
+    const h0 = await alto()
+    for (const ambito of ['Personal', 'Trabajo', 'Pareja']) {
+      const fila = d.getByRole('button', { name: ambito, exact: true })
+      if (await fila.count()) await fila.first().click()
+    }
+    expect(await alto()).toBe(h0) // desplegar ámbitos y categorías no agranda el diálogo
+    expect(h0).toBeLessThanOrEqual(900 * 0.92)
+    expect(await d.evaluate((e) => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1)
+  })
+
   test('en móvil la tabla pasa a tarjetas compactas sin desborde y con las acciones disponibles', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await iniciarSesion(page)
