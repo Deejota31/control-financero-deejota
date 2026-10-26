@@ -115,14 +115,14 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
         <div id={idBloque} role="group" aria-label="Explorador de íconos" data-captura-escape onKeyDown={teclas}
           className="flex h-[clamp(260px,40vh,320px)] flex-col overflow-hidden rounded-lg border border-line bg-surface-2/40">
           <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-2">
-            <label className="flex min-w-0 flex-1 basis-40 items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 focus-within:border-pri">
+            <label className="flex min-w-0 flex-1 basis-28 items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 focus-within:border-pri">
               <Search className="size-4 shrink-0 text-muted" aria-hidden="true" />
               <input ref={busquedaRef} value={consulta} onChange={(e) => setConsulta(e.target.value)} placeholder="Buscar ícono…" aria-label="Buscar ícono" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
               {consulta && <button type="button" aria-label="Borrar búsqueda" onClick={() => { setConsulta(''); busquedaRef.current?.focus() }} className="text-muted hover:text-fg"><X className="size-3.5" aria-hidden="true" /></button>}
             </label>
             <label className="flex items-center gap-1.5 text-sm">
-              <span className="sr-only sm:not-sr-only text-muted">Sección</span>
-              <select value={vista} onChange={(e) => setVista(e.target.value)} aria-label="Sección de íconos" className="max-w-44 rounded-md border border-line bg-surface px-2 py-1.5 text-sm">
+              <span className="sr-only">Sección</span>
+              <select value={vista} onChange={(e) => setVista(e.target.value)} aria-label="Sección de íconos" className="max-w-40 rounded-md border border-line bg-surface px-2 py-1.5 text-sm">
                 <option value="sugeridos">Sugeridos</option>
                 <option value="todos">Todos</option>
                 {SECCIONES_ICONOS.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
