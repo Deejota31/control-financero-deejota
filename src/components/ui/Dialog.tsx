@@ -1,6 +1,7 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
+import * as Popover from '@radix-ui/react-popover'
+import { Info, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from './Button'
@@ -11,6 +12,8 @@ interface ModalProps {
   title: string
   description?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  /** Explicación breve que se abre desde un icono de información junto a la X. */
+  ayuda?: ReactNode
   children: ReactNode
 }
 
@@ -28,7 +31,7 @@ function devolverFoco(origen: HTMLElement | null) {
 const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }
 
 /** Diálogo modal accesible. Se muestra sobre la página de origen para conservar el contexto. */
-export function Modal({ open, onOpenChange, title, description, size = 'md', children }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, size = 'md', ayuda, children }: ModalProps) {
   // Al cerrar, el foco vuelve al control que abrió el diálogo (se monta al abrir).
   const [origen] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
   return (
@@ -56,9 +59,24 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', chi
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
             </div>
-            <Dialog.Close aria-label="Cerrar" className="grid size-8 shrink-0 place-items-center rounded-md hover:bg-surface-2">
-              <X className="size-4" aria-hidden="true" />
-            </Dialog.Close>
+            <div className="flex shrink-0 items-center gap-1">
+              {ayuda && (
+                <Popover.Root>
+                  <Popover.Trigger aria-label="Ayuda: cómo funciona" className="grid size-8 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-pri">
+                    <Info className="size-4" aria-hidden="true" />
+                  </Popover.Trigger>
+                  <Popover.Portal>
+                    <Popover.Content align="end" sideOffset={6} onEscapeKeyDown={(e) => e.stopPropagation()} className="z-[80] w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-surface p-3 text-sm shadow-pop">
+                      {ayuda}
+                      <Popover.Arrow className="fill-surface" />
+                    </Popover.Content>
+                  </Popover.Portal>
+                </Popover.Root>
+              )}
+              <Dialog.Close aria-label="Cerrar" className="grid size-8 shrink-0 place-items-center rounded-md hover:bg-surface-2">
+                <X className="size-4" aria-hidden="true" />
+              </Dialog.Close>
+            </div>
           </div>
           <div className="overflow-y-auto px-6 py-5">{children}</div>
         </Dialog.Content>

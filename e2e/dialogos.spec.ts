@@ -85,3 +85,17 @@ test.describe('Diálogos: el borde de foco no se recorta', () => {
     await revisar(page, 'Nueva categoría')
   })
 })
+
+test('Fondos: la explicación de reglas está tras un icono de información junto a la X', async ({ page }) => {
+  test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
+  await iniciarSesion(page)
+  await page.getByRole('link', { name: 'Fondos' }).first().click()
+  await page.getByRole('button', { name: 'Nuevo fondo' }).click()
+  const d = page.getByRole('dialog')
+  await expect(d.getByText('Cómo se aplican las reglas')).toHaveCount(0)
+  await d.getByRole('button', { name: 'Ayuda: cómo funciona' }).click()
+  await expect(page.getByText('la exclusión gana')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('la exclusión gana')).toHaveCount(0)
+  await expect(d).toBeVisible()
+})
