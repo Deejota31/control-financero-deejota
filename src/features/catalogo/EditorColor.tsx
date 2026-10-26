@@ -21,7 +21,6 @@ interface Props {
 export function EditorColor({ valor, onChange, ambito }: Props) {
   const [avanzado, setAvanzado] = useState(false)
   const hereda = valor.modo === 'inherit' && Boolean(ambito)
-  const enPaleta = PALETA.some((c) => c.hex === valor.hex)
 
   return (
     <div className="flex flex-col gap-3">
@@ -44,24 +43,25 @@ export function EditorColor({ valor, onChange, ambito }: Props) {
         <Avanzado valor={valor} onChange={(hex) => onChange({ hex, modo: 'own' })} onVolver={() => setAvanzado(false)} />
       ) : (
         <>
-          <div role="radiogroup" aria-label="Paleta de colores" className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+          <div role="radiogroup" aria-label="Paleta de colores" className="flex flex-wrap gap-1.5">
             {PALETA.map((c) => {
               const on = valor.hex === c.hex
               return (
                 <button key={c.hex} type="button" role="radio" aria-checked={on} aria-label={`${c.nombre} ${c.hex}`} title={`${c.nombre} · ${c.hex}`}
                   onClick={() => onChange({ hex: c.hex, modo: 'own' })}
-                  className={cn('grid aspect-square place-items-center rounded-lg border-2 border-transparent text-white transition-transform hover:scale-110', on && 'outline-2 outline-offset-2 outline-fg')}
+                  className={cn('grid size-7 place-items-center rounded-md border-2 border-transparent text-white transition-transform hover:scale-110', on && 'outline-2 outline-offset-1 outline-fg')}
                   style={{ background: c.hex }}>
-                  {on && <Check className="size-4 stroke-[3]" aria-hidden="true" />}
+                  {on && <Check className="size-3.5 stroke-[3]" aria-hidden="true" />}
                 </button>
               )
             })}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="text-sm">Color: <b>{nombreDeColor(valor.hex)}</b> <code className="num rounded bg-surface-2 px-1.5 py-0.5 text-xs">{valor.hex}</code></span>
             <button type="button" onClick={() => setAvanzado(true)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-pri hover:underline">
               <Droplet className="size-4" aria-hidden="true" /> Color personalizado (HEX / RGB)…
             </button>
-            {!enPaleta && <span className="text-sm text-muted">Personalizado activo: <code className="num rounded bg-surface-2 px-1.5 py-0.5 text-xs">{valor.hex}</code></span>}
+            
           </div>
         </>
       )}

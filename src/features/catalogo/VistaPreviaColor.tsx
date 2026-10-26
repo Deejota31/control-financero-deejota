@@ -12,7 +12,7 @@ export function VistaPreviaColor({ elementos, actualId }: { elementos: ElementoP
   const actual = elementos.find((e) => e.id === actualId) ?? elementos[0]
   if (!actual) return null
   return (
-    <section aria-label="Vista previa del color" className="flex flex-col gap-3 xl:sticky xl:top-4">
+    <section aria-label="Vista previa del color" className="grid gap-2.5 sm:grid-cols-2 xl:sticky xl:top-4 xl:grid-cols-1">
       {(['claro', 'oscuro'] as Tema[]).map((tema) => (
         <Panel key={tema} tema={tema} elementos={elementos} actual={actual} />
       ))}
@@ -31,7 +31,7 @@ function Panel({ tema, elementos, actual }: { tema: Tema; elementos: ElementoPre
   const parte = C / Math.max(1, elementos.length)
 
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border p-3 text-xs" style={{ background: fondo, color: texto, borderColor: borde }}>
+    <div className="flex min-w-0 flex-col gap-2 rounded-xl border p-2.5 text-xs" style={{ background: fondo, color: texto, borderColor: borde }}>
       <p className="font-bold uppercase tracking-wider opacity-70">Tema {tema}</p>
       <div className="flex items-center gap-2.5">
         <span className="grid size-9 shrink-0 place-items-center rounded-[10px] border" style={{ background: a.suave, borderColor: a.borde, color: a.icono }}>{createElement(iconFor(actual.icono), { className: 'size-4', 'aria-hidden': true })}</span>
@@ -39,19 +39,19 @@ function Panel({ tema, elementos, actual }: { tema: Tema; elementos: ElementoPre
         <span className="rounded-full border px-2 py-0.5 font-semibold" style={{ background: a.suave, borderColor: a.borde, color: a.texto }}>Etiqueta</span>
       </div>
       <div className="flex items-center gap-3">
-        <svg viewBox="0 0 100 100" className="size-24 shrink-0" role="img" aria-label="Anillo ilustrativo con los colores de la lista">
+        <svg viewBox="0 0 100 100" className="size-16 shrink-0" role="img" aria-label="Anillo ilustrativo con los colores de la lista">
           {elementos.map((e, i) => (
             <circle key={e.id} cx="50" cy="50" r={R} fill="none" strokeWidth="14" stroke={t(e.hex).icono} strokeDasharray={`${Math.max(parte - 1.5, 0.5)} ${C}`} strokeDashoffset={-i * parte} transform="rotate(-90 50 50)" style={{ transition: 'stroke .4s', opacity: e.id === actual.id ? 1 : 0.8 }} />
           ))}
         </svg>
         <div className="flex min-w-0 flex-wrap gap-1">
-          {elementos.slice(0, 8).map((e) => {
+          {elementos.slice(0, 6).map((e) => {
             const k = t(e.hex)
             return <span key={e.id} className="rounded-full border px-2 py-0.5 font-semibold" style={{ background: k.suave, borderColor: k.borde, color: k.texto, outline: e.id === actual.id ? `2px solid ${k.icono}` : undefined }}>{e.nombre}</span>
           })}
         </div>
       </div>
-      <p className="opacity-60">El anillo es ilustrativo: no usa importes.</p>
+      
     </div>
   )
 }

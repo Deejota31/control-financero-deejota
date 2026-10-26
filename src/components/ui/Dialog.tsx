@@ -36,6 +36,8 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', chi
       <Dialog.Portal>
         <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content
+          // Un control interno (p. ej. el explorador de íconos) puede quedarse con Escape para contraerse sin cerrar el diálogo
+          onEscapeKeyDown={(e) => { if ((e.target as HTMLElement | null)?.closest?.('[data-captura-escape]')) e.preventDefault() }}
           onCloseAutoFocus={(e) => {
             e.preventDefault()
             devolverFoco(origen)

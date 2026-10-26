@@ -7,7 +7,9 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
-import { ColorPicker, IconPicker } from '@/components/ui/IconPicker'
+import { ColorPicker } from '@/components/ui/IconPicker'
+import { SelectorIcono } from '@/components/ui/SelectorIcono'
+import { sugerirIconos } from '@/domain/iconos'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { cn } from '@/lib/cn'
@@ -108,6 +110,7 @@ export function FondoForm({
   })
   const esGeneral = useWatch({ control, name: 'is_general' })
   const color = useWatch({ control, name: 'color_token' })
+  const nombreFondo = useWatch({ control, name: 'name' })
   const editando = Boolean(fondo && !clon)
 
   const arbol = useMemo(
@@ -181,7 +184,7 @@ export function FondoForm({
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">Icono</span>
-            <Controller control={control} name="icon_key" render={({ field }) => <IconPicker value={field.value} onChange={field.onChange} color={color} />} />
+            <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={field.value} onChange={field.onChange} sugerencias={sugerirIconos(nombreFondo ?? '')} color={color} />} />
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium">Color</span>

@@ -7,8 +7,9 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
-import { IconPicker } from '@/components/ui/IconPicker'
+import { SelectorIcono } from '@/components/ui/SelectorIcono'
 import { PALETA } from '@/domain/color'
+import { sugerirIconos } from '@/domain/iconos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
 import { EditorColor, type ValorColor } from './EditorColor'
@@ -70,16 +71,23 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
   const [color, setColor] = useState<ValorColor>(inicial)
   const [guardado, setGuardado] = useState<ValorColor>(inicial)
   const [ok, setOk] = useState(false)
+  /** Una elección manual de ícono siempre gana sobre la sugerencia automática. */
+  const [iconoManual, setIconoManual] = useState(false)
   const { register, handleSubmit, control, reset, formState: { errors, isDirty } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: item?.name ?? '', icon_key: item?.icon_key ?? 'tag' },
   })
   const nombre = useWatch({ control, name: 'name' })
-  const icono = useWatch({ control, name: 'icon_key' })
+  const iconoForm = useWatch({ control, name: 'icon_key' })
   const refNombre = useRef<HTMLInputElement | null>(null)
   const { ref: refRhf, ...regNombre } = register('name')
 
   useEffect(() => { if (focoTick) refNombre.current?.focus() }, [focoTick])
+
+  const sugeridos = useMemo(() => sugerirIconos(nombre ?? '', contexto?.nombre), [nombre, contexto?.nombre])
+  // En un elemento nuevo, mientras el usuario no elija, se usa la mejor sugerencia; al editar se conserva el ícono guardado.
+  const autoSugerido = !item && !iconoManual && sugeridos[0]?.puntaje > 0
+  const icono = autoSugerido ? sugeridos[0].id : iconoForm
 
   const sucio = isDirty || color.hex !== guardado.hex || color.modo !== guardado.modo
   const hexEfectivo = cfg.color ? (color.modo === 'inherit' && contexto ? contexto.hex : color.hex) : (contexto?.hex ?? PALETA[0].hex)
@@ -95,7 +103,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
       ? { color_mode: color.modo, color_hex: color.modo === 'inherit' ? null : color.hex }
       : { color_hex: color.hex }
     const values: CatalogoValores = {
-      name: v.name, icon_key: v.icon_key, ...colorValues,
+      name: v.name, icon_key: icono, ...colorValues,
       ...(!item && kind === 'categorias' ? { ambito_id: ambitoId! } : {}),
       ...(!item && kind === 'subcategorias' ? { categoria_id: categoriaId! } : {}),
     }
@@ -103,7 +111,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
       { id: item?.id, values, hermanos: hermanos.map((h) => ({ id: h.id, name: h.name })) },
       {
         onSuccess: () => {
-          toast.success(item ? 'Cambios guardados.' : `${cfg.singular.charAt(0).toUpperCase()}${cfg.singular.slice(1)} creado.`)
+          toast.success(item ? 'Cambios guardados.' : `${cfg.singular.charAt(0).toUpperCase()}${cfg.singular.slice(1)} ${cfg.genero === 'f' ? 'creada' : 'creado'}.`)
           reset(v)
           setGuardado(color)
           setOk(true)
@@ -114,25 +122,25 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
     )
   })
 
-  const descartar = () => { reset({ name: item?.name ?? '', icon_key: item?.icon_key ?? 'tag' }); setColor(guardado); setOk(false) }
+  const descartar = () => { reset({ name: item?.name ?? '', icon_key: item?.icon_key ?? 'tag' }); setColor(guardado); setIconoManual(false); setOk(false) }
 
   const formulario = (
-    <form onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-5', modo === 'panel' && 'rounded-xl border border-line bg-surface p-5')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
+    <form onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-3.5', modo === 'panel' && 'rounded-xl border border-line bg-surface p-4')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
       <Field label="Nombre" error={errors.name?.message}>
         {(p) => <Input {...p} {...regNombre} ref={(el) => { refRhf(el); refNombre.current = el }} autoFocus={modo === 'modal'} onChange={(e) => { setOk(false); void regNombre.onChange(e) }} />}
       </Field>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Icono</span>
-        <Controller control={control} name="icon_key" render={({ field }) => <IconPicker value={field.value} onChange={(v) => { setOk(false); field.onChange(v) }} color={hexEfectivo} />} />
+        <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={icono} onChange={(v) => { setOk(false); setIconoManual(true); field.onChange(v) }} sugerencias={sugeridos} color={hexEfectivo} nota={autoSugerido ? 'Sugerido por el nombre; puedes cambiarlo.' : undefined} />} />
       </div>
       {cfg.color && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium">Color</span>
           <EditorColor valor={color} onChange={(v) => { setOk(false); setColor(v) }} ambito={kind === 'categorias' ? contexto : null} />
         </div>
       )}
       {!cfg.color && contexto && <p className="text-sm text-muted">Las subcategorías usan el color de su categoría.</p>}
-      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
         {modo === 'modal' ? (
           <>
             <Button variant="secondary" onClick={onClose} disabled={mut.guardar.isPending}>Cancelar</Button>
@@ -158,10 +166,10 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
 
   if (modo === 'modal') {
     return (
-      <Modal open onOpenChange={(o) => !o && onClose?.()} title={`${cfg.genero === 'f' ? 'Nueva' : 'Nuevo'} ${cfg.singular}`} size="xl">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">{formulario}<div>{vistaPrevia}</div></div>
+      <Modal open onOpenChange={(o) => !o && onClose?.()} title={`${cfg.genero === 'f' ? 'Nueva' : 'Nuevo'} ${cfg.singular}`} size="lg">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">{formulario}<div>{vistaPrevia}</div></div>
       </Modal>
     )
   }
-  return <>{formulario}<div className="min-w-0">{vistaPrevia}</div></>
+  return <>{formulario}<div className="min-w-0 lg:col-span-2 xl:col-span-1">{vistaPrevia}</div></>
 }

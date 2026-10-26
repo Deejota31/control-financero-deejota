@@ -32,7 +32,9 @@ test.describe('Integración entre módulos', () => {
     await page.getByRole('tab', { name: 'Medios de pago' }).click()
     await page.getByRole('button', { name: 'Nuevo medio de pago' }).click()
     await page.getByRole('dialog').getByLabel('Nombre').fill(medio)
-    await page.getByRole('dialog').getByRole('radio', { name: 'Avión' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Cambiar icono' }).click()
+    await page.getByRole('dialog').getByRole('textbox', { name: 'Buscar ícono' }).fill('avión')
+    await page.getByRole('dialog').getByRole('radio', { name: 'Viajes y avión' }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByRole('list', { name: 'Lista de medios de pago' }).getByText(medio, { exact: true })).toBeVisible()
 

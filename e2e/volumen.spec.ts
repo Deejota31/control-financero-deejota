@@ -121,7 +121,7 @@ test.describe('Volumen: totales exactos con más gastos que el límite anterior'
 
     // Fondos: el consumo imputado (miles de imputaciones) coincide con el total
     await page.goto('/fondos')
-    const consumido = page.getByLabel('Resumen del período').locator('div').filter({ has: page.getByText('Consumido', { exact: true }) }).first()
+    const consumido = page.getByLabel('Resumen del período').locator('div').filter({ has: page.getByText('Consumido', { exact: true }) }).last()
     await expect.poll(async () => dinero(await consumido.locator('span').nth(1).textContent())).toBeCloseTo(esperado.total, 1)
 
     // Salud financiera: lee todo el historial sin truncar
