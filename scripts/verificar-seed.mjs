@@ -1,4 +1,4 @@
-// Comprueba que el seed demo local sigue usable (sin datos de prueba mezclados). Uso: npm run verify:seed
+// Comprueba que la base local está vacía y que la cuenta de acceso funciona. Uso: npm run verify:seed
 import { execFileSync } from 'node:child_process'
 
 try {
@@ -28,7 +28,7 @@ const login = await fetch(`${URL_API}/auth/v1/token?grant_type=password`, {
   headers: { apikey: KEY, 'Content-Type': 'application/json' },
   body: JSON.stringify({ email: EMAIL, password: PASS }),
 })
-ok(login.ok, 'el usuario demo puede iniciar sesión')
+ok(login.ok, 'la cuenta de acceso local puede iniciar sesión')
 if (!login.ok) {
   console.error('Si falló tras reiniciar Docker o tras cambiar el esquema, ejecuta: npm run db:reset')
   process.exit(1)
@@ -41,14 +41,19 @@ async function contar(ruta) {
   return Number(r.headers.get('content-range')?.split('/')[1] ?? NaN)
 }
 
-ok((await contar('funds?select=id')) === 5, 'hay exactamente los 5 fondos del seed (ninguno de prueba)')
-ok((await contar('funds?select=id&name=ilike.*E2E*')) === 0, 'no hay fondos de pruebas E2E')
-ok((await contar('expenses?select=id&status=eq.active')) >= 50, 'hay gastos demo activos')
-ok((await contar('expenses?select=id&description=ilike.*E2E*')) === 0, 'no hay gastos de pruebas E2E')
-ok((await contar('expenses?select=id&description=ilike.*masivo*')) === 0, 'no hay gastos de la prueba de volumen')
-ok((await contar('expense_templates?select=id')) === 5, 'hay las 5 plantillas del seed')
-ok((await contar('ambitos?select=id')) === 5 && (await contar('medios_pago?select=id')) === 6, 'el catálogo inicial está completo (5 ámbitos, 6 medios)')
-ok((await contar('period_fund_snapshots?select=id')) > 0, 'el período antiguo sigue cerrado con su histórico')
+// La base local debe estar VACÍA: solo existe la cuenta de acceso y lo técnico mínimo (hogar, membresía, perfil).
+for (const [tabla, nombre] of [
+  ['ambitos', 'ámbitos'], ['categorias', 'categorías'], ['subcategorias', 'subcategorías'], ['medios_pago', 'medios de pago'],
+  ['funds', 'fondos'], ['fund_period_budgets', 'presupuestos'], ['period_fund_snapshots', 'cierres'], ['expenses', 'gastos'],
+  ['expense_fund_allocations', 'imputaciones'], ['expense_templates', 'plantillas'],
+]) {
+  ok((await contar(`${tabla}?select=id`)) === 0, `sin ${nombre}`)
+}
+// La aplicación abre sola el período del mes en curso al usarla (sin importes ni fondos): es técnico, no un dato cargado.
+ok((await contar('budget_periods?select=id&status=eq.closed')) === 0 && (await contar('budget_periods?select=id')) <= 1, 'sin períodos cerrados (a lo sumo el mes en curso, vacío)')
+ok((await contar('audit_logs?select=id&entity=neq.budget_periods')) === 0, 'sin actividad de usuario registrada (solo la apertura técnica del período)')
+ok((await contar('profiles?select=user_id')) === 1, 'el perfil de la cuenta existe')
+ok((await contar('households?select=id&is_demo=eq.false')) === 1, 'el hogar existe y no está marcado como demostración')
 
 const hoy = new Date()
 const iso = (d) => d.toISOString().slice(0, 10)
@@ -62,7 +67,7 @@ const r = await fetch(`${URL_API}/rest/v1/rpc/dashboard_panel`, {
   body: JSON.stringify({ p_desde: iso(ini), p_hasta: iso(fin), p_prev_desde: iso(ant), p_prev_hasta: iso(antFin) }),
 })
 const resumen = r.ok ? await r.json() : null
-ok(Boolean(resumen) && Number(resumen.cantidad) > 0 && Number(resumen.total) > 0, 'el Dashboard calcula el mes actual con datos del seed')
+ok(Boolean(resumen) && Number(resumen.cantidad) === 0 && Number(resumen.total) === 0, 'el Dashboard responde con el período vacío (sin cifras inventadas)')
 
 // Integridad global: la suma de imputaciones iguala a cada gasto activo (consulta directa a la base local)
 try {
@@ -72,6 +77,19 @@ try {
   ok(n === '0', 'todos los gastos activos están completamente imputados a fondos')
 } catch {
   console.log('• (omitido) integridad de imputaciones: Docker no disponible')
+}
+
+// Sin rastro de pruebas ni de demostración en el resto de la base local.
+try {
+  const contenedor = process.env.SUPABASE_DB_CONTAINER ?? 'supabase_db_control-financero-deejota'
+  const q = (sql) => execFileSync('docker', ['exec', contenedor, 'psql', '-U', 'postgres', '-tA', '-c', sql], { encoding: 'utf8' }).trim()
+  ok(q('select count(*) from auth.users') === '1', 'solo existe la cuenta de acceso (sin cuentas de demostración ni de pruebas)')
+  ok(q("select count(*) from pg_proc where proname like 'dev_%'") === '0', 'no quedan funciones de fixtures de pruebas')
+  ok(q("select count(*) from storage.objects where bucket_id = 'comprobantes'") === '0', 'no quedan comprobantes de prueba')
+  ok(q('select count(*) from public.storage_cleanup_tasks') === '0' && q('select count(*) from public.idempotency_requests') === '0', 'sin tareas técnicas ni claves de idempotencia de pruebas')
+  ok(q("select count(*) from pg_policies where schemaname = 'public'") !== '0', 'las políticas RLS siguen en su sitio')
+} catch {
+  console.log('• (omitido) comprobaciones internas: Docker no disponible')
 }
 
 if (fallos.length) {

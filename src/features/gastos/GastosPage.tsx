@@ -1,7 +1,7 @@
 import { subMonths, endOfMonth, startOfMonth } from 'date-fns'
 import { Ban, Download, FileStack, ListChecks, Plus, Receipt, Undo2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Combobox, type ComboOption } from '@/components/ui/Combobox'
@@ -36,6 +36,7 @@ function nombres(c: Catalogo) {
 export function GastosPage() {
   const { filtros, cambiar, limpiar, hayFiltros } = useFiltrosGastos()
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
   const catalogo = useCatalogo()
   const fondosQ = useFondos()
   const perfil = usePerfil()
@@ -185,7 +186,12 @@ export function GastosPage() {
         hayFiltros ? (
           <EmptyState icon={Receipt} title="Ningún gasto coincide con los filtros" description="Prueba con otro período o quita algún filtro." action={<Button variant="secondary" onClick={() => { setTexto(''); limpiar() }}>Limpiar filtros</Button>} />
         ) : (
-          <EmptyState icon={Receipt} title="Aún no hay gastos en este período" description="Registra el primero o crea gastos desde tus plantillas mensuales." action={<Button onClick={() => setForm({ modo: 'nuevo' })}>Nuevo gasto</Button>} />
+          catalogo.ambitos.length === 0 || catalogo.medios.length === 0 ? (
+            <EmptyState icon={Receipt} title="Primero configura tu catálogo" description="Para registrar un gasto necesitas al menos un ámbito, una categoría y un medio de pago (Catálogo) y un fondo que lo cubra (Fondos)."
+              action={<div className="flex gap-2"><Button onClick={() => navigate('/catalogo')}>Ir al Catálogo</Button><Button variant="secondary" onClick={() => navigate('/fondos')}>Ir a Fondos</Button></div>} />
+          ) : (
+            <EmptyState icon={Receipt} title="Aún no hay gastos en este período" description="Registra el primero o crea gastos desde tus plantillas mensuales." action={<Button onClick={() => setForm({ modo: 'nuevo' })}>Nuevo gasto</Button>} />
+          )
         )
       ) : (
         <TablaGastos

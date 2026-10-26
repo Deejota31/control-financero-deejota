@@ -1,5 +1,6 @@
-import { reiniciarUsuarioE2E } from './db'
+import { cargarFixtures, reiniciarUsuarioE2E } from './db'
 
 export default function globalSetup() {
+  cargarFixtures()
   reiniciarUsuarioE2E()
 }

@@ -26,7 +26,7 @@
 | Agregaciones del Dashboard en SQL | `dashboard_panel` (antes `dashboard_resumen`): ningún KPI depende del límite de 1000 filas del API. |
 | `leerTodo` falla en lugar de truncar | Toda lectura que alimenta una cifra verifica el total declarado por el servidor. |
 | Limpieza compensatoria de comprobantes | Intención previa + borrado tras fallo + tareas reintentables; nunca se borra un archivo en uso. |
-| Usuario E2E propio y reinicio por prueba | `dev_reset_user` (solo local, en `seed.sql`) aísla las pruebas del seed demo. |
+| Usuario E2E propio y reinicio por prueba | `dev_reset_user` (solo local, en `supabase/fixtures/e2e.sql`) aísla las pruebas del seed demo. |
 | Auditoría axe sin excepciones | Ver [accesibilidad.md](accesibilidad.md). El tono verde `--ok` se oscureció para cumplir contraste. |
 | `verify:security` | Comprueba secretos, migraciones sin datos demo y un build de producción sin URLs locales. |
 | Dashboard con filtros cruzados en la URL | Una sola fuente de verdad (`useFiltrosDashboard`) y una sola RPC (`dashboard_panel`) alimentan KPIs, gráficos, Top 5, recientes y fondos: no pueden divergir y las respuestas atrasadas no sobrescriben a las recientes (clave de consulta con filtros + cancelación). |
@@ -42,3 +42,5 @@
 | Refinamiento visual Dashboard y Gastos | Barra única de filtros (Período en popover, Día, Ámbito, Categoría, Subcategoría, Medio, Tipo, Limpiar, Registrar) sin chips duplicados; indicadores con acento; Presupuesto consolidado con encabezado degradado y cuadrícula 4×2; tabla de Gastos y detalle por secciones con reparto visual entre fondos. Sin cambios en cálculos ni reglas. |
 | Filtros del Dashboard sobre la URL vigente | Las acciones leen `window.location.search` al ejecutarse, no el estado del último render: dos acciones seguidas no se pisan (Limpiar conservaba un período obsoleto). |
 | Acentos de color | `.acento-*` (generados con `domain/color.ts`) y `.chip-k` mezclan el color del elemento con el del tema para mantener contraste en claro y oscuro. |
+| Aplicación vacía por defecto | `handle_new_user` (migración `20261029000002`) crea solo hogar, membresía y perfil; `seed.sql` crea solo la cuenta de acceso local. `bootstrap_catalog` se conserva únicamente para fixtures. Sin Fondo General inicial: el motor ya contempla su ausencia (GD001 explica qué falta). |
+| Fixtures de pruebas aisladas | `supabase/fixtures/e2e.sql` (funciones `dev_*`) se carga en `global-setup` y se retira en `global-teardown` junto con el usuario E2E; los pgTAP crean su propio catálogo de partida. `verify:seed` falla si queda cualquier rastro. |

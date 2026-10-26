@@ -25,22 +25,22 @@ Crea `.env.local` a partir de `.env.example` con la URL y la clave **publishable
 npm run dev                         # http://127.0.0.1:5173
 ```
 
-Usuario demo local (solo desarrollo): `demo@gastodeejota.local` / `DemoLocal123`. Lo crea `supabase/seed.sql` junto con fondos, plantillas y tres meses de gastos marcados como **DEMO**. No hay registro público: para crear otro usuario local usa Studio (http://127.0.0.1:54323 → Authentication → Add user → *Auto Confirm*).
+Cuenta de acceso local (solo desarrollo): `demo@gastodeejota.local` / `DemoLocal123`. La crea `supabase/seed.sql` y **nada más**: la aplicación arranca **vacía** (sin ámbitos, categorías, subcategorías, medios de pago, fondos, presupuestos, plantillas ni gastos). Configura todo desde la interfaz: Catálogo → Fondos (con presupuesto) → primer gasto. El alta de cualquier usuario crea solo lo técnico (hogar, membresía y perfil).
 
 Para las pruebas E2E añade a `.env.local` (no versionado) `E2E_USER_EMAIL` y `E2E_USER_PASSWORD` con **credenciales propias para ese usuario de pruebas** (cualquier correo y contraseña locales; no uses las del usuario demo). Para `npm run verify:seed` añade `DEMO_USER_EMAIL` y `DEMO_USER_PASSWORD` con las del usuario demo.
 
-## Reiniciar la base local y volver a sembrar los datos demo
+## Reiniciar la base local
 
 ```
-npm run db:reset                    # recrea la base, aplica migraciones y seed.sql
+npm run db:reset                    # recrea la base, aplica migraciones y seed.sql (solo la cuenta de acceso, sin datos)
 ```
 
 **Cuándo necesitas `npm run db:reset`:**
 
 - Tras cambiar migraciones o `seed.sql`, o al actualizar el repositorio con migraciones nuevas.
-- Si el usuario demo no puede iniciar sesión (por ejemplo, tras reiniciar Docker con volúmenes nuevos).
-- Si `npm run verify:seed` informa datos mezclados o faltantes.
-- **No** lo necesitas por ejecutar las pruebas: las E2E usan su propio usuario y hogar, que se reinician antes y después de cada prueba (también si falla). El usuario demo no se toca.
+- Si la cuenta de acceso no puede iniciar sesión (por ejemplo, tras reiniciar Docker con volúmenes nuevos). **Ojo:** vuelve a dejar la contraseña de desarrollo del seed.
+- Si `npm run verify:seed` informa datos inesperados.
+- **No** lo necesitas por ejecutar las pruebas: las E2E cargan sus fixtures (`supabase/fixtures/e2e.sql`) al empezar, usan su propio usuario y hogar, y al terminar eliminan ese usuario, sus datos y las funciones de fixtures. La cuenta de acceso no se toca.
 
 Tras cambiar el esquema: `npm run db:types` regenera `src/lib/database.types.ts`.
 
@@ -54,16 +54,16 @@ Tras cambiar el esquema: `npm run db:types` regenera `src/lib/database.types.ts`
 | `npm test` | Vitest (lógica de dominio, formularios, sesión) |
 | `npm run test:e2e` | Playwright (requiere `db:start` y `.env.local` con credenciales E2E) |
 | `npm run db:start` / `db:stop` | Arranca o detiene Supabase local |
-| `npm run db:reset` | Recrea la base con migraciones y datos demo |
+| `npm run db:reset` | Recrea la base con migraciones y la cuenta de acceso (sin datos) |
 | `npm run db:test` | Pruebas pgTAP: RLS, jerarquía, motor de fondos, idempotencia, períodos cerrados |
 | `npm run db:types` | Regenera los tipos TypeScript desde el esquema |
-| `npm run verify:seed` | Comprueba que el seed demo sigue usable y sin datos de prueba mezclados |
+| `npm run verify:seed` | Comprueba que la base local está vacía, que la cuenta de acceso funciona y que no quedan rastros de pruebas |
 | `npm run verify:security` | Comprueba ausencia de secretos versionados, que las migraciones no crean usuarios ni datos demo y que el build de producción no incrusta URLs locales |
 | `npm run test:all` | Typecheck, lint, Vitest, pgTAP, E2E (incluye axe), verificación del seed y de seguridad |
 
 Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.0.0.1:54324
 
-**Aislamiento de las pruebas E2E:** `e2e/global-setup.ts` y el fixture de `e2e/fixtures.ts` crean y reinician (borrado en cascada y nuevo seed) el hogar de un usuario **propio** de pruebas mediante `public.dev_reset_user`, una función que solo existe en bases locales (la define `seed.sql`, no una migración) y que la API no puede invocar. Así ningún fondo, gasto o catálogo de prueba se mezcla con el seed demo. Requiere Docker y Supabase local en marcha. Las capturas de `e2e/visual.spec.ts` se guardan en `capturas/` (no versionado).
+**Aislamiento de las pruebas E2E:** `e2e/global-setup.ts` carga las fixtures (`supabase/fixtures/e2e.sql`, fuera del seed y de las migraciones) y reinicia un hogar de demostración de un usuario **propio** de pruebas mediante `dev_reset_user`; `e2e/global-teardown.ts` elimina ese usuario, su hogar y las funciones `dev_*`, de modo que la base queda vacía al terminar. Requiere Docker y Supabase local en marcha. Las capturas de `e2e/visual.spec.ts` se guardan en `capturas/` (no versionado).
 
 ## Entorno seguro
 

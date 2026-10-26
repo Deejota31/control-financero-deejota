@@ -92,7 +92,9 @@ test.describe('Integración entre módulos', () => {
 
     // Mes anterior: el KPI cambia al valor SQL de ese período
     await page.goto('/')
-    await page.getByRole('button', { name: 'Mes anterior' }).click()
+    await page.getByRole('button', { name: /^Período:/ }).click()
+    await page.getByRole('button', { name: 'Mes anterior', exact: true }).click()
+    await page.getByRole('button', { name: 'Aplicar', exact: true }).click()
     const ant = sqlLocal(`select to_char(date_trunc('month', current_date) - interval '1 month', 'YYYY-MM-DD') || '|' || to_char(date_trunc('month', current_date) - interval '1 day', 'YYYY-MM-DD')`).split('|')
     const sqlAnterior = Number(sqlLocal(`select coalesce(sum(amount), 0) from public.expenses where household_id = ${HID} and status = 'active' and expense_date between '${ant[0]}' and '${ant[1]}'`))
     await expect.poll(async () => dinero(await kpiGasto().textContent())).toBeCloseTo(sqlAnterior, 2)

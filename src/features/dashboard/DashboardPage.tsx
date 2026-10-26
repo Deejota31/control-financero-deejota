@@ -160,7 +160,7 @@ export function DashboardPage() {
         <div className="xl:w-[6.5rem] xl:shrink-0"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></div>
         <div className="xl:w-[6rem] xl:shrink-0"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></div>
         <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" disabled={!cruzados} onClick={limpiar} className="px-2.5 xl:shrink-0"><X className="size-4" aria-hidden="true" /></Button>
-        <Button onClick={() => navigate('/gastos?nuevo=1')} className="col-span-2 sm:col-span-1 xl:ml-auto xl:shrink-0"><Plus className="size-4" aria-hidden="true" /> Registrar gasto</Button>
+        <Button aria-label="Registrar gasto" onClick={() => navigate('/gastos?nuevo=1')} className="col-span-2 sm:col-span-1 xl:ml-auto xl:shrink-0"><Plus className="size-4" aria-hidden="true" /> Registrar</Button>
       </section>
 
       {!valido ? (
@@ -175,8 +175,14 @@ export function DashboardPage() {
       ) : falla ? (
         <ErrorState message="No se pudieron cargar los datos del dashboard." onRetry={() => panelQ.refetch()} />
       ) : Number(panel?.gasto_rango ?? 0) === 0 && !cruzados ? (
-        <EmptyState icon={Receipt} title="No hay gastos en este período" description="Registra un gasto o cambia el rango de fechas para ver tus gráficos."
-          action={<div className="flex gap-2"><Button onClick={() => navigate('/gastos?nuevo=1')}>Registrar gasto</Button><Button variant="secondary" onClick={() => navigate('/gastos?lote=1')}>Registrar mensuales</Button></div>} />
+        catalogo.ambitos.length === 0 ? (
+          <EmptyState icon={Receipt} title="Empieza configurando tu catálogo"
+            description="Aún no hay datos. Crea tus ámbitos, categorías y medios de pago, luego tus fondos con su presupuesto y, por último, registra tu primer gasto. Aquí verás tus indicadores cuando existan."
+            action={<div className="flex gap-2"><Button onClick={() => navigate('/catalogo')}>Ir al Catálogo</Button><Button variant="secondary" onClick={() => navigate('/fondos')}>Ir a Fondos</Button></div>} />
+        ) : (
+          <EmptyState icon={Receipt} title="No hay gastos en este período" description="Registra un gasto o cambia el rango de fechas para ver tus gráficos."
+            action={<div className="flex gap-2"><Button onClick={() => navigate('/gastos?nuevo=1')}>Registrar gasto</Button><Button variant="secondary" onClick={() => navigate('/gastos?lote=1')}>Registrar mensuales</Button></div>} />
+        )
       ) : (
         <div className={cn('flex flex-col gap-6 transition-opacity', actualizando && 'opacity-60')} aria-busy={actualizando}>
           <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
