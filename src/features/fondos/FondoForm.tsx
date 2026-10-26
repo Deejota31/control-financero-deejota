@@ -168,7 +168,7 @@ export function FondoForm({
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title={editando ? 'Editar fondo' : clon ? 'Clonar fondo' : 'Nuevo fondo'} size="xl"
       description="Un fondo es presupuesto asignado, no dinero ingresado ni una cuenta.">
-      <form onSubmit={enviar} noValidate className="grid gap-4 lg:h-[min(68vh,600px)] lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)_auto]">
+      <form onSubmit={enviar} noValidate className="grid gap-4 lg:h-[clamp(480px,68vh,620px)] lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)_auto]">
         <div className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} autoFocus {...register('name')} />}</Field>
           <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
@@ -202,7 +202,7 @@ export function FondoForm({
           </label>
         </div>
 
-        <div className="flex min-h-0 flex-col gap-3">
+        <div className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
           <Alert tone="info">
             <b>Cómo se aplican las reglas:</b> si incluyes elementos, el fondo solo admite esos; lo que excluyas nunca se admite (la exclusión gana). Sin reglas de un tipo, el fondo admite todo en ese tipo.
             {esGeneral && ' Un Fondo General suele quedar sin reglas de clasificación.'}
@@ -211,7 +211,7 @@ export function FondoForm({
 
           <fieldset className="flex min-h-0 flex-1 flex-col gap-1.5">
             <legend className="mb-1 text-sm font-semibold">Clasificación que cubre</legend>
-            <div className="flex min-h-40 flex-1 flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
+            <div className="flex min-h-36 flex-1 flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
               {arbol.map(({ a, cats }) => {
                 const claveA = `ambito:${a.id}`
                 const abierto = abiertos.has(claveA) || (Boolean(alcance[claveA]) && alcance[claveA] !== 'none') || cats.some((x) => alcance[`categoria:${x.c.id}`] && alcance[`categoria:${x.c.id}`] !== 'none')
@@ -263,7 +263,7 @@ export function FondoForm({
 
           <fieldset className="flex flex-col gap-1.5">
             <legend className="mb-1 text-sm font-semibold">Medios de pago</legend>
-            <div className="flex max-h-48 flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
+            <div className="flex max-h-28 flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
               {catalogo.medios.map((m) => (
                 <div key={m.id} className="flex items-center gap-2 px-1.5 py-0.5">
                   <ItemIcon name={m.icon_key} color={m.color_css} />
