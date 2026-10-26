@@ -68,6 +68,39 @@ export function useSnapshotsPeriodo(periodId: string | undefined, habilitado: bo
   })
 }
 
+/** Respuesta de `delete_fund`: dependencias del fondo, destinos compatibles y, con destino, el efecto simulado. */
+export interface EliminacionFondo {
+  dry_run: boolean
+  fund_name: string
+  is_general: boolean
+  open_expenses: number
+  open_allocations: number
+  closed_allocations: number
+  closed_snapshots: number
+  budgets: number
+  templates: number
+  destinations: { id: string; name: string; is_general: boolean }[]
+  /** El fondo no se puede eliminar (Fondo General o historial en períodos cerrados). */
+  blocked: boolean
+  code: string | null
+  changed_expenses?: number | null
+  consumption_before?: Record<string, number>
+  consumption_after?: Record<string, number> | null
+}
+
+/** Dependencias del fondo (consulta sin efectos) para explicar qué implica eliminarlo. */
+export function useDependenciasFondo(fundId: string) {
+  return useQuery({
+    queryKey: ['fondos', 'dependencias', fundId],
+    gcTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('delete_fund', { p_fund: fundId, p_dry_run: true })
+      if (error) throw error
+      return data as unknown as EliminacionFondo
+    },
+  })
+}
+
 export interface FondoPayload {
   id?: string
   name: string
@@ -141,5 +174,26 @@ export function useFondoMutaciones() {
     onSettled: refrescar,
   })
 
-  return { simular, guardar, simularOrden, ordenar, simularPresupuesto, presupuesto, cerrarPeriodo }
+  /** Simula la eliminación con un destino: devuelve el efecto exacto y no deja rastro. */
+  const simularEliminar = useMutation({
+    mutationFn: async (v: { fund: string; destino: string | null }) => {
+      const { data, error } = await supabase.rpc('delete_fund', { p_fund: v.fund, p_destino: v.destino ?? undefined, p_dry_run: true })
+      if (error) throw error
+      return data as unknown as EliminacionFondo
+    },
+  })
+  /** Elimina el fondo en una sola operación atómica: si algo falla, todo queda como estaba. */
+  const eliminar = useMutation({
+    mutationFn: async (v: { fund: string; destino: string | null }) => {
+      const { data, error } = await supabase.rpc('delete_fund', { p_fund: v.fund, p_destino: v.destino ?? undefined, p_dry_run: false })
+      if (error) throw error
+      return data as unknown as EliminacionFondo
+    },
+    onSettled: () => {
+      refrescar()
+      qc.invalidateQueries({ queryKey: ['catalogo'] })
+    },
+  })
+
+  return { simular, guardar, simularOrden, ordenar, simularPresupuesto, presupuesto, cerrarPeriodo, simularEliminar, eliminar }
 }

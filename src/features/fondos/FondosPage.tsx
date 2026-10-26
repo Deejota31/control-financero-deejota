@@ -1,12 +1,11 @@
-import { ArrowDown, ArrowUp, Copy, Eye, Lock, Pencil, Plus, Power, Wallet } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Banknote, Lock, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
+import { useMemo, useState, type ComponentType } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog, Modal } from '@/components/ui/Dialog'
 import { Field } from '@/components/ui/Field'
-import { ItemIcon } from '@/components/ui/ItemIcon'
 import { MesSelector } from '@/components/ui/MesSelector'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
@@ -18,7 +17,9 @@ import type { Fila, Gasto } from '@/lib/tipos'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
 import { usePerfil } from '@/features/perfil/usePerfil'
+import { EliminarFondoDialog } from './EliminarFondoDialog'
 import { FondoForm, type FondoInicial } from './FondoForm'
+import { TablaFondos, type FilaFondo } from './TablaFondos'
 import {
   mesDeFecha, useAsignacionesPeriodo, useFondoMutaciones, useFondos, usePeriodo, usePresupuestosPeriodo, useSnapshotsPeriodo,
   type FondoPayload,
@@ -48,8 +49,6 @@ interface Pendiente {
   alTerminar?: () => void
 }
 
-const TONO_ESTADO = { ok: 'ok', casi: 'warn', agotado: 'warn', negativo: 'bad' } as const
-
 export function FondosPage() {
   const [params, setParams] = useSearchParams()
   const mes = params.get('mes') ?? MES_ACTUAL
@@ -73,6 +72,9 @@ export function FondosPage() {
   const [bloqueo, setBloqueo] = useState<string | null>(null)
   const [cerrando, setCerrando] = useState(false)
   const [aplicando, setAplicando] = useState(false)
+  const [q, setQ] = useState('')
+  const [filtro, setFiltro] = useState<'activos' | 'inactivos' | 'todos'>('activos')
+  const [eliminarDe, setEliminarDe] = useState<FondoFila | null>(null)
 
   const consultas = [catalogo, periodo, fondosQ, presupuestos, asignaciones, gastos]
   const cargando = consultas.some((q) => q.isPending) || (cerrado && snapshots.isPending)
@@ -88,7 +90,7 @@ export function FondosPage() {
       fondo: f, id: f.id, nombre: f.name, esGeneral: f.is_general, icon: f.icon_key, color: f.color_token, activo: f.is_active,
       resumen: resumirFondo(asignado.get(f.id) ?? 0, consumo.get(f.id) ?? 0),
     }))
-    const orden = (a: Tarjeta, b: Tarjeta) => Number(a.esGeneral) - Number(b.esGeneral) || (a.fondo!.priority - b.fondo!.priority)
+    const orden = (a: Tarjeta, b: Tarjeta) => Number(b.esGeneral) - Number(a.esGeneral) || (a.fondo!.priority - b.fondo!.priority)
     return {
       activos: tarjetas.filter((t) => t.activo).sort(orden),
       inactivos: tarjetas.filter((t) => !t.activo).sort(orden),
@@ -104,7 +106,7 @@ export function FondosPage() {
           fondo: null, id: s.fund_id, nombre: s.fund_name, esGeneral: s.is_general, icon: null, color: null, activo: true,
           resumen: resumirFondo(Number(s.assigned_amount), Number(s.consumed_amount)),
         }))
-        .sort((a, b) => Number(a.esGeneral) - Number(b.esGeneral) || a.nombre.localeCompare(b.nombre)),
+        .sort((a, b) => Number(b.esGeneral) - Number(a.esGeneral) || a.nombre.localeCompare(b.nombre)),
     [snapshots.data],
   )
 
@@ -173,6 +175,15 @@ export function FondosPage() {
     return solicitar('Cambiar prioridad', () => mut.simularOrden.mutateAsync(especificos), () => mut.ordenar.mutateAsync(especificos), 'Prioridad actualizada.')
   }
 
+  /** Arrastrar un fondo antes de otro: mismo cambio de prioridad que «Subir/Bajar», con su simulación previa. */
+  function reordenar(idDestino: string, idOrigen: string) {
+    const ids = (datos?.activos ?? []).filter((x) => !x.esGeneral).map((x) => x.id)
+    if (!ids.includes(idOrigen) || !ids.includes(idDestino)) return
+    const nuevo = ids.filter((x) => x !== idOrigen)
+    nuevo.splice(nuevo.indexOf(idDestino), 0, idOrigen)
+    return solicitar('Cambiar prioridad', () => mut.simularOrden.mutateAsync(nuevo), () => mut.ordenar.mutateAsync(nuevo), 'Prioridad actualizada.')
+  }
+
   function abrirForm(f: FondoFila | null, clon = false) {
     const reglas = (id?: string) => ({
       alcance: id ? (fondosQ.data?.alcance ?? []).filter((r) => r.fund_id === id) : [],
@@ -180,6 +191,14 @@ export function FondosPage() {
     })
     setForm({ fondo: f, clon, ...reglas(f?.id), presupuestoPeriodo: f ? datos?.asignado.get(f.id) : undefined })
   }
+
+  const porId = new Map((fondosQ.data?.fondos ?? []).map((f) => [f.id, f]))
+  const filasTabla: FilaFondo[] = (cerrado ? tarjetasCerradas : [...(datos?.activos ?? []), ...(datos?.inactivos ?? [])]).map((t) => ({
+    id: t.id, nombre: t.nombre, esGeneral: t.esGeneral, icon: t.icon, color: t.color, activo: t.activo, resumen: t.resumen, editable: !cerrado && Boolean(t.fondo),
+  }))
+  const visibles = filasTabla.filter((f) => (cerrado || filtro === 'todos' || (filtro === 'activos') === f.activo) && f.nombre.toLowerCase().includes(q.trim().toLowerCase()))
+  const posicion = new Map((datos?.activos ?? []).filter((x) => !x.esGeneral).map((x, i) => [x.id, i + 1]))
+  const fondoDe = (f: FilaFondo) => porId.get(f.id)!
 
   if (cargando) {
     return (
@@ -198,98 +217,54 @@ export function FondosPage() {
   const detalleFondo = detalle ? [...datos.activos, ...datos.inactivos].find((t) => t.id === detalle) : null
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <MesSelector mes={mes} onChange={(m) => setParams({ mes: m }, { replace: true })} maximo={MES_ACTUAL} />
-          <Pill tone={cerrado ? 'neutral' : 'ok'}>{cerrado ? <><Lock className="size-3" aria-hidden="true" /> Período cerrado</> : 'Período abierto'}</Pill>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
-          {!cerrado && (
-            <Button onClick={() => abrirForm(null)}>
-              <Plus className="size-4" aria-hidden="true" /> Nuevo fondo
-            </Button>
-          )}
-        </div>
+    <div className="mx-auto flex max-w-[1240px] flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <MesSelector mes={mes} onChange={(m) => setParams({ mes: m }, { replace: true })} maximo={MES_ACTUAL} />
+        <Pill tone={cerrado ? 'neutral' : 'ok'}>{cerrado ? <><Lock className="size-3" aria-hidden="true" /> Período cerrado</> : 'Período abierto'}</Pill>
+        <label className="flex w-64 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-muted focus-within:border-pri">
+          <Search className="size-4 shrink-0" aria-hidden="true" />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" className="min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-muted" />
+        </label>
+        {!cerrado && (
+          <div role="group" aria-label="Estado" className="inline-flex rounded-lg bg-surface-2 p-0.5 text-sm font-semibold">
+            {([['activos', 'Activos'], ['inactivos', 'Inactivos'], ['todos', 'Todos']] as const).map(([k, n]) => (
+              <button key={k} type="button" aria-pressed={filtro === k} onClick={() => setFiltro(k)} className={cn('rounded-md px-3 py-1', filtro === k ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{n}</button>
+            ))}
+          </div>
+        )}
+        <span className="flex-1" />
+        {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
+        {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
       </div>
 
       {cerrado && <Alert tone="info">Este período está cerrado: se muestra el resultado histórico tal como quedó. Editar fondos hoy no lo modifica.</Alert>}
 
-      <section aria-label="Resumen del período" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi etiqueta="Presupuesto asignado" valor={formatSoles(totales.asignado)} nota="Suma de fondos activos" />
-        <Kpi etiqueta="Consumido" valor={formatSoles(totales.consumido)} nota="Gastos imputados a fondos" />
-        <Kpi etiqueta="Disponible" valor={formatSoles(totales.disponible)} tono={totales.disponible < 0 ? 'bad' : 'ok'} nota={totales.disponible < 0 ? 'Hay sobregasto en el período' : 'Asignado menos consumido'} />
-        <Kpi etiqueta="Fondos en sobregasto" valor={String(totales.sobregastos)} tono={totales.sobregastos ? 'bad' : undefined} nota="Con saldo negativo" />
+      <section aria-label="Resumen del período" className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <Kpi etiqueta="Presupuesto asignado" valor={formatSoles(totales.asignado)} nota="Suma de fondos activos" icono={Wallet} />
+        <Kpi etiqueta="Consumido" valor={formatSoles(totales.consumido)} nota="Gastos imputados a fondos" icono={Banknote} />
+        <Kpi etiqueta="Disponible" valor={formatSoles(totales.disponible)} tono={totales.disponible < 0 ? 'bad' : 'ok'} nota={totales.disponible < 0 ? 'Hay sobregasto' : 'Asignado − consumido'} icono={Percent} />
+        <Kpi etiqueta="Fondos en sobregasto" valor={String(totales.sobregastos)} tono={totales.sobregastos ? 'bad' : undefined} nota="Con saldo negativo" icono={TriangleAlert} />
       </section>
 
-      {lista.length === 0 ? (
-        <EmptyState icon={Wallet} title="Aún no hay fondos activos" description="Crea un fondo para asignar presupuesto a tus gastos." action={!cerrado && <Button onClick={() => abrirForm(null)}>Nuevo fondo</Button>} />
+      {filasTabla.length === 0 || lista.length === 0 && filtro === 'activos' && !cerrado && datos.inactivos.length === 0 ? (
+        <EmptyState icon={Wallet} title="Aún no hay fondos" description="Crea un fondo para asignar presupuesto a tus gastos. Empieza con el Fondo General, que absorbe el excedente de los demás." action={!cerrado && <Button onClick={() => abrirForm(null)}>Nuevo fondo</Button>} />
+      ) : visibles.length === 0 ? (
+        <EmptyState icon={Wallet} title="Ningún fondo coincide" description="Prueba con otro nombre o cambia el filtro de estado." action={<Button variant="secondary" onClick={() => { setQ(''); setFiltro('todos') }}>Ver todos</Button>} />
       ) : (
-        <ul className="flex flex-col gap-3" aria-label="Fondos">
-          {lista.map((t, idx) => {
-            const especificos = lista.filter((x) => !x.esGeneral)
-            const posEsp = especificos.findIndex((x) => x.id === t.id)
-            return (
-              <li key={t.id} className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={t.icon ?? 'wallet'} color={t.color ?? 'pri'} className="size-5" /></span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate font-display text-base font-bold">{t.nombre}</h2>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                      <Pill tone={t.esGeneral ? 'pri' : 'neutral'}>{t.esGeneral ? 'Fondo General' : `Prioridad ${idx + 1}`}</Pill>
-                      <Pill tone={TONO_ESTADO[t.resumen.estado]}>{etiquetaEstado(t)}</Pill>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={cn('num text-xl font-medium', t.resumen.disponible < 0 && 'text-bad')}>{formatSoles(t.resumen.disponible)}</p>
-                    <p className="text-xs text-muted">disponible</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={`Consumo de ${t.nombre}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(t.resumen.pct))}>
-                    <div className={cn('h-full rounded-full', t.resumen.estado === 'negativo' ? 'bg-bad' : t.resumen.estado === 'ok' ? 'bg-pri' : 'bg-acc')} style={{ width: `${Math.min(100, t.resumen.pct)}%` }} />
-                  </div>
-                  <p className="mt-1 flex justify-between text-xs text-muted">
-                    <span className="num">Consumido {formatSoles(t.resumen.consumido)}</span>
-                    <span className="num">Asignado {formatSoles(t.resumen.asignado)}</span>
-                  </p>
-                </div>
-                {!cerrado && t.fondo && (
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button variant="secondary" onClick={() => setDetalle(t.id)}><Eye className="size-4" aria-hidden="true" /> Ver gastos</Button>
-                    <Button variant="secondary" onClick={() => abrirForm(t.fondo)} aria-label={`Editar ${t.nombre}`}><Pencil className="size-4" aria-hidden="true" /> Editar</Button>
-                    <Button variant="secondary" onClick={() => setPresupuestoDe(t.fondo)}>Presupuesto del período</Button>
-                    <Button variant="ghost" onClick={() => abrirForm(t.fondo, true)} aria-label={`Clonar ${t.nombre}`}><Copy className="size-4" aria-hidden="true" /> Clonar</Button>
-                    {!t.esGeneral && (
-                      <>
-                        <Button variant="ghost" disabled={posEsp <= 0} onClick={() => mover(t, -1)} aria-label={`Subir prioridad de ${t.nombre}`}><ArrowUp className="size-4" aria-hidden="true" /></Button>
-                        <Button variant="ghost" disabled={posEsp === especificos.length - 1} onClick={() => mover(t, 1)} aria-label={`Bajar prioridad de ${t.nombre}`}><ArrowDown className="size-4" aria-hidden="true" /></Button>
-                      </>
-                    )}
-                    <Button variant="ghost" onClick={() => alternarActivo(t.fondo!)} aria-label={`Desactivar ${t.nombre}`}><Power className="size-4" aria-hidden="true" /> Desactivar</Button>
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-
-      {!cerrado && datos.inactivos.length > 0 && (
-        <section aria-label="Fondos inactivos" className="flex flex-col gap-2">
-          <h2 className="font-display text-base font-bold">Fondos inactivos</h2>
-          <ul className="divide-y divide-line rounded-lg border border-line bg-surface">
-            {datos.inactivos.map((t) => (
-              <li key={t.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <ItemIcon name={t.icon ?? 'wallet'} color={t.color ?? 'muted'} />
-                <span className="flex-1 font-medium">{t.nombre}</span>
-                <Pill>Inactivo</Pill>
-                <Button variant="secondary" onClick={() => alternarActivo(t.fondo!)} aria-label={`Activar ${t.nombre}`}>Activar</Button>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <TablaFondos
+          filas={visibles}
+          posicion={posicion}
+          totalEspecificos={posicion.size}
+          permitirOrdenar={!cerrado && filtro !== 'inactivos' && !q}
+          onVer={(f) => setDetalle(f.id)}
+          onEditar={(f) => abrirForm(fondoDe(f))}
+          onPresupuesto={(f) => setPresupuestoDe(fondoDe(f))}
+          onClonar={(f) => abrirForm(fondoDe(f), true)}
+          onMover={(f, d) => mover({ id: f.id } as Tarjeta, d)}
+          onActivar={(f) => alternarActivo(fondoDe(f))}
+          onEliminar={(f) => setEliminarDe(fondoDe(f))}
+          onReordenar={reordenar}
+        />
       )}
 
       {form && catalogo && (
@@ -340,6 +315,14 @@ export function FondosPage() {
         description={pendiente && <EfectoCambio cambio={pendiente.cambio} fondos={fondosQ.data!.fondos} />}
       />
 
+      {eliminarDe && (
+        <EliminarFondoDialog
+          fondo={{ id: eliminarDe.id, nombre: eliminarDe.name }}
+          onClose={() => setEliminarDe(null)}
+          onDesactivar={eliminarDe.is_active ? () => alternarActivo(eliminarDe) : undefined}
+        />
+      )}
+
       <Modal open={Boolean(bloqueo)} onOpenChange={(o) => !o && setBloqueo(null)} title="No se puede guardar este cambio" size="sm">
         <div className="flex flex-col gap-4">
           <Alert tone="error">{bloqueo}</Alert>
@@ -366,21 +349,15 @@ export function FondosPage() {
   )
 }
 
-function etiquetaEstado(t: Tarjeta): string {
-  switch (t.resumen.estado) {
-    case 'negativo': return t.esGeneral ? 'Saldo negativo' : 'Sobregasto'
-    case 'agotado': return 'Agotado'
-    case 'casi': return 'Casi agotado'
-    default: return 'Con saldo'
-  }
-}
-
-function Kpi({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad' }) {
+function Kpi({ etiqueta, valor, nota, tono, icono: Icono }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad'; icono: ComponentType<{ className?: string }> }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-line bg-surface px-4 py-3">
-      <span className="text-sm text-muted">{etiqueta}</span>
-      <span className={cn('num text-2xl font-medium', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
-      <span className="text-xs text-muted">{nota}</span>
+    <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5">
+      <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', tono === 'bad' ? 'bg-bad-soft text-bad' : 'bg-pri-soft text-pri')}><Icono className="size-[18px]" aria-hidden="true" /></span>
+      <div className="min-w-0">
+        <span className="block text-xs text-muted">{etiqueta}</span>
+        <span className={cn('num block text-lg font-semibold leading-tight', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
+        <span className="block truncate text-[11px] text-muted">{nota}</span>
+      </div>
     </div>
   )
 }

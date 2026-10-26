@@ -1,0 +1,273 @@
+<title>Propuestas de Fondos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Paleta B «Índigo» de Gasto Deejota. Maqueta de diseño con datos de ejemplo: no guarda nada. */
+:root { --bg:#f6f6fa; --surface:#fff; --surface-2:#ececf4; --line:#d9d9e6; --fg:#17172b; --muted:#58587a; --pri:#3a3fa6; --pri-fg:#fff; --pri-soft:#e0e1f7;
+  --ok:#12663a; --ok-soft:#dcf2e4; --warn:#8f5400; --warn-soft:#fbe9c8; --bad:#b3261e; --bad-soft:#f9dedc; --shadow:0 12px 28px -8px rgba(23,23,43,.22),0 2px 8px rgba(23,23,43,.08); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a;
+  --ok:#5ad08a; --ok-soft:#14301f; --warn:#f0b24a; --warn-soft:#3a2a0c; --bad:#ff8f86; --bad-soft:#3f1b18; --shadow:0 14px 32px -8px rgba(0,0,0,.65),0 2px 10px rgba(0,0,0,.45); color-scheme: dark; } }
+:root[data-theme="dark"] { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a;
+  --ok:#5ad08a; --ok-soft:#14301f; --warn:#f0b24a; --warn-soft:#3a2a0c; --bad:#ff8f86; --bad-soft:#3f1b18; --shadow:0 14px 32px -8px rgba(0,0,0,.65),0 2px 10px rgba(0,0,0,.45); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 'Segoe UI', system-ui, -apple-system, sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; } button:disabled { cursor: not-allowed; opacity: .45; }
+:focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.ico { width: 18px; height: 18px; flex: none; }
+.pag { max-width: 1240px; margin: 0 auto; padding-block: 18px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
+h1 { font-size: 24px; margin: 0; text-wrap: balance; } .cab p { margin: 4px 0 0; color: var(--muted); max-width: 64ch; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 600; }
+.btn:hover:not(:disabled) { background: var(--surface-2); } .btn.pri { background: var(--pri); color: var(--pri-fg); border-color: var(--pri); } .btn.pri:hover:not(:disabled) { filter: brightness(1.08); background: var(--pri); }
+.btn.mal { background: var(--bad); color: #fff; border-color: var(--bad); } .btn.peq { padding: 5px 10px; font-size: 13px; }
+.vars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0; }
+.var { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: transform .15s, border-color .15s; min-width: 0; }
+.var:hover { transform: translateY(-2px); border-color: var(--pri); } .var[aria-pressed='true'] { background: var(--pri-soft); border-color: var(--pri); }
+.var b { display: flex; gap: 8px; align-items: center; } .var .l { width: 22px; height: 22px; border-radius: 7px; background: var(--pri); color: var(--pri-fg); display: grid; place-items: center; font-size: 12px; font-weight: 800; flex: none; }
+.var small { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.nota { color: var(--muted); font-size: 12px; margin: 6px 2px; }
+
+/* KPIs compactos */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.kpi { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); min-width: 0; }
+.kpi .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--pri-soft); color: var(--pri); }
+.kpi small { display: block; color: var(--muted); font-size: 12px; } .kpi b { font-size: 18px; }
+.kpi.mal .ic { background: var(--bad-soft); color: var(--bad); }
+.barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+.barra .esp { flex: 1; }
+.mes { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.mes button { border: 0; background: none; padding: 7px 10px; border-radius: 10px; } .mes span { padding: 0 8px; font-weight: 600; min-width: 112px; text-align: center; }
+.buscar { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); width: 260px; color: var(--muted); }
+.buscar input { border: 0; background: none; outline: none; flex: 1; min-width: 0; }
+.seg { display: inline-flex; padding: 3px; background: var(--surface-2); border-radius: 10px; gap: 2px; }
+.seg button { border: 0; background: none; padding: 5px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; } .seg button[aria-pressed='true'] { background: var(--surface); color: var(--pri); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+
+/* Lista (tabla en escritorio, tarjetas en móvil) */
+.lista { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.fila { display: grid; grid-template-columns: minmax(210px, 2.3fr) 84px 118px 118px 128px 160px 190px; align-items: center; gap: 8px; padding: 0 14px; min-height: 68px; border-bottom: 1px solid var(--line); transition: background .15s; }
+.fila:last-child { border-bottom: 0; } .fila:not(.enc):hover { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.fila.enc { min-height: 40px; background: var(--surface-2); color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.der { text-align: right; justify-content: flex-end; }
+.fondo { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.ins { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--k) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 32%, transparent); color: color-mix(in srgb, var(--k) 65%, var(--fg)); }
+.fondo b { display: block; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .fondo small { color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid transparent; }
+.chip.gen { background: var(--pri-soft); color: var(--pri); border-color: color-mix(in srgb, var(--pri) 35%, transparent); } .chip.ina { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); } .chip.mal { background: var(--bad-soft); color: var(--bad); } .chip.av { background: var(--warn-soft); color: var(--warn); }
+.disp { font-weight: 700; font-size: 15px; } .disp.neg { color: var(--bad); } .disp.pos { color: var(--ok); }
+.uso { display: flex; align-items: center; gap: 8px; } .uso i { flex: 1; height: 7px; border-radius: 9px; background: var(--surface-2); overflow: hidden; display: block; box-shadow: inset 0 0 0 1px var(--line); }
+.uso i span { display: block; height: 100%; border-radius: 9px; background: linear-gradient(90deg, color-mix(in srgb, var(--k) 70%, #fff), var(--k)); transition: width .4s; } .uso i span.exc { background: linear-gradient(90deg,#e0553f,#c62f2f); }
+.uso b { font-size: 12px; width: 44px; text-align: right; }
+.acc { display: flex; justify-content: flex-end; align-items: center; gap: 6px; position: relative; }
+.ib { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid transparent; border-radius: 9px; background: none; color: var(--muted); } .ib:hover { background: var(--pri-soft); color: var(--pri); }
+.menu { position: absolute; right: 0; top: 36px; z-index: 30; width: 250px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; animation: ent .12s ease-out; }
+.menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: left; } .menu button:hover:not(:disabled) { background: var(--surface-2); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 5px 0; } .menu .peligro { color: var(--bad); } .menu .peligro:hover:not(:disabled) { background: var(--bad-soft); }
+@keyframes ent { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.vacio { padding: 36px 16px; text-align: center; color: var(--muted); }
+
+/* Variantes */
+[data-v='2'] .fila:not(.enc), [data-v='3'] .fila:not(.enc) { box-shadow: inset 4px 0 0 var(--k); }
+.fila.arr { opacity: .35; } .fila.antes { box-shadow: inset 4px 0 0 var(--k), 0 -3px 0 0 var(--pri) !important; } .fila[draggable='true'] .asa { cursor: grab; }
+[data-v='3'] .grupo { padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+[data-v='3'] .fila.gen { background: color-mix(in srgb, var(--pri-soft) 55%, var(--surface)); min-height: 76px; }
+.prio { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; } .asa { color: var(--muted); display: inline-grid; cursor: grab; } .prio .n { width: 24px; height: 24px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; font-size: 12px; }
+[data-v='4'] .detalle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 12px 14px 14px 63px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 13px; }
+.detalle h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); } .detalle p { margin: 0; }
+.chev { transition: transform .15s; } .chev[aria-expanded='true'] svg { transform: rotate(90deg); }
+.tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tarj { display: flex; flex-direction: column; gap: 9px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); position: relative; border-top: 3px solid var(--k); }
+.tarj .fila-m { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; } .tarj .fila-m small { color: var(--muted); }
+
+/* Modal */
+.ov { position: fixed; inset: 0; background: rgba(8,8,20,.55); backdrop-filter: blur(2px); display: grid; place-items: center; z-index: 60; padding: 16px; }
+.mod { width: min(560px, 100%); max-height: 92vh; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 20px; display: flex; flex-direction: column; gap: 14px; animation: ent .15s ease-out; }
+.mod h2 { margin: 0; font-size: 18px; } .mod p { margin: 0; } .mod .pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
+.deps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; } .deps li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); } .deps li:last-child { border-bottom: 0; }
+.aviso { padding: 10px 12px; border-radius: 10px; font-size: 13px; } .aviso.i { background: var(--pri-soft); } .aviso.w { background: var(--warn-soft); color: var(--fg); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); } .aviso.b { background: var(--bad-soft); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); }
+.mod select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); width: 100%; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; z-index: 70; box-shadow: var(--shadow); animation: ent .2s ease-out; max-width: calc(100vw - 32px); }
+
+@media (max-width: 1100px) { .vars { grid-template-columns: repeat(3, 1fr); } .tarjetas { grid-template-columns: repeat(2, 1fr); } .kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 860px) {
+  .fila.enc { display: none; }
+  .fila { grid-template-columns: 1fr auto; row-gap: 8px; padding: 12px 14px; }
+  .fila > .c-prio, .fila > .c-asig, .fila > .c-cons { display: none; }
+  .fila > .c-disp { text-align: right; } .fila > .c-uso { grid-column: 1 / -1; } .fila > .c-acc { grid-column: 1 / -1; justify-content: space-between; }
+  [data-v='4'] .detalle { grid-template-columns: 1fr; padding: 12px 14px; }
+}
+@media (max-width: 640px) { .vars { grid-template-columns: repeat(2, 1fr); } .tarjetas { grid-template-columns: 1fr; } .buscar { width: 100%; } .barra .esp { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<div class="pag" id="app"></div>
+<script>
+'use strict'
+/* ---- Iconos ---- */
+const P = {
+  cartera: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1"/>', casa: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  bebe: '<circle cx="12" cy="12" r="8"/><circle cx="9.5" cy="11" r=".8"/><circle cx="14.5" cy="11" r=".8"/><path d="M9.5 15c1.4 1 3.6 1 5 0"/>', comida: '<path d="M7 3v8a2 2 0 0 0 2 2v8"/><path d="M5 3v6M9 3v6"/><path d="M17 3c-2 2-3 5-3 8h3v10"/>',
+  familia: '<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/>', huella: '<circle cx="7" cy="9" r="1.6"/><circle cx="11" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="19" cy="9" r="1.6"/><path d="M8 18c0-3 2-5 4-5s4 2 4 5c0 2-8 2-8 0z"/>',
+  avion: '<path d="M2 14 21 5l-5 15-4-6z"/><path d="m12 14 3-4"/>', mas: '<path d="M12 5v14M5 12h14"/>', buscar: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/>', puntos: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+  ojo: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>', lapiz: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', dinero: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><circle cx="12" cy="12" r="2.5"/>', copiar: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',
+  sube: '<path d="m6 14 6-6 6 6"/>', baja: '<path d="m6 10 6 6 6-6"/>', power: '<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>', papelera: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>', izq: '<path d="m15 6-6 6 6 6"/>', der: '<path d="m9 6 6 6-6 6"/>',
+  alerta: '<path d="M12 4 2 20h20z"/><path d="M12 10v4M12 17h.01"/>', pct: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2"/><circle cx="17" cy="17" r="2"/>', luna: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', sol: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>',
+  arrastrar: '<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>', flecha: '<path d="m9 6 6 6-6 6"/>',
+}
+const ic = (n, c = '') => `<svg class="ico ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const S = (v) => 'S/ ' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/* ---- Datos de EJEMPLO (no son tuyos) ---- */
+const INICIAL = [
+  { id: 'f1', nombre: 'Alimentos Sodexo', icono: 'comida', k: '#E0622F', activo: true, general: false, asignado: 600, consumido: 113.16, gastos: 4, periodos: 3, cerrados: 2, reglas: ['Alimentación', 'Medio: Sodexo'] },
+  { id: 'f2', nombre: 'Hogar', icono: 'casa', k: '#1E8A8A', activo: true, general: false, asignado: 900, consumido: 736.0, gastos: 6, periodos: 3, cerrados: 2, reglas: ['Ámbito: Hogar'] },
+  { id: 'f3', nombre: 'Bebé', icono: 'bebe', k: '#A8478F', activo: true, general: false, asignado: 450, consumido: 493.8, gastos: 9, periodos: 3, cerrados: 2, reglas: ['Ámbito: Bebé'] },
+  { id: 'f4', nombre: 'Familia', icono: 'familia', k: '#8A8A2E', activo: true, general: false, asignado: 600, consumido: 600, gastos: 2, periodos: 3, cerrados: 2, reglas: ['Ámbito: Familia'] },
+  { id: 'f5', nombre: 'Mascotas', icono: 'huella', k: '#3A3FA6', activo: true, general: false, asignado: 150, consumido: 0, gastos: 0, periodos: 0, cerrados: 0, reglas: ['Categoría: Mascotas'] },
+  { id: 'f6', nombre: 'Viajes', icono: 'avion', k: '#2563EB', activo: false, general: false, asignado: 0, consumido: 0, gastos: 5, periodos: 2, cerrados: 2, reglas: ['Categoría: Viajes'] },
+  { id: 'f0', nombre: 'Fondo General', icono: 'cartera', k: '#3A3FA6', activo: true, general: true, asignado: 1500, consumido: 973.44, gastos: 11, periodos: 3, cerrados: 2, reglas: ['Cubre todo lo que ningún otro fondo admite'] },
+]
+let fondos = JSON.parse(JSON.stringify(INICIAL))
+const E = { v: '3', q: '', filtro: 'activos', mes: 0, abierto: null, exp: new Set(['f1']), vista: 'tabla' }
+const MESES = ['Octubre 2026', 'Septiembre 2026', 'Agosto 2026']
+const orden = () => [...fondos.filter((f) => f.general), ...fondos.filter((f) => !f.general)]
+const disp = (f) => f.asignado - f.consumido
+const pct = (f) => (f.asignado > 0 ? (f.consumido / f.asignado) * 100 : f.consumido > 0 ? 100 : 0)
+const visibles = () => orden().filter((f) => (E.filtro === 'todos' || (E.filtro === 'activos') === f.activo) && f.nombre.toLowerCase().includes(E.q.toLowerCase()))
+function estado(f) { if (!f.activo) return '<span class="chip ina">Inactivo</span>'; if (disp(f) < 0) return '<span class="chip mal">Sobregirado</span>'; if (disp(f) === 0 && f.asignado > 0) return '<span class="chip av">Agotado</span>'; return '<span class="chip ok">Activo</span>' }
+function aviso(t) { document.querySelector('.toast')?.remove(); const d = document.createElement('div'); d.className = 'toast'; d.setAttribute('role', 'status'); d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3500) }
+
+/* ---- Piezas ---- */
+const kpis = () => { const a = fondos.filter((f) => f.activo), asg = a.reduce((s, f) => s + f.asignado, 0), con = a.reduce((s, f) => s + f.consumido, 0), neg = a.filter((f) => disp(f) < 0).length
+  return `<div class="kpis" role="list" aria-label="Resumen del período">
+  <div class="kpi" role="listitem"><span class="ic">${ic('cartera')}</span><div><small>Presupuesto asignado</small><b class="num">${S(asg)}</b></div></div>
+  <div class="kpi" role="listitem"><span class="ic">${ic('dinero')}</span><div><small>Consumido</small><b class="num">${S(con)}</b></div></div>
+  <div class="kpi" role="listitem"><span class="ic">${ic('pct')}</span><div><small>Disponible</small><b class="num">${S(asg - con)}</b></div></div>
+  <div class="kpi ${neg ? 'mal' : ''}" role="listitem"><span class="ic">${ic('alerta')}</span><div><small>Fondos en sobregasto</small><b class="num">${neg}</b></div></div></div>` }
+const barraUso = (f) => `<span class="uso"><i><span class="${pct(f) > 100 ? 'exc' : ''}" style="width:${Math.min(100, pct(f))}%"></span></i><b class="num">${pct(f).toFixed(0)}%</b></span>`
+const menu = (f) => { const o = orden().filter((x) => !x.general), i = o.findIndex((x) => x.id === f.id)
+  return `<div class="menu" role="menu" aria-label="Acciones de ${esc(f.nombre)}">
+  <button role="menuitem" data-a="editar" data-id="${f.id}">${ic('lapiz')} Editar fondo</button>
+  <button role="menuitem" data-a="presupuesto" data-id="${f.id}" ${f.activo ? '' : 'disabled'}>${ic('dinero')} Cambiar presupuesto del período</button>
+  <button role="menuitem" data-a="clonar" data-id="${f.id}">${ic('copiar')} Clonar</button>
+  <button role="menuitem" data-a="sube" data-id="${f.id}" ${f.general || i <= 0 ? 'disabled' : ''}>${ic('sube')} Subir prioridad</button>
+  <button role="menuitem" data-a="baja" data-id="${f.id}" ${f.general || i >= o.length - 1 ? 'disabled' : ''}>${ic('baja')} Bajar prioridad</button>
+  <button role="menuitem" data-a="activar" data-id="${f.id}">${ic('power')} ${f.activo ? 'Desactivar' : 'Activar'}</button><hr>
+  <button role="menuitem" class="peligro" data-a="eliminar" data-id="${f.id}">${ic('papelera')} Eliminar fondo…</button></div>` }
+const acciones = (f) => `<span class="acc c-acc"><button class="btn peq" data-a="gastos" data-id="${f.id}" aria-label="Ver gastos de ${esc(f.nombre)}">${ic('ojo')} Ver gastos</button>
+  <button class="ib" data-a="menu" data-id="${f.id}" aria-haspopup="menu" aria-expanded="${E.abierto === f.id}" aria-label="Más acciones de ${esc(f.nombre)}">${ic('puntos')}</button>${E.abierto === f.id ? menu(f) : ''}</span>`
+function fila(f, i) {
+  const o = orden().filter((x) => !x.general), n = o.findIndex((x) => x.id === f.id) + 1
+  const extra = E.v === '4' ? `<button class="ib chev" data-a="exp" data-id="${f.id}" aria-expanded="${E.exp.has(f.id)}" aria-label="Detalle de ${esc(f.nombre)}">${ic('flecha')}</button>` : ''
+  const prio = f.general ? '<span class="chip gen">Principal</span>' : E.v === '3' ? `<span class="prio"><span class="asa" aria-hidden="true">${ic('arrastrar')}</span><span class="n">${n}º</span></span>` : `<b>${n}º</b>`
+  return `<div class="fila ${f.general ? 'gen' : ''}" style="--k:${f.k}" role="row" ${f.general ? '' : 'draggable="true"'} data-fid="${f.id}">
+    <span class="fondo">${extra}<span class="ins">${ic(f.icono)}</span><span style="min-width:0"><b>${esc(f.nombre)}</b><small>${f.general ? '<span class="chip gen">Fondo General</span> ' : ''}${estado(f)}</small></span></span>
+    <span class="c-prio">${prio}</span><span class="der num c-asig">${S(f.asignado)}</span><span class="der num c-cons">${S(f.consumido)}</span>
+    <span class="der num disp c-disp ${disp(f) < 0 ? 'neg' : disp(f) > 0 ? 'pos' : ''}">${S(disp(f))}</span><span class="c-uso">${barraUso(f)}</span>${acciones(f)}</div>
+    ${E.v === '4' && E.exp.has(f.id) ? `<div class="detalle"><div><h4>Qué cubre</h4><p>${f.reglas.map(esc).join(' · ')}</p></div><div><h4>Gastos y períodos</h4><p>${f.gastos} gastos · ${f.periodos} períodos (${f.cerrados} cerrados)</p></div><div><h4>Período actual</h4><p>Asignado ${S(f.asignado)} · queda ${S(disp(f))}</p></div></div>` : ''}`
+}
+const encabezado = '<div class="fila enc" role="row"><span>Fondo</span><span>Prioridad</span><span class="der">Asignado</span><span class="der">Consumido</span><span class="der">Disponible</span><span>Uso</span><span class="der">Acciones</span></div>'
+function tarjeta(f) { const o = orden().filter((x) => !x.general), n = o.findIndex((x) => x.id === f.id) + 1
+  return `<article class="tarj" style="--k:${f.k}"><div class="fila-m"><span class="fondo"><span class="ins">${ic(f.icono)}</span><span><b>${esc(f.nombre)}</b><small>${f.general ? 'General · ' : n + 'º · '}${estado(f)}</small></span></span><b class="disp num ${disp(f) < 0 ? 'neg' : 'pos'}">${S(disp(f))}</b></div>
+  <div class="fila-m"><small>Asignado ${S(f.asignado)} · Consumido ${S(f.consumido)}</small></div>${barraUso(f)}${acciones(f)}</article>` }
+function lista() {
+  const v = visibles()
+  if (!v.length) return '<div class="vacio lista">Ningún fondo coincide con la búsqueda o el filtro.</div>'
+  if (E.v === '5' && E.vista === 'tarjetas') return `<div class="tarjetas">${v.map(tarjeta).join('')}</div>`
+  if (E.v === '3') { const gen = v.filter((f) => f.general), esp = v.filter((f) => !f.general)
+    return `<div class="lista" role="table" aria-label="Fondos">${encabezado}${gen.length ? '<div class="grupo">Fondo General · siempre primero · absorbe el excedente</div>' + gen.map(fila).join('') : ''}${esp.length ? '<div class="grupo">Fondos específicos · orden de creación (arrastra para cambiarlo)</div>' + esp.map(fila).join('') : ''}</div>` }
+  return `<div class="lista" role="table" aria-label="Fondos">${encabezado}${v.map(fila).join('')}</div>`
+}
+
+/* ---- Eliminar fondo (maqueta del flujo completo) ---- */
+function dialogoEliminar(f) {
+  const destinos = fondos.filter((x) => x.id !== f.id && x.activo)
+  const unicoGeneral = f.general
+  const sinUso = f.gastos === 0 && f.periodos === 0
+  let cuerpo, pie
+  if (unicoGeneral) {
+    cuerpo = `<div class="aviso b"><b>No se puede eliminar el Fondo General.</b><br>Es el fondo que absorbe el excedente de los demás: sin él, un gasto que ningún otro fondo cubre quedaría sin imputar. Puedes <b>desactivarlo</b>, pero eso no lo elimina y los gastos nuevos dejarían de tener cobertura general.</div>`
+    pie = `<button class="btn" data-m="cerrar">Cancelar</button><button class="btn" data-m="desactivar" data-id="${f.id}">${ic('power')} Desactivar en su lugar</button>`
+  } else if (sinUso) {
+    cuerpo = `<p>Se eliminará el fondo <b>«${esc(f.nombre)}»</b> y sus reglas de cobertura (${f.reglas.map(esc).join(' · ')}).</p><div class="aviso i">Nunca se ha usado: no tiene gastos, imputaciones ni períodos. No se pierde ningún importe.</div>`
+    pie = `<button class="btn" data-m="cerrar">Cancelar</button><button class="btn mal" data-m="eliminar" data-id="${f.id}">${ic('papelera')} Eliminar fondo</button>`
+  } else if (destinos.length) {
+    cuerpo = `<p>El fondo <b>«${esc(f.nombre)}»</b> tiene historial. Para eliminarlo, elige un fondo que reciba sus imputaciones actuales.</p>
+      <ul class="deps" aria-label="Dependencias"><li><span>Gastos imputados</span><b class="num">${f.gastos}</b></li><li><span>Períodos con presupuesto</span><b class="num">${f.periodos}</b></li><li><span>Períodos cerrados</span><b class="num">${f.cerrados}</b></li><li><span>Importe imputado en abiertos</span><b class="num">${S(f.consumido)}</b></li></ul>
+      <label>Fondo de destino compatible<select id="destino" aria-label="Fondo de destino"><option value="">Elegir fondo…</option>${destinos.map((d) => `<option value="${d.id}">${esc(d.nombre)}${d.general ? ' (General)' : ''}</option>`).join('')}</select></label>
+      <div class="aviso w"><b>Qué pasa:</b> los gastos <b>no se borran</b> ni cambian de importe; solo se reimputan al fondo elegido en los períodos <b>abiertos</b>. Los ${f.cerrados} períodos cerrados conservan su historial con el nombre «${esc(f.nombre)}». Todo ocurre en una sola operación: si algo falla, queda como estaba.</div>`
+    pie = `<button class="btn" data-m="cerrar">Cancelar</button><button class="btn mal" id="ok" data-m="reasignar" data-id="${f.id}" disabled>${ic('papelera')} Reasignar y eliminar</button>`
+  } else {
+    cuerpo = `<div class="aviso b"><b>No hay un fondo de destino compatible.</b><br>«${esc(f.nombre)}» tiene ${f.gastos} gastos y ${f.cerrados} períodos cerrados, y no existe otro fondo activo que pueda recibir sus imputaciones. Crea o activa otro fondo, o desactiva este.</div>`
+    pie = `<button class="btn" data-m="cerrar">Cancelar</button><button class="btn" data-m="desactivar" data-id="${f.id}">${ic('power')} Desactivar en su lugar</button>`
+  }
+  const ov = document.createElement('div'); ov.className = 'ov'
+  ov.innerHTML = `<div class="mod" role="alertdialog" aria-modal="true" aria-labelledby="mt"><h2 id="mt">Eliminar fondo «${esc(f.nombre)}»</h2>${cuerpo}<div class="pie">${pie}</div></div>`
+  document.body.appendChild(ov)
+  const cerrar = () => { ov.remove(); document.removeEventListener('keydown', tecla) }
+  const tecla = (e) => { if (e.key === 'Escape') cerrar() }
+  document.addEventListener('keydown', tecla)
+  ov.querySelector('#destino')?.addEventListener('change', (e) => { ov.querySelector('#ok').disabled = !e.target.value })
+  ov.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-m]'); if (e.target === ov) return cerrar(); if (!b) return
+    const m = b.dataset.m
+    if (m === 'cerrar') cerrar()
+    if (m === 'eliminar') { fondos = fondos.filter((x) => x.id !== f.id); cerrar(); aviso(`Fondo «${f.nombre}» eliminado.`); dibujar() }
+    if (m === 'reasignar') { const d = fondos.find((x) => x.id === ov.querySelector('#destino').value); d.consumido += f.consumido; d.gastos += f.gastos; fondos = fondos.filter((x) => x.id !== f.id); cerrar(); aviso(`Eliminado. Sus ${f.gastos} gastos pasaron a «${d.nombre}»; los importes no cambiaron.`); dibujar() }
+    if (m === 'desactivar') { fondos.find((x) => x.id === f.id).activo = false; cerrar(); aviso(`«${f.nombre}» se desactivó (no se eliminó).`); dibujar() }
+  })
+  ov.querySelector('button').focus()
+}
+
+/* ---- Página ---- */
+const VARS = [['1', 'Tabla clásica', 'Filas limpias de 68 px, uso con barra y %.'], ['2', 'Acento por fondo', 'Franja y barra con el color de cada fondo.'], ['3', 'General fijado', 'Fondo General aparte y prioridad con asa de orden.'], ['4', 'Filas expandibles', 'Despliega reglas, gastos y período sin salir.'], ['5', 'Tabla ⇄ Tarjetas', 'Cambia a tarjetas compactas (como en móvil).']]
+function dibujar() {
+  const t = tema()
+  document.getElementById('app').innerHTML = `
+  <header class="cab"><div><h1>Fondos · propuesta combinada</h1><p>Mezcla de «Acento por fondo» y «General fijado». El <b>Fondo General</b> va siempre primero; los demás siguen el <b>orden de creación</b> y puedes cambiarlo <b>arrastrando el asa</b> ⠿ o con «Subir/Bajar prioridad» del menú ⋯. Datos de ejemplo: nada se guarda.</p></div>
+    <div style="display:flex;gap:8px"><button class="btn" id="rst">Restablecer</button><button class="btn" id="tema" aria-label="Cambiar tema">${ic(t === 'claro' ? 'luna' : 'sol')} ${t === 'claro' ? 'Oscuro' : 'Claro'}</button></div></header>
+  
+  ${kpis()}
+  <div class="barra"><div class="mes" role="group" aria-label="Mes"><button data-a="mes-" aria-label="Mes anterior">${ic('izq')}</button><span>${MESES[E.mes]}</span><button data-a="mes+" aria-label="Mes siguiente">${ic('der')}</button></div>
+    <label class="buscar">${ic('buscar')}<input id="q" placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" value="${esc(E.q)}"></label>
+    <div class="seg" role="group" aria-label="Estado">${[['activos', 'Activos'], ['inactivos', 'Inactivos'], ['todos', 'Todos']].map(([k, n]) => `<button data-f="${k}" aria-pressed="${E.filtro === k}">${n}</button>`).join('')}</div>
+    ${E.v === '5' ? `<div class="seg" role="group" aria-label="Vista">${[['tabla', 'Tabla'], ['tarjetas', 'Tarjetas']].map(([k, n]) => `<button data-vista="${k}" aria-pressed="${E.vista === k}">${n}</button>`).join('')}</div>` : ''}
+    <span class="esp"></span><button class="btn pri" data-a="nuevo">${ic('mas')} Nuevo fondo</button></div>
+  <div data-v="${E.v}" id="lista">${lista()}</div>
+  <p class="nota">En pantallas angostas la tabla pasa a tarjetas compactas con lo esencial (disponible, uso y acciones). Importes y fondos son ejemplos.</p>`
+  const q = document.getElementById('q'); if (E.enfocar) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); E.enfocar = false }
+}
+const tema = () => { const t = document.documentElement.dataset.theme; return t ? (t === 'dark' ? 'oscuro' : 'claro') : matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro' }
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-v],[data-f],[data-vista],[data-a],#tema,#rst'); const dentro = e.target.closest('.menu')
+  if (!b) { if (E.abierto && !dentro) { E.abierto = null; dibujar() } return }
+  if (b.id === 'tema') { document.documentElement.dataset.theme = tema() === 'claro' ? 'dark' : 'light'; return dibujar() }
+  if (b.id === 'rst') { fondos = JSON.parse(JSON.stringify(INICIAL)); E.abierto = null; return dibujar() }
+  if (b.dataset.v) { E.v = b.dataset.v; E.abierto = null; return dibujar() }
+  if (b.dataset.f) { E.filtro = b.dataset.f; E.abierto = null; return dibujar() }
+  if (b.dataset.vista) { E.vista = b.dataset.vista; return dibujar() }
+  const a = b.dataset.a, f = fondos.find((x) => x.id === b.dataset.id)
+  if (a === 'menu') { E.abierto = E.abierto === f.id ? null : f.id; return dibujar() }
+  if (a === 'exp') { E.exp.has(f.id) ? E.exp.delete(f.id) : E.exp.add(f.id); return dibujar() }
+  if (a === 'mes-') { E.mes = Math.min(2, E.mes + 1); return dibujar() } if (a === 'mes+') { E.mes = Math.max(0, E.mes - 1); return dibujar() }
+  if (a === 'nuevo') return aviso('Aquí se abriría el formulario «Nuevo fondo».')
+  if (a === 'gastos') return aviso(`Se abriría Gastos filtrado por «${f.nombre}».`)
+  E.abierto = null
+  if (a === 'editar') aviso(`Se abriría el formulario de «${f.nombre}».`)
+  if (a === 'presupuesto') aviso(`Se abriría «Cambiar presupuesto de ${MESES[E.mes]}» para «${f.nombre}».`)
+  if (a === 'clonar') { const c = { ...JSON.parse(JSON.stringify(f)), id: 'c' + Date.now(), nombre: f.nombre + ' (copia)', general: false, consumido: 0, gastos: 0, periodos: 0, cerrados: 0 }; fondos.splice(fondos.indexOf(f) + 1, 0, c); aviso(`«${c.nombre}» creado, sin gastos.`) }
+  if (a === 'sube' || a === 'baja') { const o = orden().filter((x) => !x.general), i = o.indexOf(f), j = i + (a === 'sube' ? -1 : 1); if (o[j]) { const ia = fondos.indexOf(o[i]), ib = fondos.indexOf(o[j]);[fondos[ia], fondos[ib]] = [fondos[ib], fondos[ia]]; aviso(`Prioridad de «${f.nombre}» actualizada.`) } }
+  if (a === 'activar') { f.activo = !f.activo; aviso(f.activo ? `«${f.nombre}» activado.` : `«${f.nombre}» desactivado (sigue existiendo).`) }
+  if (a === 'eliminar') { dibujar(); return dialogoEliminar(f) }
+  dibujar()
+})
+document.addEventListener('input', (e) => { if (e.target.id === 'q') { E.q = e.target.value; E.enfocar = true; dibujar() } })
+let arr = null
+document.addEventListener('dragstart', (e) => { const f = e.target.closest?.('.fila[data-fid]'); if (!f) return e.preventDefault(); arr = f.dataset.fid; e.dataTransfer.setData('text/plain', arr); setTimeout(() => f.classList.add('arr'), 0) })
+document.addEventListener('dragend', () => { arr = null; document.querySelectorAll('.arr,.antes').forEach((x) => x.classList.remove('arr', 'antes')) })
+document.addEventListener('dragover', (e) => { const f = e.target.closest?.('.fila[data-fid]'); if (!arr || !f || f.dataset.fid === arr) return; e.preventDefault(); document.querySelectorAll('.antes').forEach((x) => x.classList.remove('antes')); f.classList.add('antes') })
+document.addEventListener('drop', (e) => { const f = e.target.closest?.('.fila[data-fid]'); if (!arr || !f) return; e.preventDefault(); const mov = fondos.find((x) => x.id === arr), dest = fondos.find((x) => x.id === f.dataset.fid); fondos = fondos.filter((x) => x.id !== arr); fondos.splice(fondos.indexOf(dest), 0, mov); arr = null; aviso('Orden actualizado: ' + orden().filter((x) => !x.general).map((x) => x.nombre).join(' › ')); dibujar() })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && E.abierto) { E.abierto = null; dibujar() } })
+dibujar()
+</script>
