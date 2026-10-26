@@ -169,7 +169,7 @@ export function FondoForm({
     <Modal open onOpenChange={(o) => !o && onClose()} title={editando ? 'Editar fondo' : clon ? 'Clonar fondo' : 'Nuevo fondo'} size="xl"
       description="Un fondo es presupuesto asignado, no dinero ingresado ni una cuenta.">
       <form onSubmit={enviar} noValidate className="grid gap-4 lg:h-[clamp(480px,68vh,620px)] lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)_auto]">
-        <div className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
+        <div className="flex min-h-0 flex-col gap-3 lg:-m-1.5 lg:overflow-y-auto lg:p-1.5">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} autoFocus {...register('name')} />}</Field>
           <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -202,7 +202,7 @@ export function FondoForm({
           </label>
         </div>
 
-        <div className="flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pr-1">
+        <div className="flex min-h-0 flex-col gap-3 lg:-m-1.5 lg:overflow-y-auto lg:p-1.5">
           <Alert tone="info">
             <b>Cómo se aplican las reglas:</b> si incluyes elementos, el fondo solo admite esos; lo que excluyas nunca se admite (la exclusión gana). Sin reglas de un tipo, el fondo admite todo en ese tipo.
             {esGeneral && ' Un Fondo General suele quedar sin reglas de clasificación.'}
