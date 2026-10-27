@@ -14,7 +14,7 @@ export function Field({ label, error, hint, children }: FieldProps) {
   const msgId = `${id}-msg`
   const hasMsg = Boolean(error || hint)
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-medium">
         {label}
       </label>

@@ -14,6 +14,10 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   /** Explicación breve que se abre desde un icono de información junto a la X. */
   ayuda?: ReactNode
+  /** Hay cambios sin guardar: cerrar (X, Escape, fondo o «Cancelar») pregunta si seguir editando o descartar. */
+  sucio?: boolean
+  /** Acciones principales, siempre visibles bajo el cuerpo con scroll. Recibe `cerrar`, que respeta la confirmación de descarte. */
+  footer?: ReactNode | ((cerrar: () => void) => ReactNode)
   children: ReactNode
 }
 
@@ -31,11 +35,13 @@ function devolverFoco(origen: HTMLElement | null) {
 const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }
 
 /** Diálogo modal accesible. Se muestra sobre la página de origen para conservar el contexto. */
-export function Modal({ open, onOpenChange, title, description, size = 'md', ayuda, children }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, size = 'md', ayuda, sucio, footer, children }: ModalProps) {
   // Al cerrar, el foco vuelve al control que abrió el diálogo (se monta al abrir).
   const [origen] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
+  const [descartando, setDescartando] = useState(false)
+  const cerrar = () => (sucio ? setDescartando(true) : onOpenChange(false))
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(o) => (o ? onOpenChange(true) : cerrar())}>
       <Dialog.Portal>
         <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content
@@ -46,15 +52,15 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
             devolverFoco(origen)
           }}
           className={cn(
-            'anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-surface shadow-pop',
+            'anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-surface shadow-pop',
             SIZES[size],
           )}
         >
-          <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
-            <div>
-              <Dialog.Title className="font-display text-lg font-bold">{title}</Dialog.Title>
+          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
+            <div className="min-w-0">
+              <Dialog.Title className="break-words font-display text-lg font-bold">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="mt-1 text-sm text-muted">{description}</Dialog.Description>
+                <Dialog.Description className="mt-1 break-words text-sm text-muted">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
@@ -78,9 +84,16 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
               </Dialog.Close>
             </div>
           </div>
-          <div className="overflow-y-auto px-6 py-5">{children}</div>
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+          {footer && (
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+              {typeof footer === 'function' ? footer(cerrar) : footer}
+            </div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
+      <ConfirmDialog open={descartando} onOpenChange={setDescartando} title="¿Descartar los cambios?" description="Tienes cambios sin guardar en este formulario. Si sales ahora, se perderán."
+        confirmLabel="Descartar cambios" cancelLabel="Seguir editando" danger onConfirm={() => { setDescartando(false); onOpenChange(false) }} />
     </Dialog.Root>
   )
 }
@@ -91,13 +104,14 @@ interface ConfirmProps {
   title: string
   description: ReactNode
   confirmLabel: string
+  cancelLabel?: string
   danger?: boolean
   loading?: boolean
   onConfirm: () => void
 }
 
 /** Confirmación previa para acciones destructivas o que afectan a varios registros. */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, danger, loading, onConfirm }: ConfirmProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, cancelLabel = 'Cancelar', danger, loading, onConfirm }: ConfirmProps) {
   // El diálogo está siempre montado: el origen se captura justo antes de que Radix mueva el foco al abrir.
   const [origen, setOrigen] = useState<HTMLElement | null>(null)
   return (
@@ -118,7 +132,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
           <div className="mt-2 flex justify-end gap-2">
             <AlertDialog.Cancel asChild>
               <Button variant="secondary" disabled={loading}>
-                Cancelar
+                {cancelLabel}
               </Button>
             </AlertDialog.Cancel>
             <Button variant={danger ? 'danger' : 'primary'} loading={loading} onClick={onConfirm}>

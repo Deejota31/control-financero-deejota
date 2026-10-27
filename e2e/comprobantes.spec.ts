@@ -123,6 +123,8 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
     await e.getByRole('button', { name: 'Quitar comprobante' }).click()
     // Cancelar sin guardar: el archivo y la referencia siguen intactos
     await e.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(page.getByRole('alertdialog', { name: '¿Descartar los cambios?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Descartar cambios' }).click()
     expect(await existeComprobante(page, g.receipt_path)).toBe(true)
 
     await page.getByRole('button', { name: `Editar ${desc}` }).click()

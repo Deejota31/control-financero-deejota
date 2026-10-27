@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Paperclip, X } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -11,6 +11,7 @@ import { DatePicker } from '@/components/ui/DatePicker'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
 import { MoneyInput } from '@/components/ui/MoneyInput'
+import { Seccion } from '@/components/ui/Seccion'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
@@ -69,8 +70,9 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const subidoRef = useRef<string | null>(null)
+  const formId = useId()
 
-  const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<Values>({
+  const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       expense_date: gasto?.expense_date ?? inicial?.expense_date ?? HOY,
@@ -182,9 +184,16 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
 
   return (
     <Modal open onOpenChange={(o) => !o && !pendiente && onClose()} title={titulo} size="xl"
+      sucio={isDirty || Boolean(archivo) || (modo === 'editar' && recibo !== (gasto?.receipt_path ?? null))}
+      footer={(cerrar) => (
+        <>
+          <Button variant="secondary" onClick={cerrar} disabled={pendiente}>Cancelar</Button>
+          <Button type="submit" form={formId} loading={pendiente} disabled={bloqueado}>{pendiente ? 'Guardando…' : modo === 'editar' ? 'Guardar cambios' : 'Guardar gasto'}</Button>
+        </>
+      )}
       description={modo === 'clonar' ? 'Copia de un gasto existente: conserva su fecha, y puedes cambiar cualquier dato antes de guardar.' : undefined}>
-      <form onSubmit={enviar} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="flex flex-col gap-4">
+      <form id={formId} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="flex min-w-0 flex-col gap-4">
           {errorEnvio && <Alert tone="error">{errorEnvio}</Alert>}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Importe" error={errors.amount?.message}>
@@ -244,51 +253,49 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
             {(p) => <Input {...p} {...register('description', { onChange: () => setTocada(true) })} />}
           </Field>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div className="flex flex-col gap-1.5">
-              <span id="tipo-label" className="text-sm font-medium">Tipo</span>
-              <Controller control={control} name="expense_type" render={({ field }) => (
-                <div role="radiogroup" aria-labelledby="tipo-label" className="inline-flex rounded-md bg-surface-2 p-0.5 text-sm font-semibold">
-                  {([['variable', 'Variable'], ['fixed', 'Fijo']] as const).map(([val, label]) => (
-                    <button key={val} type="button" role="radio" aria-checked={field.value === val} onClick={() => field.onChange(val)}
-                      className={cn('rounded px-3 py-1.5', field.value === val ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{label}</button>
-                  ))}
-                </div>
-              )} />
-            </div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('is_recurring')} /> Es un gasto recurrente</label>
-          </div>
-
-          <Field label="Notas (opcional)" error={errors.notes?.message}>
-            {(p) => <Input {...p} {...register('notes')} />}
-          </Field>
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Comprobante (opcional)</span>
-            {recibo && !archivo ? (
-              <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
-                <Paperclip className="size-4 text-muted" aria-hidden="true" />
-                <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
-                <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
+          <Seccion titulo="Más opciones" inicial={modo !== 'nuevo' && Boolean(gasto?.notes || gasto?.receipt_path || gasto?.is_recurring || gasto?.expense_type === 'fixed')} resumen={[v.expense_type === 'fixed' ? 'Fijo' : 'Variable', v.is_recurring ? 'recurrente' : null, v.notes ? 'con nota' : null, archivo || recibo ? 'con comprobante' : null].filter(Boolean).join(' · ')}>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex flex-col gap-1.5">
+                <span id="tipo-label" className="text-sm font-medium">Tipo</span>
+                <Controller control={control} name="expense_type" render={({ field }) => (
+                  <div role="radiogroup" aria-labelledby="tipo-label" className="inline-flex rounded-md bg-surface-2 p-0.5 text-sm font-semibold">
+                    {([['variable', 'Variable'], ['fixed', 'Fijo']] as const).map(([val, label]) => (
+                      <button key={val} type="button" role="radio" aria-checked={field.value === val} onClick={() => field.onChange(val)}
+                        className={cn('rounded px-3 py-1.5', field.value === val ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{label}</button>
+                    ))}
+                  </div>
+                )} />
               </div>
-            ) : (
-              <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
-                className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
-            )}
-            <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
-            {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
-          </div>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('is_recurring')} /> Es un gasto recurrente</label>
+            </div>
+
+            <Field label="Notas (opcional)" error={errors.notes?.message}>
+              {(p) => <Input {...p} {...register('notes')} />}
+            </Field>
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">Comprobante (opcional)</span>
+              {recibo && !archivo ? (
+                <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
+                  <Paperclip className="size-4 text-muted" aria-hidden="true" />
+                  <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
+                  <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
+                </div>
+              ) : (
+                <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+                  className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
+              )}
+              <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
+              {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
+            </div>
+          </Seccion>
         </div>
 
-        <aside aria-label="Imputación a fondos" className="flex flex-col gap-3 lg:sticky lg:top-0 lg:self-start">
+        <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-0 lg:self-start">
           <h3 className="font-display text-base font-bold">Cobertura por fondos</h3>
           <PanelPrevio payload={payloadPrevio} actualizando={previoActualizando} error={previo.isError} reporte={payloadPrevio === payloadDebounced ? previo.data : undefined} />
         </aside>
 
-        <div className="flex justify-end gap-2 lg:col-span-2">
-          <Button variant="secondary" onClick={onClose} disabled={pendiente}>Cancelar</Button>
-          <Button type="submit" loading={pendiente} disabled={bloqueado}>{pendiente ? 'Guardando…' : modo === 'editar' ? 'Guardar cambios' : 'Guardar gasto'}</Button>
-        </div>
       </form>
     </Modal>
   )
