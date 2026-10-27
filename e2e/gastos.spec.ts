@@ -80,7 +80,7 @@ test.describe('Gastos', () => {
     const fechaOriginal = (await fila.getByRole('cell').nth(1).textContent())!.trim()
     await fila.getByRole('button', { name: `Clonar ${desc}` }).click()
     const dlg = page.getByRole('dialog')
-    await expect(dlg.getByText(fechaOriginal)).toBeVisible()
+    await expect(dlg.getByText(fechaOriginal).first()).toBeVisible()
     await expect(dlg.getByLabel('Descripción', { exact: true })).toHaveValue(desc)
     const copia = `${desc} copia`
     await dlg.getByLabel('Descripción', { exact: true }).fill(copia)

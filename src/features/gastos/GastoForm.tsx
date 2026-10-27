@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Paperclip, X } from 'lucide-react'
-import { useId, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
+import { ChipK } from '@/components/ui/ChipK'
 import { Combobox } from '@/components/ui/Combobox'
+import { ItemIcon } from '@/components/ui/ItemIcon'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
@@ -56,6 +58,16 @@ const MOTIVOS: Record<string, string> = {
   rules: 'Ningún fondo admite a la vez esta clasificación y este medio de pago. Ajusta las reglas en Fondos o cambia uno de los dos.',
 }
 
+/** Agrupa campos relacionados bajo un título: la jerarquía del formulario es por tareas, no una lista de controles. */
+function GrupoForm({ titulo, children }: { titulo: string; children: ReactNode }) {
+  return (
+    <section aria-label={titulo} className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 sm:p-4">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">{titulo}</h3>
+      {children}
+    </section>
+  )
+}
+
 export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; gasto?: Gasto; inicial?: Partial<Values>; onClose: () => void }) {
   const catalogo = useCatalogo()
   const perfil = usePerfil()
@@ -89,6 +101,10 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
   })
   const v = useWatch({ control })
 
+  const ambitoSel = catalogo.ambitos.find((x) => x.id === v.ambito_id)
+  const categoriaSel = catalogo.categorias.find((x) => x.id === v.categoria_id)
+  const subSel = catalogo.subcategorias.find((x) => x.id === v.subcategoria_id)
+  const medioSel = catalogo.medios.find((x) => x.id === v.payment_method_id)
   const categorias = useMemo(() => catalogo.categorias.filter((c) => c.ambito_id === v.ambito_id), [catalogo.categorias, v.ambito_id])
   const subcategorias = useMemo(() => catalogo.subcategorias.filter((s) => s.categoria_id === v.categoria_id), [catalogo.subcategorias, v.categoria_id])
 
@@ -179,6 +195,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
     }
   })(ev)
 
+  const resumenValido = parseImporte(v.amount ?? '') !== null && Boolean(v.expense_date)
   const titulo = modo === 'editar' ? 'Editar gasto' : modo === 'clonar' ? 'Clonar gasto' : 'Nuevo gasto'
   const pendiente = enviando || mut.crear.isPending || mut.actualizar.isPending
 
@@ -187,6 +204,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
       sucio={isDirty || Boolean(archivo) || (modo === 'editar' && recibo !== (gasto?.receipt_path ?? null))}
       footer={(cerrar) => (
         <>
+          {resumenValido && <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite">Se guardará <b className="num text-fg">{formatSoles(parseImporte(v.amount ?? '') ?? 0)}</b> · {formatFecha(v.expense_date ?? HOY, formato)}{medioSel ? ` · ${medioSel.name}` : ''}</p>}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>Cancelar</Button>
           <Button type="submit" form={formId} loading={pendiente} disabled={bloqueado}>{pendiente ? 'Guardando…' : modo === 'editar' ? 'Guardar cambios' : 'Guardar gasto'}</Button>
         </>
@@ -195,17 +213,31 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
       <form id={formId} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex min-w-0 flex-col gap-4">
           {errorEnvio && <Alert tone="error">{errorEnvio}</Alert>}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Importe" error={errors.amount?.message}>
-              {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} />} />}
+          <GrupoForm titulo="Datos principales">
+            <Field label="Descripción" error={errors.description?.message} hint="Qué compraste o pagaste. Se propone desde la subcategoría; puedes editarla.">
+            {(p) => <Input {...p} {...register('description', { onChange: () => setTocada(true) })} />}
+          </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Importe" error={errors.amount?.message}>
+              {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput grande id={p.id} aria-describedby={p["aria-describedby"]} invalid={p["aria-invalid"]} value={field.value} onChange={field.onChange} />} />}
             </Field>
-            <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
+              <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
               {(p) => <Controller control={control} name="expense_date" render={({ field }) => <DatePicker id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} formato={formato} />} />}
             </Field>
-          </div>
+            </div>
+            <Field label="Medio de pago" error={errors.payment_method_id?.message}>
+              {(p) => (
+                <Controller control={control} name="payment_method_id" render={({ field }) => (
+                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} searchable={false}
+                    options={opciones(catalogo.medios, field.value)} placeholder="Elegir medio" onChange={(x) => field.onChange(x ?? '')} />
+                )} />
+              )}
+            </Field>
+          </GrupoForm>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Ámbito" error={errors.ambito_id?.message}>
+          <GrupoForm titulo="Clasificación">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Ámbito" error={errors.ambito_id?.message}>
               {(p) => (
                 <Controller control={control} name="ambito_id" render={({ field }) => (
                   <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} searchable={false}
@@ -214,7 +246,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
                 )} />
               )}
             </Field>
-            <Field label="Categoría" error={errors.categoria_id?.message} hint={!v.ambito_id ? 'Primero elige un ámbito.' : undefined}>
+              <Field label="Categoría" error={errors.categoria_id?.message} hint={!v.ambito_id ? 'Primero elige un ámbito.' : undefined}>
               {(p) => (
                 <Controller control={control} name="categoria_id" render={({ field }) => (
                   <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} disabled={!v.ambito_id}
@@ -223,9 +255,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
                 )} />
               )}
             </Field>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
+            </div>
             <Field label="Subcategoría (opcional)" hint={v.categoria_id && subcategorias.length === 0 ? 'Esta categoría no tiene subcategorías.' : !v.categoria_id ? 'Primero elige una categoría.' : undefined}>
               {(p) => (
                 <Controller control={control} name="subcategoria_id" render={({ field }) => (
@@ -239,21 +269,16 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
                 )} />
               )}
             </Field>
-            <Field label="Medio de pago" error={errors.payment_method_id?.message}>
-              {(p) => (
-                <Controller control={control} name="payment_method_id" render={({ field }) => (
-                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} searchable={false}
-                    options={opciones(catalogo.medios, field.value)} placeholder="Elegir medio" onChange={(x) => field.onChange(x ?? '')} />
-                )} />
-              )}
-            </Field>
-          </div>
+            {(ambitoSel || categoriaSel) && (
+              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted" aria-label="Clasificación elegida">
+                {ambitoSel && <ChipK color={ambitoSel.color_css}><ItemIcon name={ambitoSel.icon_key} className="size-3" /> {ambitoSel.name}</ChipK>}
+                {categoriaSel && <ChipK color={categoriaSel.color_css}><ItemIcon name={categoriaSel.icon_key} className="size-3" /> {categoriaSel.name}</ChipK>}
+                {subSel && <ChipK color={subSel.color_css}><ItemIcon name={subSel.icon_key} className="size-3" /> {subSel.name}</ChipK>}
+              </p>
+            )}
+          </GrupoForm>
 
-          <Field label="Descripción" error={errors.description?.message} hint="Se propone desde la subcategoría; puedes editarla.">
-            {(p) => <Input {...p} {...register('description', { onChange: () => setTocada(true) })} />}
-          </Field>
-
-          <Seccion titulo="Más opciones" inicial={modo !== 'nuevo' && Boolean(gasto?.notes || gasto?.receipt_path || gasto?.is_recurring || gasto?.expense_type === 'fixed')} resumen={[v.expense_type === 'fixed' ? 'Fijo' : 'Variable', v.is_recurring ? 'recurrente' : null, v.notes ? 'con nota' : null, archivo || recibo ? 'con comprobante' : null].filter(Boolean).join(' · ')}>
+          <Seccion titulo="Información adicional" inicial={modo !== 'nuevo' && Boolean(gasto?.notes || gasto?.receipt_path || gasto?.is_recurring || gasto?.expense_type === 'fixed')} resumen={[v.expense_type === 'fixed' ? 'Fijo' : 'Variable', v.is_recurring ? 'recurrente' : null, v.notes ? 'con nota' : null, archivo || recibo ? 'con comprobante' : null].filter(Boolean).join(' · ')}>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="flex flex-col gap-1.5">
                 <span id="tipo-label" className="text-sm font-medium">Tipo</span>
@@ -270,7 +295,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
             </div>
 
             <Field label="Notas (opcional)" error={errors.notes?.message}>
-              {(p) => <Input {...p} {...register('notes')} />}
+              {(p) => <textarea {...p} rows={2} {...register('notes')} className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" placeholder="Detalles que no caben en el concepto" />}
             </Field>
 
             <div className="flex flex-col gap-1.5">
@@ -292,7 +317,10 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
         </div>
 
         <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-0 lg:self-start">
-          <h3 className="font-display text-base font-bold">Cobertura por fondos</h3>
+          <div>
+            <h3 className="font-display text-base font-bold">Cobertura estimada por fondos</h3>
+            <p className="text-xs text-muted">Estimación del motor con los datos de hoy. La imputación definitiva se calcula al guardar.</p>
+          </div>
           <PanelPrevio payload={payloadPrevio} actualizando={previoActualizando} error={previo.isError} reporte={payloadPrevio === payloadDebounced ? previo.data : undefined} />
         </aside>
 

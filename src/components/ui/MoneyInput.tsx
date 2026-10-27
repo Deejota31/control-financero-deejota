@@ -11,10 +11,12 @@ interface MoneyInputProps {
   'aria-describedby'?: string
   'aria-label'?: string
   placeholder?: string
+  /** Importe protagonista de un formulario: tipografía mayor. */
+  grande?: boolean
 }
 
 /** Importe con prefijo S/ fijo dentro del mismo contorno, de modo que nunca se separe del número. */
-export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, placeholder = '0.00', ...aria }: MoneyInputProps) {
+export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, placeholder = '0.00', grande, ...aria }: MoneyInputProps) {
   return (
     <div
       className={cn(
@@ -40,7 +42,7 @@ export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, pla
           if (n !== null) onChange(n.toFixed(2))
           onBlur?.()
         }}
-        className="sin-anillo num w-full bg-transparent py-2 pl-1 pr-3 text-sm outline-none placeholder:text-muted"
+        className={cn('sin-anillo num w-full bg-transparent py-2 pl-1 pr-3 outline-none placeholder:text-muted', grande ? 'text-lg font-semibold' : 'text-sm')}
       />
     </div>
   )

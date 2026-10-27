@@ -47,7 +47,7 @@ test.describe('Modales: acciones visibles y campos contenidos en todos los tama�
       await expect(d).toBeVisible()
       let r = await medir(page, d, ['Cancelar', 'Guardar gasto'])
       expect(r.fallos, `Nuevo gasto ${t.w}×${t.h}`).toEqual([])
-      await d.getByRole('button', { name: /Más opciones/ }).click()
+      await d.getByRole('button', { name: /Información adicional/ }).click()
       r = await medir(page, d, ['Cancelar', 'Guardar gasto'])
       expect(r.fallos, `Nuevo gasto (más opciones) ${t.w}×${t.h}`).toEqual([])
       await d.getByRole('button', { name: 'Cancelar' }).click()
