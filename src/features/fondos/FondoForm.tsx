@@ -7,15 +7,13 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
-import { ColorPicker } from '@/components/ui/IconPicker'
-import { Seccion } from '@/components/ui/Seccion'
+import { ColorCompacto } from '@/components/ui/SelectorColor'
 import { SelectorIcono } from '@/components/ui/SelectorIcono'
 import { sugerirIconos } from '@/domain/iconos'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { cn } from '@/lib/cn'
 import { errorImporte, parseMontoNoNegativo } from '@/lib/format'
-import { nombreIcono } from '@/lib/icons'
 import type { Catalogo } from '@/features/catalogo/useCatalogo'
 import type { Fila } from '@/lib/tipos'
 import type { FondoPayload } from './useFondos'
@@ -144,9 +142,6 @@ export function FondoForm({
   const esGeneral = useWatch({ control, name: 'is_general' })
   const color = useWatch({ control, name: 'color_token' })
   const nombreFondo = useWatch({ control, name: 'name' })
-  const iconKey = useWatch({ control, name: 'icon_key' })
-  const activo = useWatch({ control, name: 'is_active' })
-  const descripcion = useWatch({ control, name: 'description' })
   const editando = Boolean(fondo && !clon)
 
   const arbol = useMemo(
@@ -253,18 +248,15 @@ export function FondoForm({
               </Field>
             )}
           </div>
-          <Seccion titulo="Apariencia" resumen={`Icono ${nombreIcono(iconKey)} · color ${color}`}>
-            <div className="flex min-w-0 flex-col gap-2">
-              <span className="text-sm font-medium">Icono</span>
-              <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={field.value} onChange={field.onChange} sugerencias={sugerirIconos(nombreFondo ?? '')} color={color} />} />
-            </div>
-            <div className="flex min-w-0 flex-col gap-2">
-              <span className="text-sm font-medium">Color</span>
-              <Controller control={control} name="color_token" render={({ field }) => <ColorPicker value={field.value} onChange={field.onChange} />} />
-            </div>
-          </Seccion>
-          <Seccion titulo="Más opciones" inicial={esGeneral} resumen={[esGeneral ? 'Fondo General' : null, activo ? 'Activo' : 'Inactivo', descripcion ? 'con descripción' : null].filter(Boolean).join(' · ')}>
-            <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
+          <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-sm font-medium">Icono</span>
+            <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={field.value} onChange={field.onChange} sugerencias={sugerirIconos(nombreFondo ?? '')} color={color} />} />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Controller control={control} name="color_token" render={({ field }) => <ColorCompacto valor={field.value} onChange={field.onChange} etiqueta="Color" />} />
+          </div>
+          <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-1" disabled={editando && fondo?.is_general ? true : hayGeneralActivo && !fondo?.is_general} {...register('is_general')} />
               <span>
@@ -275,7 +267,7 @@ export function FondoForm({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" {...register('is_active')} /> Fondo activo
             </label>
-          </Seccion>
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-3">
@@ -291,7 +283,7 @@ export function FondoForm({
               <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar ámbito, categoría o subcategoría…" aria-label="Buscar en la clasificación"
                 className="min-w-0 flex-1 sin-anillo bg-transparent text-sm outline-none placeholder:text-muted" />
             </label>
-            <div className="flex h-[clamp(13rem,34dvh,19rem)] flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
+            <div className="flex max-h-[clamp(13rem,40dvh,20rem)] flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
               {arbol.map(({ a, cats }) => {
                 const claveA = `ambito:${a.id}`
                 const visibles = cats.map(({ c, subs }) => ({ c, subs, visSubs: subs.filter((s) => coincide(s.name)), ok: coincide(c.name) })).filter((x) => !q || coincide(a.name) || x.ok || x.visSubs.length > 0)

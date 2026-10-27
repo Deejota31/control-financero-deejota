@@ -56,7 +56,6 @@ test.describe('Modales: acciones visibles y campos contenidos en todos los tama�
       await page.getByRole('button', { name: 'Nuevo fondo' }).first().click()
       d = page.getByRole('dialog').last()
       await expect(d).toBeVisible()
-      for (const sec of ['Apariencia', 'Más opciones']) await d.getByRole('button', { name: new RegExp(`^${sec}`) }).click()
       r = await medir(page, d, ['Cancelar', 'Guardar fondo'])
       expect(r.fallos, `Nuevo fondo ${t.w}×${t.h}`).toEqual([])
       await page.keyboard.press('Escape')

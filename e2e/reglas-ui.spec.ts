@@ -84,7 +84,6 @@ test.describe('Formulario de fondo: reglas por teclado, ramas contraíbles, desc
     for (let i = 0; i < 8; i++) {
       await page.getByRole('button', { name: 'Nuevo fondo' }).click()
       const d = page.getByRole('dialog', { name: 'Nuevo fondo' })
-      await d.getByRole('button', { name: /^Apariencia/ }).click()
       await d.getByRole('button', { name: /Cambiar icono/ }).click()
       await expect(d.getByRole('group', { name: 'Explorador de íconos' })).toBeVisible()
       await page.keyboard.press('Escape') // contrae el explorador, no cierra el diálogo
@@ -106,3 +105,31 @@ test.describe('Formulario de fondo: reglas por teclado, ramas contraíbles, desc
     }
   })
 })
+
+test.describe('Formulario de fondo: orden de campos y color', () => {
+  test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
+
+  test('la descripción va tras los importes, el color se elige en un popover y se guarda con su nombre (no como «c1»)', async ({ page }) => {
+    await iniciarSesion(page)
+    await page.goto('/fondos')
+    await page.getByRole('button', { name: 'Nuevo fondo' }).click()
+    const d = page.getByRole('dialog', { name: 'Nuevo fondo' })
+    // Orden visual: Nombre → Importe por defecto → Descripción
+    const y = async (n: string) => (await d.getByLabel(n).first().boundingBox())!.y
+    expect(await y('Nombre')).toBeLessThan(await y('Importe por defecto (S/)'))
+    expect(await y('Importe por defecto (S/)')).toBeLessThan(await y('Descripción (opcional)'))
+    await expect(d.getByText(/color c\d/i)).toHaveCount(0) // sin identificadores técnicos
+    const nombre = `Color ${sufijo()}`
+    await d.getByLabel('Nombre').fill(nombre)
+    await d.getByRole('radiogroup', { name: 'Regla para Hogar', exact: true }).getByRole('radio', { name: 'Incluir' }).click()
+    await d.getByRole('button', { name: /^Cambiar/ }).last().click()
+    await page.getByRole('radio', { name: /^Rojo, familia/ }).click()
+    await page.keyboard.press('Escape') // cierra el popover, no el diálogo
+    await expect(d).toBeVisible()
+    await expect(d.getByText('Color: Rojo')).toBeVisible()
+    await d.getByRole('button', { name: 'Guardar fondo' }).click()
+    await expect(page.getByText('Fondo guardado.')).toBeVisible()
+    const fila = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: nombre, exact: true }) })
+    await expect(fila).toBeVisible()
+  })
+});
