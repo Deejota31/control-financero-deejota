@@ -2,5 +2,5 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "import"],
   "categories": { "correctness": "error" },
-  "ignorePatterns": ["dist", "node_modules", "supabase", "prototipos"]
+  "ignorePatterns": ["dist", "node_modules", "supabase"]
 }

@@ -57,7 +57,7 @@ Tras cambiar el esquema: `npm run db:types` regenera `src/lib/database.types.ts`
 | `npm run db:reset` | Recrea la base con migraciones y la cuenta de acceso (sin datos) |
 | `npm run db:test` | Pruebas pgTAP: RLS, jerarquía, motor de fondos, idempotencia, períodos cerrados |
 | `npm run db:types` | Regenera los tipos TypeScript desde el esquema |
-| `npm run verify:seed` | Comprueba que la base local está vacía, que la cuenta de acceso funciona y que no quedan rastros de pruebas |
+| `npm run verify:seed` | Comprueba que la base local está vacía, que la cuenta de acceso funciona y que no quedan rastros de pruebas. **Solo para una base recién creada: no lo ejecutes sobre una base con datos reales** |
 | `npm run verify:security` | Comprueba ausencia de secretos versionados, que las migraciones no crean usuarios ni datos demo y que el build de producción no incrusta URLs locales |
 | `npm run test:all` | Typecheck, lint, Vitest, pgTAP, E2E (incluye axe), verificación del seed y de seguridad |
 
@@ -76,4 +76,3 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 - [Reglas de asignación de fondos](docs/reglas-fondos.md)
 - [Decisiones técnicas](docs/decisiones.md)
 - [Preparación para publicar](docs/despliegue.md) (pendiente de tu aprobación)
-- [Rediseño del Catálogo: propuestas A/B/C](docs/catalogo-propuestas.md) (solo diseño; prototipos en `prototipos/catalogo/`)
