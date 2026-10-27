@@ -147,7 +147,7 @@ export function DashboardPage() {
   const subcategoriasOpc = catalogo.subcategorias.filter((s) => (filtros.categoria ? s.categoria_id === filtros.categoria : categoriasOpc.some((c) => c.id === s.categoria_id)))
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-6">
+    <div className="mx-auto flex max-w-[1760px] flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{etiquetaPeriodo} · <span aria-live="polite">{cruzados ? 'con filtros activos' : 'todos los ámbitos y medios de pago'}</span></p>
         {cruzados && valido && <Button variant="secondary" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>}

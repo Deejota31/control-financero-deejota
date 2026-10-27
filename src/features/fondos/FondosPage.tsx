@@ -9,10 +9,11 @@ import { Field } from '@/components/ui/Field'
 import { MesSelector } from '@/components/ui/MesSelector'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
-import { admite, cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
+import { DetalleFondo } from './DetalleFondo'
+import { cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatFecha, formatMes, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
+import { errorImporte, formatMes, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
 import type { Fila, Gasto } from '@/lib/tipos'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
@@ -291,6 +292,8 @@ export function FondosPage() {
       {detalleFondo && (
         <DetalleFondo
           tarjeta={detalleFondo}
+          periodo={formatMes(p.start_date)}
+          cerrado={cerrado}
           asignaciones={(asignaciones.data ?? []).filter((a) => a.fund_id === detalleFondo.id)}
           gastos={datos.gastosPorId}
           fondosQ={fondosQ.data!}
@@ -451,72 +454,3 @@ function PresupuestoDialog({ fondo, actual, cargando, onClose, onSubmit }: { fon
   )
 }
 
-function DetalleFondo({
-  tarjeta, asignaciones, gastos, fondosQ, todas, formato, onClose,
-}: {
-  tarjeta: Tarjeta
-  asignaciones: Fila<'expense_fund_allocations'>[]
-  gastos: Map<string, Gasto>
-  fondosQ: { fondos: FondoFila[]; alcance: Fila<'fund_scope_rules'>[]; medios: Fila<'fund_payment_rules'>[] }
-  todas: Fila<'expense_fund_allocations'>[]
-  formato: string
-  onClose: () => void
-}) {
-  const filas = asignaciones
-    .map((a) => ({ a, g: gastos.get(a.expense_id) }))
-    .filter((x): x is { a: Fila<'expense_fund_allocations'>; g: Gasto } => Boolean(x.g))
-    .sort((x, y) => x.g.expense_date.localeCompare(y.g.expense_date))
-
-  // Origen del excedente: fondos específicos que admiten ese gasto (según las reglas actuales).
-  function origen(g: Gasto, a: Fila<'expense_fund_allocations'>): string | null {
-    if (!tarjeta.esGeneral || a.allocation_kind !== 'general') return null
-    const especificos = fondosQ.fondos.filter((f) => !f.is_general && f.is_active && admite(
-      fondosQ.alcance.filter((r) => r.fund_id === f.id),
-      fondosQ.medios.filter((r) => r.fund_id === f.id),
-      { ambito_id: g.ambito_id, categoria_id: g.categoria_id, subcategoria_id: g.subcategoria_id, payment_method_id: g.payment_method_id },
-    ))
-    return especificos.length ? `Excedente de ${especificos.map((f) => f.name).join(', ')}` : null
-  }
-
-  const excedente = round2(filas.reduce((s, { a, g }) => s + (origen(g, a) ? Number(a.amount) : 0), 0))
-  const otrosFondos = (id: string) => todas.filter((x) => x.expense_id === id && x.fund_id !== tarjeta.id)
-
-  return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title={`Gastos imputados · ${tarjeta.nombre}`} size="lg">
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-muted">
-          Consumido <b className="num text-fg">{formatSoles(tarjeta.resumen.consumido)}</b> de <span className="num">{formatSoles(tarjeta.resumen.asignado)}</span>.
-          {tarjeta.esGeneral && excedente > 0 && <> Excedente recibido de fondos específicos: <b className="num text-fg">{formatSoles(excedente)}</b>.</>}
-        </p>
-        {filas.length === 0 ? (
-          <EmptyState title="Sin gastos imputados" description="Los gastos que consuman este fondo aparecerán aquí." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead><tr className="text-xs uppercase tracking-wide text-muted"><th className="py-2">Fecha</th><th className="py-2">Descripción</th><th className="py-2">Detalle</th><th className="py-2 text-right">Imputado</th></tr></thead>
-              <tbody>
-                {filas.map(({ a, g }) => {
-                  const o = origen(g, a)
-                  const otros = otrosFondos(g.id)
-                  return (
-                    <tr key={a.id} className="border-t border-line">
-                      <td className="num whitespace-nowrap py-2">{formatFecha(g.expense_date, formato)}</td>
-                      <td className="py-2">{g.description}</td>
-                      <td className="py-2">
-                        {o ? <Pill tone="warn">{o}</Pill> : otros.length ? <Pill tone="neutral">Compartido con {otros.length} fondo(s)</Pill> : <span className="text-muted">Directo</span>}
-                      </td>
-                      <td className="num whitespace-nowrap py-2 text-right">
-                        {formatSoles(Number(a.amount))}
-                        {Number(a.amount) < Number(g.amount) && <span className="block text-xs text-muted">de {formatSoles(Number(g.amount))}</span>}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </Modal>
-  )
-}

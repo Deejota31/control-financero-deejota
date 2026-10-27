@@ -40,7 +40,7 @@ export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, pla
           if (n !== null) onChange(n.toFixed(2))
           onBlur?.()
         }}
-        className="num w-full bg-transparent py-2 pl-1 pr-3 text-sm outline-none placeholder:text-muted"
+        className="sin-anillo num w-full bg-transparent py-2 pl-1 pr-3 text-sm outline-none placeholder:text-muted"
       />
     </div>
   )

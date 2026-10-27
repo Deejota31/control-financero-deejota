@@ -39,7 +39,7 @@ export function CatalogoPage() {
   if (catalogo.isError) return <ErrorState message="No se pudo cargar el catálogo." onRetry={catalogo.refetch} />
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
+    <div className="mx-auto flex max-w-[1760px] flex-col gap-4">
       <p className="text-sm text-muted">
         Las opciones usadas por gastos anteriores no se eliminan: se desactivan y conservan su significado en el histórico. Cambiar un color solo cambia cómo se ve, nunca los importes.
       </p>

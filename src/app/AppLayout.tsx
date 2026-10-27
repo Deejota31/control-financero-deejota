@@ -1,5 +1,5 @@
 import { LogOut, Plus } from 'lucide-react'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/States'
@@ -11,7 +11,9 @@ import { useTema } from '@/features/tema/ThemeProvider'
 import { ThemeToggle } from '@/features/tema/ThemeToggle'
 import { procesarLimpieza } from '@/features/gastos/comprobantes'
 import { RegistroGastoProvider, useRegistroGasto } from '@/features/gastos/RegistroGasto'
+import { BarraLateral } from './BarraLateral'
 import { MODULOS, type Modulo } from './modulos'
+import { useBarraLateral } from './useBarraLateral'
 
 export function AppLayout() {
   return (
@@ -30,6 +32,8 @@ function Estructura() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [saliendo, setSaliendo] = useState(false)
+  const { compacta, alternar } = useBarraLateral()
+  const tecladoAbierto = useTecladoVirtual()
 
   // El tema guardado en el perfil manda al iniciar sesión.
   const temaPerfil = perfil.data?.theme
@@ -53,43 +57,15 @@ function Estructura() {
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[4.5rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]">
+    <div
+      className="min-h-screen lg:grid lg:[grid-template-columns:var(--ancho-barra)_minmax(0,1fr)] lg:transition-[grid-template-columns] lg:duration-200 lg:ease-out motion-reduce:lg:transition-none"
+      style={{ '--ancho-barra': compacta ? '4.5rem' : '15rem' } as CSSProperties}
+    >
       <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-pri focus:px-3 focus:py-2 focus:text-pri-fg">
         Saltar al contenido
       </a>
 
-      <aside className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-line bg-surface p-2 lg:flex xl:p-4">
-        <div className="flex items-center justify-center gap-2 px-1 pb-4 pt-2 font-display text-lg font-bold xl:justify-start xl:px-3">
-          <span aria-hidden="true" className="grid size-7 place-items-center rounded-md bg-pri text-sm text-pri-fg">
-            G
-          </span>
-          <span className="hidden xl:inline">Gasto Deejota</span>
-        </div>
-        <nav aria-label="Módulos" className="flex flex-col gap-1">
-          {MODULOS.map(({ path, label, icon: Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              aria-label={label}
-              title={label}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center justify-center gap-3 rounded-md px-3 py-2 text-sm font-medium xl:justify-start',
-                  isActive ? 'bg-pri-soft text-pri' : 'text-muted hover:bg-surface-2 hover:text-fg',
-                )
-              }
-            >
-              <Icon className="size-[18px]" aria-hidden="true" />
-              <span className="hidden xl:inline">{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto hidden flex-col gap-0.5 border-t border-line px-3 pt-3 text-sm xl:flex">
-          <span className="truncate font-semibold">{nombre}</span>
-          {perfil.data?.display_name && <span className="truncate text-muted">{user?.email}</span>}
-        </div>
-      </aside>
+      <BarraLateral compacta={compacta} onAlternar={alternar} nombre={nombre} correo={user?.email} />
 
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-between gap-3 border-b border-line bg-surface px-4 lg:px-8">
@@ -118,7 +94,7 @@ function Estructura() {
         </main>
       </div>
 
-      <nav aria-label="Módulos" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
         {MODULOS.slice(0, 3).map((m) => <EnlaceInferior key={m.path} modulo={m} />)}
         <button type="button" onClick={abrir} aria-label="Registrar gasto" className="fab-gasto relative -top-4 mx-auto grid size-14 place-items-center rounded-full bg-pri text-pri-fg shadow-pop ring-4 ring-surface">
           <Plus className="size-7" aria-hidden="true" />
@@ -149,4 +125,20 @@ function EnlaceInferior({ modulo: { path, label, corto, icon: Icon } }: { modulo
       )}
     </NavLink>
   )
+}
+
+/**
+ * Detecta el teclado virtual (el viewport visual se encoge respecto al de la página). Con el teclado abierto la barra inferior se oculta
+ * para no invadir el formulario que se está editando.
+ */
+function useTecladoVirtual(): boolean {
+  const [abierto, setAbierto] = useState(false)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const medir = () => setAbierto(window.innerHeight - vv.height > 140 && window.matchMedia('(max-width: 1023px)').matches)
+    vv.addEventListener('resize', medir)
+    return () => vv.removeEventListener('resize', medir)
+  }, [])
+  return abierto
 }

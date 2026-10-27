@@ -136,7 +136,7 @@ export function GastosPage() {
   const hoy = new Date()
 
   return (
-    <div className="mx-auto flex max-w-[1400px] flex-col gap-5">
+    <div className="mx-auto flex max-w-[1760px] flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-muted" aria-live="polite">{q.isPending ? 'Cargando…' : `${total} ${total === 1 ? 'movimiento' : 'movimientos'} con los filtros aplicados`}</p>

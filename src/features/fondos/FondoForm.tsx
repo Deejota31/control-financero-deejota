@@ -289,7 +289,7 @@ export function FondoForm({
             <label className="flex items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 focus-within:border-pri">
               <Search className="size-4 shrink-0 text-muted" aria-hidden="true" />
               <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar ámbito, categoría o subcategoría…" aria-label="Buscar en la clasificación"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
+                className="min-w-0 flex-1 sin-anillo bg-transparent text-sm outline-none placeholder:text-muted" />
             </label>
             <div className="flex h-[clamp(13rem,34dvh,19rem)] flex-col gap-0.5 overflow-y-auto rounded-md border border-line p-1.5">
               {arbol.map(({ a, cats }) => {

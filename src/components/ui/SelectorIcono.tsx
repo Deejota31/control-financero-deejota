@@ -125,7 +125,7 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
           <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-2">
             <label className="flex min-w-0 flex-1 basis-28 items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 focus-within:border-pri">
               <Search className="size-4 shrink-0 text-muted" aria-hidden="true" />
-              <input ref={busquedaRef} value={consulta} onChange={(e) => setConsulta(e.target.value)} placeholder="Buscar ícono…" aria-label="Buscar ícono" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted" />
+              <input ref={busquedaRef} value={consulta} onChange={(e) => setConsulta(e.target.value)} placeholder="Buscar ícono…" aria-label="Buscar ícono" className="min-w-0 flex-1 sin-anillo bg-transparent text-sm outline-none placeholder:text-muted" />
               {consulta && <button type="button" aria-label="Borrar búsqueda" onClick={() => { setConsulta(''); busquedaRef.current?.focus() }} className="text-muted hover:text-fg"><X className="size-3.5" aria-hidden="true" /></button>}
             </label>
             <label className="flex items-center gap-1.5 text-sm">

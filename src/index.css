@@ -161,3 +161,6 @@ body {
 
 /* Los disparadores globales de «Registrar gasto» se ocultan mientras un diálogo bloquea la pantalla. */
 body[data-scroll-locked] .fab-gasto { display: none; }
+
+/* Campos que ya dibujan su propio anillo de foco en el contenedor (focus-within): sin contorno doble en el input. */
+.sin-anillo:focus-visible { outline: none; }
