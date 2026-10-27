@@ -1,4 +1,4 @@
-import { ArrowLeftRight, ArrowRight, Minus, Plus, Receipt, TrendingDown, TrendingUp, Trophy, Wallet, X } from 'lucide-react'
+import { ArrowLeftRight, ArrowRight, Minus, Receipt, TrendingDown, TrendingUp, Trophy, Wallet, X } from 'lucide-react'
 import { useMemo, useState, type ComponentType } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
@@ -162,7 +162,6 @@ export function DashboardPage() {
         <div className="xl:w-[6.5rem] xl:shrink-0"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></div>
         <div className="xl:w-[6rem] xl:shrink-0"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></div>
         <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" disabled={!cruzados} onClick={limpiar} className="px-2.5 xl:shrink-0"><X className="size-4" aria-hidden="true" /></Button>
-        <Button aria-label="Registrar gasto" onClick={abrirNuevo} className="col-span-2 sm:col-span-1 xl:ml-auto xl:shrink-0"><Plus className="size-4" aria-hidden="true" /> Registrar</Button>
       </section>
 
       {!valido ? (

@@ -255,8 +255,8 @@ test.describe('Dashboard', () => {
 
   test('accesos rápidos: registrar gasto y registrar mensuales', async ({ page }) => {
     await iniciarSesion(page)
-    await page.getByRole('button', { name: 'Registrar gasto' }).click()
-    await expect(page).toHaveURL(/\/gastos/)
+    await page.locator('button.fab-gasto:visible').click()
+    await expect(page).toHaveURL(/\/$/) // el formulario global se abre sin salir del dashboard
     await expect(page.getByRole('dialog', { name: 'Nuevo gasto' })).toBeVisible()
     await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click()
     await page.getByRole('link', { name: 'Dashboard' }).first().click()
@@ -327,7 +327,7 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
       const b = (await el.boundingBox())!
       cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
     }
-    for (const b of [(await barra.getByRole('button', { name: 'Limpiar filtros' }).boundingBox())!, (await barra.getByRole('button', { name: 'Registrar gasto' }).boundingBox())!]) cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
+    for (const b of [(await barra.getByRole('button', { name: 'Limpiar filtros' }).boundingBox())!]) cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
     const y0 = cajas[0].y + cajas[0].h / 2
     for (const c of cajas) expect(Math.abs(c.y + c.h / 2 - y0), 'centrado vertical').toBeLessThanOrEqual(2)
     const caja = (await barra.boundingBox())!

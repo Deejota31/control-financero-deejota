@@ -52,7 +52,7 @@ function etiquetaEstado(f: FilaFondo): string {
   }
 }
 
-const COLS = 'md:grid-cols-[minmax(210px,2.3fr)_84px_118px_118px_128px_150px_minmax(190px,auto)]'
+const COLS = '@min-[1060px]:grid-cols-[minmax(210px,2.3fr)_84px_118px_118px_128px_150px_minmax(190px,auto)]'
 
 function Uso({ f }: { f: FilaFondo }) {
   const pct = f.resumen.pct
@@ -102,7 +102,7 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
   const disp = f.resumen.disponible
   return (
     <li
-      className={cn('grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2 border-b border-line px-3.5 py-3 last:border-0 md:min-h-[68px] md:py-0', COLS, 'transition-colors hover:bg-surface-2/50', f.esGeneral && 'bg-pri-soft/50', !f.activo && 'opacity-75', sobre && 'shadow-[0_-3px_0_0_var(--pri)]')}
+      className={cn('grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2 border-b border-line px-3.5 py-3 last:border-0 @min-[1060px]:min-h-[68px] @min-[1060px]:py-0', COLS, 'transition-colors hover:bg-surface-2/50', f.esGeneral && 'bg-pri-soft/50', !f.activo && 'opacity-75', sobre && 'shadow-[0_-3px_0_0_var(--pri)]')}
       style={{ '--k': colorVar(f.color ?? 'pri'), boxShadow: sobre ? undefined : 'inset 4px 0 0 var(--k)' } as CSSProperties}
       draggable={arrastrable}
       onDragStart={(e) => { e.dataTransfer.setData('text/plain', f.id); e.dataTransfer.effectAllowed = 'move' }}
@@ -120,7 +120,7 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
           </div>
         </div>
       </div>
-      <span className="hidden items-center gap-1.5 font-semibold md:flex">
+      <span className="hidden items-center gap-1.5 font-semibold @min-[1060px]:flex">
         {f.esGeneral ? <ChipK color="pri">Principal</ChipK> : (
           <>
             {arrastrable ? <GripVertical className="size-4 cursor-grab text-muted" aria-hidden="true" /> : <span className="size-4" />}
@@ -128,14 +128,14 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
           </>
         )}
       </span>
-      <span className="num hidden text-right md:block">{formatSoles(f.resumen.asignado)}</span>
-      <span className="num hidden text-right md:block">{formatSoles(f.resumen.consumido)}</span>
+      <span className="num hidden text-right @min-[1060px]:block">{formatSoles(f.resumen.asignado)}</span>
+      <span className="num hidden text-right @min-[1060px]:block">{formatSoles(f.resumen.consumido)}</span>
       <span className={cn('num text-right text-[15px] font-bold', disp < 0 ? 'text-bad' : disp > 0 ? 'text-ok' : 'text-fg')}>
-        {formatSoles(disp)}<span className="block text-[11px] font-normal text-muted md:hidden">disponible</span>
+        {formatSoles(disp)}<span className="block text-[11px] font-normal text-muted @min-[1060px]:hidden">disponible</span>
       </span>
-      <div className="col-span-2 md:col-span-1"><Uso f={f} /></div>
-      <div className="col-span-2 flex items-center justify-between gap-2 md:col-span-1 md:justify-end">
-        <span className="num text-xs text-muted md:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
+      <div className="col-span-2 @min-[1060px]:col-span-1"><Uso f={f} /></div>
+      <div className="col-span-2 flex items-center justify-between gap-2 @min-[1060px]:col-span-1 @min-[1060px]:justify-end">
+        <span className="num text-xs text-muted @min-[1060px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
         {f.editable && (
           <span className="flex items-center gap-1.5">
             <Button variant="secondary" className="px-2.5 py-1.5 text-[13px]" onClick={() => p.onVer(f)}><Eye className="size-4" aria-hidden="true" /> Ver gastos</Button>
@@ -151,8 +151,8 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
 export function TablaFondos(p: Props) {
   const [sobre, setSobre] = useState<string | null>(null)
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
-      <div className={cn('hidden min-h-10 items-center gap-x-2 border-b border-line bg-surface-2 px-3.5 text-[11px] font-bold uppercase tracking-wider text-muted md:grid', COLS)} aria-hidden="true">
+    <div className="@container overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+      <div className={cn('hidden min-h-10 items-center gap-x-2 border-b border-line bg-surface-2 px-3.5 text-[11px] font-bold uppercase tracking-wider text-muted @min-[1060px]:grid', COLS)} aria-hidden="true">
         <span>Fondo</span><span>Prioridad</span><span className="text-right">Asignado</span><span className="text-right">Consumido</span><span className="text-right">Disponible</span><span>Uso</span><span className="text-right">Acciones</span>
       </div>
       <ul aria-label="Fondos">
