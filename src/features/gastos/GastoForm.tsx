@@ -15,7 +15,7 @@ import { Seccion } from '@/components/ui/Seccion'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatSoles, parseImporte, toIso } from '@/lib/format'
+import { errorImporte, formatFecha, formatMes, formatSoles, parseImporte, toIso } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import type { Gasto } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
@@ -199,7 +199,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
             <Field label="Importe" error={errors.amount?.message}>
               {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} />} />}
             </Field>
-            <Field label="Fecha" error={errors.expense_date?.message}>
+            <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
               {(p) => <Controller control={control} name="expense_date" render={({ field }) => <DatePicker id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} formato={formato} />} />}
             </Field>
           </div>
