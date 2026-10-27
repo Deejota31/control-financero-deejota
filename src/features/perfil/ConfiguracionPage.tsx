@@ -158,11 +158,11 @@ export function ConfiguracionPage() {
 
   return (
     <Tabs.Root value={actual} onValueChange={(v) => setParams({ seccion: v }, { replace: true })} orientation="vertical" className="mx-auto flex max-w-[1200px] flex-col gap-6 lg:flex-row lg:items-start">
-      <Tabs.List aria-label="Secciones de configuración" className="flex shrink-0 gap-1 overflow-x-auto lg:sticky lg:top-4 lg:w-72 lg:flex-col lg:overflow-visible">
+      <Tabs.List aria-label="Secciones de configuración" className="grid shrink-0 grid-cols-3 gap-1 sm:grid-cols-5 lg:sticky lg:top-4 lg:flex lg:w-72 lg:flex-col">
         {SECCIONES.map(({ id, titulo, descripcion, icono: Icono }) => (
-          <Tabs.Trigger key={id} value={id} className="flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left data-[state=active]:border-pri data-[state=active]:bg-pri-soft data-[state=inactive]:hover:bg-surface-2">
+          <Tabs.Trigger key={id} value={id} className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-transparent px-1.5 py-2 text-center data-[state=active]:border-pri lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left data-[state=active]:bg-pri-soft data-[state=inactive]:hover:bg-surface-2">
             <Icono className="size-5 shrink-0 text-pri" aria-hidden="true" />
-            <span className="flex flex-col"><span className="text-sm font-semibold">{titulo}</span><span className="hidden text-xs text-muted lg:block">{descripcion}</span></span>
+            <span className="flex min-w-0 flex-col"><span className="text-xs font-semibold sm:text-sm lg:text-sm">{titulo}</span><span className="hidden text-xs text-muted lg:block">{descripcion}</span></span>
           </Tabs.Trigger>
         ))}
       </Tabs.List>

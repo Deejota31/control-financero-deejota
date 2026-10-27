@@ -52,3 +52,20 @@ test.describe('Responsive: ningún módulo recorta su contenido', () => {
     })
   }
 })
+
+test.describe('Responsive: apartados descubribles', () => {
+  test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
+  for (const w of [360, 390, 768]) {
+    test(`Configuración muestra sus cinco apartados dentro de la pantalla a ${w} px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 800 })
+      await iniciarSesion(page)
+      await page.goto('/configuracion')
+      for (const n of ['Perfil y preferencias', 'Hogar', 'Exportar datos', 'Cuenta y seguridad', 'Actividad reciente']) {
+        const b = await page.getByRole('tab', { name: n }).boundingBox()
+        expect(b, n).not.toBeNull()
+        expect(b!.x, n).toBeGreaterThanOrEqual(0)
+        expect(b!.x + b!.width, n).toBeLessThanOrEqual(w)
+      }
+    })
+  }
+})
