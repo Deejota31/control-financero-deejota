@@ -154,7 +154,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
   const limpiar = () => { setQ(''); setTipo('todos'); setVisibles(TAMANO_PAGINA) }
 
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title={`Gastos imputados · ${tarjeta.nombre}`} description={`${periodo}${cerrado ? ' · período cerrado (resultado histórico)' : ''}`} size="lg">
+    <Modal open onOpenChange={(o) => !o && onClose()} title={`Gastos imputados · ${tarjeta.nombre}`} description={`${periodo}${cerrado ? ' · período cerrado (resultado histórico)' : ''}`} size="xl">
       <div className="flex min-w-0 flex-col gap-4">
         <section aria-label="Resumen del fondo" className="flex flex-col gap-3 rounded-xl border border-line bg-surface-2/50 p-3 sm:p-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -205,7 +205,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
                 Mostrando <b className="num text-fg">{mostradas.length}</b> de <b className="num text-fg">{filtradas.length}</b> {filtradas.length === 1 ? 'gasto' : 'gastos'} · <b className="num text-fg">{formatSoles(subtotal)}</b> en resultados
                 {hayFiltro && <> (el fondo consumió {formatSoles(tarjeta.resumen.consumido)} en total)</>}
               </p>
-              <div className="hidden grid-cols-[5.5rem_minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem] gap-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted @min-[46rem]:grid" aria-hidden="true">
+              <div className="hidden grid-cols-[5.5rem_minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem] gap-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted @min-[44rem]:grid" aria-hidden="true">
                 <span>Fecha</span><span>Concepto</span><span>Clasificación</span><span>Imputación</span><span className="text-right">Importe</span>
               </div>
             </div>
@@ -226,25 +226,25 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
                   const idPanel = `detalle-${a.id}`
                   return (
                     <li key={a.id} className="border-b border-line last:border-0">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-1 py-3 @min-[46rem]:grid-cols-[5.5rem_minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem] @min-[46rem]:items-center @min-[46rem]:px-3">
-                        <span className="num col-start-1 row-start-2 text-xs text-muted @min-[46rem]:row-start-1 @min-[46rem]:text-sm @min-[46rem]:text-fg">{formatFecha(g.expense_date, formato)}</span>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-1 py-3 @min-[44rem]:grid-cols-[5.5rem_minmax(0,1.3fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem] @min-[44rem]:items-center @min-[44rem]:px-3">
+                        <span className="num col-start-1 row-start-2 text-xs text-muted @min-[44rem]:row-start-1 @min-[44rem]:text-sm @min-[44rem]:text-fg">{formatFecha(g.expense_date, formato)}</span>
                         <button type="button" aria-expanded={abierto} aria-controls={idPanel} onClick={() => setAbierta(abierto ? null : a.id)}
-                          className="col-start-1 row-start-1 flex min-w-0 items-start gap-1.5 rounded-md text-left @min-[46rem]:col-start-2">
+                          className="col-start-1 row-start-1 flex min-w-0 items-start gap-1.5 rounded-md text-left @min-[44rem]:col-start-2">
                           <ChevronRight className={cn('mt-0.5 size-4 shrink-0 text-muted transition-transform', abierto && 'rotate-90')} aria-hidden="true" />
                           <span className="min-w-0 break-words font-semibold">{g.description}<span className="sr-only">. {abierto ? 'Ocultar' : 'Ver'} detalle</span></span>
                         </button>
-                        <span className="col-span-2 row-start-3 flex min-w-0 flex-wrap items-center gap-1 @min-[46rem]:col-span-1 @min-[46rem]:col-start-3 @min-[46rem]:row-start-1">
+                        <span className="col-span-2 row-start-3 flex min-w-0 flex-wrap items-center gap-1 @min-[44rem]:col-span-1 @min-[44rem]:col-start-3 @min-[44rem]:row-start-1">
                           <ChipK color={cat?.color_css}><ItemIcon name={cat?.icon_key} className="size-3" /> {cat?.name}{sub ? ` › ${sub.name}` : ''}</ChipK>
                           <span className="text-xs text-muted">{med?.name}</span>
                         </span>
-                        <span className="col-start-2 row-start-2 justify-self-end @min-[46rem]:col-start-4 @min-[46rem]:row-start-1 @min-[46rem]:justify-self-start">
+                        <span className="col-start-2 row-start-2 justify-self-end @min-[44rem]:col-start-4 @min-[44rem]:row-start-1 @min-[44rem]:justify-self-start">
                           {f.etiqueta ? (
                             <Pill tone={f.tipo === 'excedente' ? 'warn' : 'neutral'}><Users className="size-3" aria-hidden="true" /> {f.etiqueta}</Pill>
                           ) : (
                             <span className="text-xs text-muted"><span className="sr-only">Imputación </span>Directo</span>
                           )}
                         </span>
-                        <span className="num col-start-2 row-start-1 text-right @min-[46rem]:col-start-5">
+                        <span className="num col-start-2 row-start-1 text-right @min-[44rem]:col-start-5">
                           <span className="block font-bold">{formatSoles(Number(a.amount))}</span>
                           {parcial && <span className="block text-[11px] leading-tight text-muted">Este fondo · total {formatSoles(Number(g.amount))}</span>}
                         </span>

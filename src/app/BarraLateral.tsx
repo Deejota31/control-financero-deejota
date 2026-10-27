@@ -60,7 +60,8 @@ export function BarraLateral({ compacta, onAlternar, nombre, correo }: Props) {
               )}
             </NavLink>
           )
-          return compacta ? <Hint key={path} contenido={label} side="right">{enlace}</Hint> : enlace
+          // El disparador del tooltip es un contenedor: Radix fusiona className en su hijo y NavLink usa className como función.
+          return compacta ? <Hint key={path} contenido={label} side="right"><span className="block">{enlace}</span></Hint> : enlace
         })}
       </nav>
 
@@ -78,7 +79,7 @@ export function BarraLateral({ compacta, onAlternar, nombre, correo }: Props) {
               )}
             </NavLink>
           )
-          return compacta ? <Hint contenido={<><span className="block font-semibold">{nombre}</span>{correo && correo !== nombre && <span className="block text-muted">{correo}</span>}</>} side="right">{cuenta}</Hint> : cuenta
+          return compacta ? <Hint contenido={<><span className="block font-semibold">{nombre}</span>{correo && correo !== nombre && <span className="block text-muted">{correo}</span>}</>} side="right"><span className="block">{cuenta}</span></Hint> : cuenta
         })()}
       </div>
     </aside>

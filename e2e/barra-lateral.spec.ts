@@ -22,7 +22,7 @@ test.describe('Barra lateral: expandida y compacta', () => {
       await expect(nav.getByRole('link', { name: nombre })).toContainText(nombre)
       await expect(nav.getByRole('link', { name: nombre })).toHaveAttribute('aria-current', 'page')
       expect((await lado.boundingBox())!.width).toBeGreaterThan(220)
-      const sinCortar = await nav.getByRole('link').evaluateAll((els) => els.every((e) => (e.querySelector('span:not(.absolute)') as HTMLElement | null)?.scrollWidth! <= (e.querySelector('span:not(.absolute)') as HTMLElement).clientWidth + 1))
+      const sinCortar = await nav.getByRole('link').evaluateAll((els) => els.every((e) => { const t = e.querySelector<HTMLElement>('span:not(.absolute)'); return !t || t.scrollWidth <= t.clientWidth + 1 }))
       expect(sinCortar, `etiquetas cortadas en ${nombre}`).toBe(true)
       // Compacta: solo iconos centrados, contenido ocupando el espacio liberado
       await toggle.click()
@@ -30,6 +30,13 @@ test.describe('Barra lateral: expandida y compacta', () => {
       await expect(lado).toHaveJSProperty('clientWidth', 72, { timeout: 3000 }).catch(() => undefined)
       await expect.poll(async () => Math.round((await lado.boundingBox())!.width)).toBeLessThanOrEqual(80)
       await expect(nav.getByRole('link', { name: nombre })).toHaveAttribute('aria-current', 'page')
+      // Iconos centrados en la barra compacta (si los estilos del enlace se perdieran, quedarían pegados a la izquierda)
+      const anchoBarra = (await lado.boundingBox())!.width
+      for (const l of await nav.getByRole('link').all()) {
+        const b = (await l.boundingBox())!
+        expect(Math.abs(b.x + b.width / 2 - anchoBarra / 2), `icono descentrado en ${nombre}`).toBeLessThanOrEqual(2)
+        expect(b.height).toBeGreaterThanOrEqual(36)
+      }
       const cabecera = (await page.locator('header').first().boundingBox())!
       expect(Math.abs(cabecera.x - (await lado.boundingBox())!.width)).toBeLessThanOrEqual(2) // el contenido empieza donde acaba la barra
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1)

@@ -135,10 +135,10 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
       </span>
       <div className="col-span-2 @min-[1060px]:col-span-1"><Uso f={f} /></div>
       <div className="col-span-2 flex items-center justify-between gap-2 @min-[1060px]:col-span-1 @min-[1060px]:justify-end">
-        <span className="num text-xs text-muted @min-[1060px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
+        <span className="num min-w-0 flex-1 text-xs text-muted @min-[1060px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
         {f.editable && (
           <span className="flex items-center gap-1.5">
-            <Button variant="secondary" className="px-2.5 py-1.5 text-[13px]" onClick={() => p.onVer(f)}><Eye className="size-4" aria-hidden="true" /> Ver gastos</Button>
+            <Button variant="secondary" className="shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[13px]" onClick={() => p.onVer(f)}><Eye className="size-4" aria-hidden="true" /> Ver gastos</Button>
             <MenuAcciones f={f} p={p} />
           </span>
         )}

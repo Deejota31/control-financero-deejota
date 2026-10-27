@@ -363,11 +363,11 @@ export function FondosPage() {
 function Kpi({ etiqueta, valor, nota, tono, icono: Icono }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad'; icono: ComponentType<{ className?: string }> }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5">
-      <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', tono === 'bad' ? 'bg-bad-soft text-bad' : 'bg-pri-soft text-pri')}><Icono className="size-[18px]" aria-hidden="true" /></span>
+      <span className={cn('hidden size-9 shrink-0 place-items-center rounded-lg min-[440px]:grid', tono === 'bad' ? 'bg-bad-soft text-bad' : 'bg-pri-soft text-pri')}><Icono className="size-[18px]" aria-hidden="true" /></span>
       <div className="min-w-0">
         <span className="block text-xs text-muted">{etiqueta}</span>
         <span className={cn('num block text-lg font-semibold leading-tight', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
-        <span className="block truncate text-[11px] text-muted">{nota}</span>
+        <span className="block text-[11px] leading-snug text-muted">{nota}</span>
       </div>
     </div>
   )
