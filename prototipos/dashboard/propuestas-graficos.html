@@ -1,0 +1,180 @@
+<title>Gráficos del dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Paleta B «Índigo». Maqueta independiente con datos de ejemplo: no toca la aplicación. */
+:root { --bg:#f6f6fa; --surface:#fff; --surface-2:#ececf4; --line:#d9d9e6; --fg:#17172b; --muted:#58587a; --pri:#3a3fa6; --pri-fg:#fff; --pri-soft:#e0e1f7; --ok:#12663a; --bad:#b3261e; --shadow:0 10px 26px -8px rgba(23,23,43,.28); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a; --ok:#5ad08a; --bad:#ff8f86; --shadow:0 12px 30px -8px rgba(0,0,0,.7); color-scheme: dark; } }
+:root[data-theme="dark"] { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a; --ok:#5ad08a; --bad:#ff8f86; --shadow:0 12px 30px -8px rgba(0,0,0,.7); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.45 'Segoe UI', system-ui, -apple-system, sans-serif; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
+.pag { max-width: 1240px; margin: 0 auto; padding-block: 18px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cab { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-start; } h1 { margin: 0; font-size: 24px; text-wrap: balance; } .cab p { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 600; } .btn:hover { background: var(--surface-2); }
+.barra { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin: 14px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(8px); }
+.grp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .grp > span { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+.seg { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface-2); } .seg button { border: 0; background: none; padding: 5px 12px; border-radius: 9px; font-weight: 700; color: var(--muted); } .seg button[aria-pressed='true'] { background: var(--pri); color: var(--pri-fg); }
+.g { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; } .s12 { grid-column: span 12; } .s8 { grid-column: span 8; } .s7 { grid-column: span 7; } .s6 { grid-column: span 6; } .s5 { grid-column: span 5; } .s4 { grid-column: span 4; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; animation: ent .3s ease-out both; } @keyframes ent { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.card header { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; } .card h2 { margin: 0; font-size: 15px; } .card .sub { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; } .tag { font-size: 11px; padding: 2px 9px; border-radius: 99px; background: var(--pri-soft); color: var(--pri); font-weight: 700; white-space: nowrap; }
+.scroll { overflow-x: auto; } svg { display: block; max-width: 100%; } svg text { fill: var(--muted); font-size: 11px; font-family: inherit; } svg .v { fill: var(--fg); font-weight: 700; }
+.leg { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; font-size: 12px; color: var(--muted); } .leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; } .chip { padding: 3px 11px; border-radius: 99px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; } .chip i { width: 9px; height: 9px; border-radius: 50%; } .chip[aria-pressed='true'] { background: var(--pri-soft); border-color: var(--pri); color: var(--pri); }
+.cal { display: grid; grid-template-columns: 26px repeat(5, minmax(0, 1fr)); gap: 6px; } .cal .d { color: var(--muted); font-size: 11px; display: grid; place-items: center; font-weight: 700; } .cal .c { aspect-ratio: 2.6; border-radius: 10px; padding: 5px 7px; font-size: 11px; position: relative; border: 1px solid transparent; background: color-mix(in srgb, var(--col, var(--pri)) calc(var(--v) * 1%), var(--surface-2)); color: color-mix(in srgb, var(--fg) 85%, transparent); transition: transform .12s, box-shadow .12s; } .cal .c:hover { transform: scale(1.06); box-shadow: var(--shadow); z-index: 2; } .cal .c.vacio { background: none; } .cal .c.hoy { border-color: var(--fg); } .cal .c b { position: absolute; right: 7px; bottom: 4px; font-size: 11px; color: var(--fg); } .cal .c.alto { color: #fff; } .cal .c.alto b { color: #fff; }
+.mx { display: grid; gap: 3px; align-items: center; font-size: 11px; color: var(--muted); } .mx .r { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; color: var(--fg); font-weight: 600; } .mx i { display: block; height: 22px; border-radius: 5px; background: color-mix(in srgb, var(--col) calc(var(--v) * 1%), var(--surface-2)); transition: transform .1s; } .mx i:hover { transform: scale(1.25); outline: 2px solid var(--fg); z-index: 2; position: relative; } .mx .h { text-align: center; font-weight: 700; }
+.rank { display: flex; flex-direction: column; gap: 9px; } .rk { display: grid; grid-template-columns: 22px minmax(0, 1.1fr) minmax(0, 1.4fr) 86px 60px; gap: 10px; align-items: center; } .rk .n { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .rk .bar { height: 9px; border-radius: 99px; background: var(--surface-2); overflow: hidden; } .rk .bar i { display: block; height: 100%; border-radius: 99px; } .rk .m { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; } .rk .dl { text-align: right; font-size: 12px; font-weight: 700; } .up { color: var(--bad); } .dn { color: var(--ok); }
+.pos { width: 22px; height: 22px; border-radius: 7px; background: var(--pri-soft); color: var(--pri); font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--fg); color: var(--bg); padding: 6px 10px; border-radius: 10px; font-size: 12.5px; font-weight: 600; box-shadow: var(--shadow); opacity: 0; transition: opacity .1s; max-width: 240px; } #tip.on { opacity: 1; } #tip small { display: block; font-weight: 500; opacity: .8; }
+@media (max-width: 960px) { .s8, .s7, .s6, .s5, .s4 { grid-column: span 12; } }
+@media (max-width: 600px) { .rk { grid-template-columns: 22px minmax(0, 1fr) 80px 52px; } .rk .bar { display: none; } .cal .c { aspect-ratio: 1; padding: 3px 4px; } .cal .c b { font-size: 9.5px; right: 3px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<div class="pag" id="app"></div>
+<div id="tip" role="tooltip"></div>
+<script>
+'use strict'
+const S = (n) => 'S/ ' + Math.round(n).toLocaleString('es-PE')
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const PAL = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c7)', 'var(--c8)']
+document.head.insertAdjacentHTML('beforeend', `<style>:root{--c1:#3a3fa6;--c2:#1e8a8a;--c3:#e0622f;--c4:#a8478f;--c5:#8a8a2e;--c6:#5b6dd6;--c7:#2d8a4e;--c8:#b4472f}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c1:#9ea3ff;--c2:#4fd0d0;--c3:#ff9c6e;--c4:#e48ccb;--c5:#c9c95a;--c6:#8ba0ff;--c7:#6fd68f;--c8:#ff8b73}}:root[data-theme="dark"]{--c1:#9ea3ff;--c2:#4fd0d0;--c3:#ff9c6e;--c4:#e48ccb;--c5:#c9c95a;--c6:#8ba0ff;--c7:#6fd68f;--c8:#ff8b73}</style>`)
+/* ---- datos de ejemplo (deterministas) ---- */
+let seed = 7; const rnd = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+const DIM = {
+  ambito: ['Personal', 'Familia', 'Pareja', 'Trabajo', 'Amigos'],
+  medio: ['Yape', 'Plin', 'Sodexo', 'Transferencia', 'Efectivo', 'Tarjeta'],
+  categoria: ['Alimentación', 'Transporte', 'Hogar', 'Salidas', 'Salud', 'Educación', 'Compras', 'Servicios', 'Regalos', 'Otros'],
+  subcategoria: ['Supermercado', 'Almuerzo', 'Taxi', 'Combustible', 'Cine', 'Restaurantes', 'Farmacia', 'Consulta', 'Internet', 'Luz', 'Ropa', 'Cursos'],
+}
+const NOMBRE = { ambito: 'ámbito', medio: 'medio de pago', categoria: 'categoría', subcategoria: 'subcategoría' }
+const DIAS = 26, MESES = ['may', 'jun', 'jul', 'ago', 'sep', 'oct']
+const D = {}
+for (const [k, items] of Object.entries(DIM)) {
+  D[k] = items.map((n, i) => {
+    const peso = 90 + rnd() * 260 + (i === 0 ? 220 : 0), freq = 0.35 + rnd() * 0.55
+    const dia = Array.from({ length: 31 }, (_, d) => (d >= DIAS ? 0 : rnd() < freq * (new Date(2026, 9, d + 1).getDay() % 6 === 0 ? 1.3 : 1) ? peso * (0.25 + rnd() * 1.6) : 0))
+    const total = dia.reduce((a, b) => a + b, 0)
+    const meses = [...Array.from({ length: 5 }, () => total * (0.65 + rnd() * 0.7)), total]
+    const sem = [0, 0, 0, 0, 0, 0, 0]; dia.forEach((v, d) => { sem[(new Date(2026, 9, d + 1).getDay() + 6) % 7] += v })
+    return { n, col: PAL[i % PAL.length], dia, total, meses, sem }
+  })
+}
+const E = { dim: 'categoria', sel: 'todos' }
+const items = () => D[E.dim]
+const tip = (a, b = '') => `data-tip="${esc(a)}" data-tip2="${esc(b)}"`
+const mezcla = (v) => Math.round(Math.min(100, v))
+function maxOf(arr) { return Math.max(1, ...arr) }
+
+/* 1 · Calendario de calor mensual */
+function cCal() {
+  const sel = E.sel === 'todos' ? null : items().find((i) => i.n === E.sel)
+  const val = (d) => (sel ? sel.dia[d] : items().reduce((a, i) => a + i.dia[d], 0))
+  const vs = Array.from({ length: 31 }, (_, d) => val(d)), mx = maxOf(vs), off = (new Date(2026, 9, 1).getDay() + 6) % 7, col = sel ? sel.col : 'var(--pri)'
+  const cel = []; for (let d = 0; d < 31; d++) { const p = Math.floor((d + off) / 7), r = (d + off) % 7; cel[r * 6 + p] = d }
+  const filas = ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((l, r) => `<span class="d">${l}</span>${[0, 1, 2, 3, 4].map((p) => { const d = cel[r * 6 + p]; if (d === undefined) return '<div class="c vacio"></div>'; const fut = d >= DIAS, v = vs[d], pc = fut ? 0 : mezcla((v / mx) * 92); return `<div class="c ${fut ? 'vacio' : ''} ${d + 1 === DIAS ? 'hoy' : ''} ${pc > 58 ? 'alto' : ''}" style="--v:${pc};--col:${col}" ${fut ? '' : tip(`${d + 1} de octubre`, S(v) + (sel ? ' · ' + sel.n : ''))}>${d + 1}${fut || !v ? '' : `<b>${Math.round(v)}</b>`}</div>` }).join('')}`).join('')
+  return `<section class="card s7"><header><div><h2>Calendario de calor · octubre</h2><p class="sub">Cada cuadro es un día; más intenso, más gasto. Filtra por ${NOMBRE[E.dim]}.</p></div><span class="tag">Calendario</span></header>
+  <div class="chips" role="group" aria-label="Filtrar calendario"><button class="chip" data-sel="todos" aria-pressed="${E.sel === 'todos'}">Todos</button>${items().map((i) => `<button class="chip" data-sel="${esc(i.n)}" aria-pressed="${E.sel === i.n}"><i style="background:${i.col}"></i>${esc(i.n)}</button>`).join('')}</div>
+  <div class="cal">${filas}</div></section>`
+}
+/* 2 · Matriz elemento × día del mes */
+function cDia() {
+  const its = items(), mx = maxOf(its.flatMap((i) => i.dia))
+  return `<section class="card s5"><header><div><h2>Elemento × día</h2><p class="sub">Qué ${NOMBRE[E.dim]} se mueve cada día del mes.</p></div><span class="tag">Mapa de calor</span></header><div class="scroll"><div class="mx" style="grid-template-columns:96px repeat(${DIAS},minmax(11px,1fr));min-width:520px"><span></span>${Array.from({ length: DIAS }, (_, d) => `<span class="h">${(d + 1) % 5 === 0 || d === 0 ? d + 1 : ''}</span>`).join('')}${its.map((i) => `<span class="r">${esc(i.n)}</span>${i.dia.slice(0, DIAS).map((v, d) => `<i style="--v:${mezcla((v / mx) * 100)};--col:${i.col}" ${tip(`${i.n} · ${d + 1} oct`, S(v))}></i>`).join('')}`).join('')}</div></div></section>`
+}
+/* 3 · Matriz elemento × mes */
+function cMes() {
+  const its = items(), mx = maxOf(its.flatMap((i) => i.meses))
+  return `<section class="card s6"><header><div><h2>Elemento × mes</h2><p class="sub">Seis meses de un vistazo; el último es octubre.</p></div><span class="tag">Mapa de calor</span></header><div class="mx" style="grid-template-columns:96px repeat(6,1fr)"><span></span>${MESES.map((m) => `<span class="h">${m}</span>`).join('')}${its.map((i) => `<span class="r">${esc(i.n)}</span>${i.meses.map((v, m) => `<i style="--v:${mezcla((v / mx) * 100)};--col:${i.col};height:26px" ${tip(`${i.n} · ${MESES[m]}`, S(v))}></i>`).join('')}`).join('')}</div></section>`
+}
+/* 4 · Matriz elemento × día de la semana */
+function cSem() {
+  const its = items(), mx = maxOf(its.flatMap((i) => i.sem)), N = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+  return `<section class="card s6"><header><div><h2>Elemento × día de la semana</h2><p class="sub">¿Cuándo gastas en cada ${NOMBRE[E.dim]}?</p></div><span class="tag">Mapa de calor</span></header><div class="mx" style="grid-template-columns:96px repeat(7,1fr)"><span></span>${N.map((m) => `<span class="h">${m}</span>`).join('')}${its.map((i) => `<span class="r">${esc(i.n)}</span>${i.sem.map((v, d) => `<i style="--v:${mezcla((v / mx) * 100)};--col:${i.col};height:26px" ${tip(`${i.n} · ${N[d]}`, S(v))}></i>`).join('')}`).join('')}</div></section>`
+}
+/* 5 · Treemap */
+function split(list, x, y, w, h, out, vert) {
+  if (list.length === 1) { out.push({ ...list[0], x, y, w, h }); return }
+  const tot = list.reduce((a, b) => a + b.v, 0); let acc = 0, k = 0
+  while (k < list.length - 1 && acc + list[k].v / 2 < tot / 2) acc += list[k++].v
+  k = Math.max(1, k); const a = list.slice(0, k), b = list.slice(k), fa = a.reduce((s, i) => s + i.v, 0) / tot
+  if (vert) { split(a, x, y, w * fa, h, out, !vert); split(b, x + w * fa, y, w * (1 - fa), h, out, !vert) } else { split(a, x, y, w, h * fa, out, !vert); split(b, x, y + h * fa, w, h * (1 - fa), out, !vert) }
+}
+function cTree() {
+  const its = items().map((i) => ({ n: i.n, v: i.total, col: i.col })).sort((a, b) => b.v - a.v), out = [], W = 560, H = 300; split(its, 0, 0, W, H, out, true)
+  const tot = its.reduce((a, b) => a + b.v, 0)
+  return `<section class="card s7"><header><div><h2>Mapa de áreas (treemap)</h2><p class="sub">El tamaño del bloque es lo que pesa cada ${NOMBRE[E.dim]} en el gasto del mes.</p></div><span class="tag">Treemap</span></header><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Treemap de gasto por ${NOMBRE[E.dim]}">${out.map((r) => `<g ${tip(r.n, S(r.v) + ' · ' + Math.round((r.v / tot) * 100) + ' %')}><rect x="${r.x + 1.5}" y="${r.y + 1.5}" width="${Math.max(0, r.w - 3)}" height="${Math.max(0, r.h - 3)}" rx="10" fill="${r.col}" opacity=".88"/>${r.w > 70 && r.h > 40 ? `<text x="${r.x + 12}" y="${r.y + 24}" style="fill:#fff;font-weight:700;font-size:13px">${esc(r.n)}</text><text x="${r.x + 12}" y="${r.y + 42}" style="fill:#fff;opacity:.9">${S(r.v)} · ${Math.round((r.v / tot) * 100)} %</text>` : ''}</g>`).join('')}</svg></section>`
+}
+/* 6 · Donut anidado ámbito → categoría */
+function arco(cx, cy, r0, r1, a0, a1) {
+  const p = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)], g = a1 - a0 > Math.PI ? 1 : 0, [x0, y0] = p(r1, a0), [x1, y1] = p(r1, a1), [x2, y2] = p(r0, a1), [x3, y3] = p(r0, a0)
+  return `M${x0},${y0} A${r1},${r1} 0 ${g} 1 ${x1},${y1} L${x2},${y2} A${r0},${r0} 0 ${g} 0 ${x3},${y3}Z`
+}
+function cDonut() {
+  const am = D.ambito, cats = D.categoria, tot = am.reduce((a, b) => a + b.total, 0); let a = -Math.PI / 2; const inner = [], outer = []
+  am.forEach((x, i) => {
+    const sw = (x.total / tot) * 2 * Math.PI - 0.02; inner.push(`<path d="${arco(130, 130, 56, 88, a, a + sw)}" fill="${x.col}" ${tip(x.n, S(x.total))}/>`)
+    const w = cats.map((c, j) => ({ c, v: 0.3 + ((i * 7 + j * 3) % 10) })), ws = w.reduce((s, y) => s + y.v, 0); let b = a
+    w.forEach((y) => { const s = (y.v / ws) * sw; outer.push(`<path d="${arco(130, 130, 92, 116, b, b + s - 0.005)}" fill="${x.col}" opacity="${0.35 + (y.v / 10) * 0.6}" ${tip(`${x.n} › ${y.c.n}`, S((y.v / ws) * x.total))}/>`); b += s })
+    a += sw + 0.02
+  })
+  return `<section class="card s5"><header><div><h2>Anillos anidados</h2><p class="sub">Dentro: ámbito. Fuera: sus categorías.</p></div><span class="tag">Sunburst</span></header><svg viewBox="0 0 260 260" width="100%" style="max-width:300px;margin:auto" role="img" aria-label="Gasto por ámbito y categoría">${inner.join('')}${outer.join('')}<text x="130" y="127" text-anchor="middle" class="v" style="font-size:18px">${S(tot)}</text><text x="130" y="144" text-anchor="middle">octubre</text></svg><div class="leg">${am.map((x) => `<span><i style="background:${x.col}"></i>${x.n}</span>`).join('')}</div></section>`
+}
+/* 7 · Sankey ámbito → fondo → medio */
+function cSankey() {
+  const W = 760, H = 290, nw = 14, A = D.ambito, F = ['General', 'Sodexo', 'Hogar', 'Pareja', 'Movilidad'].map((n, i) => ({ n, col: PAL[(i + 2) % 8] })), M = D.medio
+  const fa = A.map((x, i) => F.map((_, j) => ((i * 5 + j * 3) % 7) + 1)), faN = fa.map((r) => { const s = r.reduce((a, b) => a + b, 0); return r.map((v) => v / s) })
+  const l1 = A.flatMap((x, i) => F.map((f, j) => ({ i, j, v: x.total * faN[i][j] }))), ft = F.map((_, j) => l1.filter((l) => l.j === j).reduce((a, b) => a + b.v, 0))
+  const fm = F.map((_, j) => M.map((_, k) => ((j * 3 + k * 5) % 6) + 1)), l2 = F.flatMap((f, j) => { const s = fm[j].reduce((a, b) => a + b, 0); return M.map((m, k) => ({ j, k, v: ft[j] * (fm[j][k] / s) })) })
+  const tot = ft.reduce((a, b) => a + b, 0), gap = 10, esc2 = (H - gap * 6) / tot
+  const pos = (vals) => { let y = 0; return vals.map((v) => { const o = { y, h: v * esc2 }; y += o.h + gap; return o }) }
+  const pa = pos(A.map((x) => x.total)), pf = pos(ft), pm = pos(M.map((_, k) => l2.filter((l) => l.k === k).reduce((a, b) => a + b.v, 0)))
+  const xs = [0, (W - nw) / 2, W - nw]; const so = pa.map(() => 0), fi = pf.map(() => 0), fo = pf.map(() => 0), mi = pm.map(() => 0)
+  const curva = (x0, y0, x1, y1, h, col, t) => `<path d="M${x0},${y0} C${(x0 + x1) / 2},${y0} ${(x0 + x1) / 2},${y1} ${x1},${y1}" fill="none" stroke="${col}" stroke-width="${Math.max(1, h)}" opacity=".32" ${tip(t[0], t[1])} style="transition:opacity .15s" onmouseover="this.style.opacity=.7" onmouseout="this.style.opacity=.32"/>`
+  const L1 = l1.map((l) => { const h = l.v * esc2, y0 = pa[l.i].y + so[l.i] + h / 2, y1 = pf[l.j].y + fi[l.j] + h / 2; so[l.i] += h; fi[l.j] += h; return curva(xs[0] + nw, y0, xs[1], y1, h, A[l.i].col, [`${A[l.i].n} → ${F[l.j].n}`, S(l.v)]) })
+  const L2 = l2.map((l) => { const h = l.v * esc2, y0 = pf[l.j].y + fo[l.j] + h / 2, y1 = pm[l.k].y + mi[l.k] + h / 2; fo[l.j] += h; mi[l.k] += h; return curva(xs[1] + nw, y0, xs[2], y1, h, F[l.j].col, [`${F[l.j].n} → ${M[l.k].n}`, S(l.v)]) })
+  const nodos = (ps, ls, x, izq) => ps.map((p, i) => `<rect x="${x}" y="${p.y}" width="${nw}" height="${Math.max(2, p.h)}" rx="4" fill="${ls[i].col}"/><text x="${izq ? x - 6 : x + nw + 6}" y="${p.y + p.h / 2 + 4}" text-anchor="${izq ? 'end' : 'start'}" class="v" style="font-size:11.5px">${esc(ls[i].n)}</text>`).join('')
+  return `<section class="card s12"><header><div><h2>Flujo del dinero</h2><p class="sub">Ámbito → fondo que lo cubre → medio de pago. Pasa el cursor por un flujo para ver el monto.</p></div><span class="tag">Sankey</span></header><div class="scroll"><svg viewBox="-70 -4 ${W + 150} ${H + 8}" width="100%" style="min-width:640px" role="img" aria-label="Flujo de ámbito a fondo a medio de pago">${L1.join('')}${L2.join('')}${nodos(pa, A, xs[0], true)}${nodos(pf, F, xs[1], false)}${nodos(pm, M, xs[2], false)}</svg></div></section>`
+}
+/* 8 · Barras apiladas por mes */
+function cApil() {
+  const its = items(), W = 520, H = 230, p = 28, tot = MESES.map((_, m) => its.reduce((a, i) => a + i.meses[m], 0)), mx = Math.max(...tot) * 1.08, bw = (W - 2 * p) / 6
+  const barras = MESES.map((mm, m) => { let y = H - p; return `<g>${its.map((i) => { const h = (i.meses[m] / mx) * (H - 2 * p); y -= h; return `<rect x="${p + m * bw + 8}" y="${y}" width="${bw - 16}" height="${Math.max(0, h - 1.5)}" rx="4" fill="${i.col}" ${tip(`${i.n} · ${mm}`, S(i.meses[m]))}/>` }).join('')}<text x="${p + m * bw + bw / 2}" y="${H - 8}" text-anchor="middle">${mm}</text><text x="${p + m * bw + bw / 2}" y="${H - p - (tot[m] / mx) * (H - 2 * p) - 6}" text-anchor="middle" class="v">${(tot[m] / 1000).toFixed(1)}k</text></g>` }).join('')
+  return `<section class="card s6"><header><div><h2>Barras apiladas por mes</h2><p class="sub">Cómo se reparte cada mes por ${NOMBRE[E.dim]}.</p></div><span class="tag">Apilado</span></header><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Barras apiladas por mes">${barras}</svg><div class="leg">${its.map((i) => `<span><i style="background:${i.col}"></i>${esc(i.n)}</span>`).join('')}</div></section>`
+}
+/* 9 · Ranking con sparklines */
+function cRank() {
+  const its = [...items()].sort((a, b) => b.total - a.total), mx = its[0].total
+  const spark = (v, col) => { const m = Math.max(...v), n = Math.min(...v); return `<svg viewBox="0 0 60 22" width="60" height="22"><path d="${v.map((x, i) => `${i ? 'L' : 'M'}${(i * 60) / 5},${20 - ((x - n) / (m - n || 1)) * 17}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` }
+  return `<section class="card s6"><header><div><h2>Ranking con tendencia</h2><p class="sub">Quién pesa más, cuánto cambió frente al promedio y su recorrido de 6 meses.</p></div><span class="tag">Ranking</span></header><div class="rank">${its.map((i, k) => { const prom = i.meses.slice(0, 5).reduce((a, b) => a + b, 0) / 5, d = ((i.total - prom) / prom) * 100; return `<div class="rk"><span class="pos">${k + 1}</span><span class="n">${esc(i.n)}</span><div class="bar"><i style="width:${(i.total / mx) * 100}%;background:${i.col}"></i></div><span class="m">${S(i.total)}</span><span class="dl ${d > 0 ? 'up' : 'dn'}">${d > 0 ? '▲' : '▼'} ${Math.abs(Math.round(d))}%</span></div>` }).join('')}</div></section>`
+}
+/* 10 · Cascada del presupuesto */
+function cCasc() {
+  const F = [['Presupuesto', 3480], ['General', -1120], ['Sodexo', -262], ['Hogar', -612], ['Pareja', -468], ['Movilidad', -120]], W = 520, H = 230, p = 30, bw = (W - 2 * p) / 7, mx = 3700
+  const Y = (v) => H - 30 - (v / mx) * (H - 60); let run = 0; const bars = F.map(([n, v], i) => { const ini = v > 0 ? 0 : run + v, fin = v > 0 ? v : run; run = v > 0 ? v : run + v; return `<rect x="${p + i * bw + 8}" y="${Y(fin)}" width="${bw - 16}" height="${Y(ini) - Y(fin)}" rx="6" fill="${v > 0 ? 'var(--pri)' : 'var(--c3)'}" opacity="${v > 0 ? 1 : .85}" ${tip(n, S(Math.abs(v)))}/><text x="${p + i * bw + bw / 2}" y="${Y(fin) - 6}" text-anchor="middle" class="v">${v > 0 ? '' : '−'}${Math.abs(v)}</text><text x="${p + i * bw + bw / 2}" y="${H - 12}" text-anchor="middle">${n}</text>` }).join('')
+  const rest = 3480 - 2582
+  return `<section class="card s6"><header><div><h2>Cascada del presupuesto</h2><p class="sub">Del presupuesto total, cuánto se llevó cada fondo y qué queda.</p></div><span class="tag">Cascada</span></header><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Cascada del presupuesto por fondo">${bars}<rect x="${p + 6 * bw + 8}" y="${Y(rest)}" width="${bw - 16}" height="${Y(0) - Y(rest)}" rx="6" fill="var(--ok)" ${tip('Queda', S(rest))}/><text x="${p + 6 * bw + bw / 2}" y="${Y(rest) - 6}" text-anchor="middle" class="v">${rest}</text><text x="${p + 6 * bw + bw / 2}" y="${H - 12}" text-anchor="middle">Queda</text></svg></section>`
+}
+/* 11 · Radar */
+function cRadar() {
+  const c = D.categoria.slice(0, 7), cx = 150, cy = 140, R = 100, mx = maxOf(c.flatMap((i) => [i.total, i.meses[2]])), ang = (i) => (i / c.length) * 2 * Math.PI - Math.PI / 2
+  const pt = (i, v) => [cx + (v / mx) * R * Math.cos(ang(i)), cy + (v / mx) * R * Math.sin(ang(i))]
+  const poly = (f) => c.map((x, i) => pt(i, f(x)).join(',')).join(' ')
+  return `<section class="card s5"><header><div><h2>Perfil de gasto</h2><p class="sub">Este mes frente a tu promedio.</p></div><span class="tag">Radar</span></header><svg viewBox="0 0 300 280" width="100%" style="max-width:330px;margin:auto" role="img" aria-label="Radar de gasto por categoría">${[.25, .5, .75, 1].map((f) => `<polygon points="${c.map((_, i) => [cx + f * R * Math.cos(ang(i)), cy + f * R * Math.sin(ang(i))].join(',')).join(' ')}" fill="none" stroke="var(--line)"/>`).join('')}${c.map((x, i) => { const [lx, ly] = [cx + (R + 22) * Math.cos(ang(i)), cy + (R + 16) * Math.sin(ang(i))]; return `<line x1="${cx}" y1="${cy}" x2="${cx + R * Math.cos(ang(i))}" y2="${cy + R * Math.sin(ang(i))}" stroke="var(--line)"/><text x="${lx}" y="${ly}" text-anchor="middle">${esc(x.n)}</text>` }).join('')}<polygon points="${poly((x) => x.meses.slice(0, 5).reduce((a, b) => a + b, 0) / 5)}" fill="var(--muted)" opacity=".2" stroke="var(--muted)" stroke-dasharray="4 3"/><polygon points="${poly((x) => x.total)}" fill="var(--pri)" opacity=".3" stroke="var(--pri)" stroke-width="2.5"/>${c.map((x, i) => `<circle cx="${pt(i, x.total)[0]}" cy="${pt(i, x.total)[1]}" r="4" fill="var(--pri)" ${tip(x.n, S(x.total))}/>`).join('')}</svg><div class="leg"><span><i style="background:var(--pri)"></i>Octubre</span><span><i style="background:var(--muted);opacity:.5"></i>Promedio</span></div></section>`
+}
+const TEMA = () => document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+function dibujar() {
+  document.getElementById('app').innerHTML = `<header class="cab"><div><h1>Gráficos para el dashboard · propuestas</h1><p>Galería independiente con datos de ejemplo: nada de esto toca la aplicación. Cambia la dimensión y todos los gráficos se recalculan, para ver cuáles valdría la pena sumar al panel.</p></div><button class="btn" id="tema">${TEMA() === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}</button></header>
+  <div class="barra"><div class="grp"><span>Ver por</span><div class="seg" role="group" aria-label="Dimensión">${Object.keys(DIM).map((k) => `<button data-dim="${k}" aria-pressed="${E.dim === k}">${NOMBRE[k][0].toUpperCase() + NOMBRE[k].slice(1)}</button>`).join('')}</div></div><div class="grp"><span>Período</span><div class="seg"><button aria-pressed="true">Octubre 2026</button></div></div></div>
+  <div class="g">${cCal()}${cTree()}${cDia()}${cDonut()}${cMes()}${cSem()}${cSankey()}${cApil()}${cRank()}${cCasc()}${cRadar()}</div>`
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-dim],[data-sel],#tema'); if (!b) return
+  if (b.id === 'tema') document.documentElement.dataset.theme = TEMA() === 'dark' ? 'light' : 'dark'
+  if (b.dataset.dim) { E.dim = b.dataset.dim; E.sel = 'todos' }
+  if (b.dataset.sel) E.sel = b.dataset.sel
+  const y = scrollY; dibujar(); scrollTo(0, y)
+})
+const T = document.getElementById('tip')
+document.addEventListener('mousemove', (e) => { const t = e.target.closest?.('[data-tip]'); if (!t) { T.classList.remove('on'); return } T.innerHTML = `${esc(t.dataset.tip)}${t.dataset.tip2 ? `<small>${esc(t.dataset.tip2)}</small>` : ''}`; T.classList.add('on'); T.style.left = Math.min(innerWidth - 250, e.clientX + 14) + 'px'; T.style.top = e.clientY + 14 + 'px' })
+dibujar()
+</script>

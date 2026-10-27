@@ -3,204 +3,201 @@
 <style>
 /* Paleta B «Índigo» de Gasto Deejota. Maqueta con datos de ejemplo: no guarda nada. */
 :root { --bg:#f6f6fa; --surface:#fff; --surface-2:#ececf4; --line:#d9d9e6; --fg:#17172b; --muted:#58587a; --pri:#3a3fa6; --pri-fg:#fff; --pri-soft:#e0e1f7;
-  --ok:#12663a; --ok-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#f9dedc; --shadow:0 12px 28px -8px rgba(23,23,43,.22),0 2px 8px rgba(23,23,43,.08); }
+  --ok:#12663a; --ok-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#f9dedc; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a;
-  --ok:#5ad08a; --ok-soft:#14301f; --bad:#ff8f86; --bad-soft:#3f1b18; --shadow:0 14px 32px -8px rgba(0,0,0,.65),0 2px 10px rgba(0,0,0,.45); color-scheme: dark; } }
+  --ok:#5ad08a; --ok-soft:#14301f; --bad:#ff8f86; --bad-soft:#3f1b18; color-scheme: dark; } }
 :root[data-theme="dark"] { --bg:#0f0f1c; --surface:#181829; --surface-2:#222238; --line:#34344f; --fg:#ececf8; --muted:#a5a5c8; --pri:#9ea3ff; --pri-fg:#101030; --pri-soft:#26264a;
-  --ok:#5ad08a; --ok-soft:#14301f; --bad:#ff8f86; --bad-soft:#3f1b18; --shadow:0 14px 32px -8px rgba(0,0,0,.65),0 2px 10px rgba(0,0,0,.45); color-scheme: dark; }
+  --ok:#5ad08a; --ok-soft:#14301f; --bad:#ff8f86; --bad-soft:#3f1b18; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); font: 14px/1.45 'Segoe UI', system-ui, -apple-system, sans-serif; }
-button, input { font: inherit; color: inherit; } button { cursor: pointer; }
+button, input, select { font: inherit; color: inherit; } button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--pri); outline-offset: 2px; }
-.ico { width: 16px; height: 16px; flex: none; }
-.pag { max-width: 1180px; margin: 0 auto; padding-block: 18px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.cab { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; } h1 { margin: 0; font-size: 24px; text-wrap: balance; } .cab p { margin: 4px 0 0; color: var(--muted); max-width: 66ch; }
-.cab > .btn { align-self: flex-start; }
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 600; } .btn:hover { background: var(--surface-2); }
+.ico { width: 16px; height: 16px; flex: none; } .ico.g { width: 20px; height: 20px; }
+.pag { max-width: 1200px; margin: 0 auto; padding-block: 18px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.cab { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; } h1 { margin: 0; font-size: 24px; text-wrap: balance; } .cab p { margin: 4px 0 0; color: var(--muted); max-width: 68ch; } .cab > .btn { align-self: flex-start; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 600; } .btn:hover { background: var(--surface-2); } .btn.pri { background: var(--pri); color: var(--pri-fg); border-color: var(--pri); }
 .vars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 16px 0; }
 .var { text-align: left; display: flex; flex-direction: column; gap: 3px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); min-width: 0; transition: transform .15s, border-color .15s; }
 .var:hover { transform: translateY(-2px); border-color: var(--pri); } .var[aria-pressed='true'] { background: var(--pri-soft); border-color: var(--pri); }
 .var b { display: flex; gap: 8px; align-items: center; } .var .l { width: 22px; height: 22px; border-radius: 7px; background: var(--pri); color: var(--pri-fg); display: grid; place-items: center; font-size: 12px; font-weight: 800; flex: none; } .var small { color: var(--muted); font-size: 12px; line-height: 1.3; }
 .marco { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; min-width: 0; }
-.panel h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.zona { height: 330px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
-.zona .sc { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
-.barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
-.buscar { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 150px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); padding: 5px 9px; } .buscar input { border: 0; outline: 0; background: none; flex: 1; min-width: 0; }
-.chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; font-weight: 600; transition: background .12s, border-color .12s; }
-.chip.inc { background: var(--ok-soft); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); } .chip.exc { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); text-decoration: line-through; text-decoration-thickness: 1px; }
-.chip:hover { border-color: var(--pri); } .chip .x { opacity: .7; } .chip small { font-weight: 500; opacity: .75; }
-.estado { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; font-size: 10px; font-weight: 800; }
-.mini { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; } .mini button { border: 0; background: var(--surface); padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--muted); } .mini button + button { border-left: 1px solid var(--line); }
-.mini button[aria-pressed='true'].i { background: var(--ok-soft); color: var(--ok); } .mini button[aria-pressed='true'].e { background: var(--bad-soft); color: var(--bad); } .mini button[aria-pressed='true'].n { background: var(--surface-2); color: var(--fg); }
-.grupo { margin-bottom: 8px; } .grupo > .cab2 { display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px; font-weight: 700; } .grupo .chips { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 4px; }
-table.mx { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: 12.5px; } .mx th { font-weight: 700; padding: 3px 4px; text-align: center; white-space: nowrap; } .mx th.f { text-align: left; } .mx td { padding: 0; }
-.cel { width: 100%; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 800; } .cel.inc { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); } .cel.exc { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); } .cel.no { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--surface-2) 4px 6px); border-style: dashed; cursor: default; }
-.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; height: 100%; } .cols > div { min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; } .cols h3 { margin: 0; padding: 6px 10px; font-size: 12px; background: var(--surface-2); } .cols .sc { flex: 1; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
-.fila { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; } .fila:hover { background: var(--surface-2); } .fila span.n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ib { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font-weight: 800; } .ib.i:hover { background: var(--ok-soft); color: var(--ok); } .ib.e:hover { background: var(--bad-soft); color: var(--bad); }
-.md { display: grid; grid-template-columns: 190px 1fr; height: 100%; } .md .izq { border-right: 1px solid var(--line); overflow-y: auto; padding: 6px; } .md .der { overflow-y: auto; padding: 10px; }
-.amb { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid transparent; border-radius: 10px; background: none; text-align: left; } .amb[aria-pressed='true'] { background: var(--pri-soft); border-color: var(--pri); } .amb .cnt { margin-left: auto; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; }
-.cnt.inc { background: var(--ok-soft); color: var(--ok); } .cnt.exc { background: var(--bad-soft); color: var(--bad); }
-.pill { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; background: var(--surface); margin: 0 6px 6px 0; } .pill > span { padding: 4px 10px; font-weight: 600; font-size: 12.5px; } .pill button { border: 0; border-left: 1px solid var(--line); background: none; padding: 4px 8px; font-weight: 800; color: var(--muted); } .pill button.on.i { background: var(--ok-soft); color: var(--ok); } .pill button.on.e { background: var(--bad-soft); color: var(--bad); }
-.sug { position: relative; } .lista-sug { max-height: 190px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin-top: 6px; } .lista-sug .fila { cursor: pointer; } .lista-sug .sel { background: var(--pri-soft); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-width: 0; }
+.panel h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.zona { height: 350px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); animation: ent .25s ease-out; }
+@keyframes ent { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.zona .sc { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+.barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.buscar { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 150px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 6px 10px; } .buscar input { border: 0; outline: 0; background: none; flex: 1; min-width: 0; }
+.nota { color: var(--muted); font-size: 12px; }
+.inc-t { color: var(--ok); font-weight: 700; } .exc-t { color: var(--bad); font-weight: 700; }
+.k { --k: var(--pri); }
+.disco { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--k) 15%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); color: color-mix(in srgb, var(--k) 70%, var(--fg)); }
+.tok { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 600; font-size: 13px; transition: transform .12s, background .15s, border-color .15s; }
+.tok:hover { transform: translateY(-1px); border-color: var(--pri); }
+.tok.inc { background: var(--ok-soft); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 55%, transparent); } .tok.exc { background: var(--bad-soft); color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.tok.exc .t { text-decoration: line-through; } .tok small { font-weight: 500; opacity: .8; }
+.qx { border: 0; background: none; color: inherit; padding: 0; display: grid; opacity: .65; }
+.marca { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; font-weight: 800; background: currentColor; } .marca i { color: var(--surface); font-style: normal; }
+.rej { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card { border: 1.5px solid var(--line); border-radius: 16px; padding: 12px; background: linear-gradient(160deg, color-mix(in srgb, var(--k) 7%, var(--surface)), var(--surface)); transition: border-color .2s, box-shadow .2s; }
+.card.inc { border-color: color-mix(in srgb, var(--ok) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 14%, transparent); } .card.exc { border-color: color-mix(in srgb, var(--bad) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 14%, transparent); }
+.card header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; } .card header b { flex: 1; font-size: 15px; }
+.sw { display: inline-flex; padding: 2px; background: var(--surface-2); border-radius: 99px; } .sw button { border: 0; background: none; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--muted); } .sw button[aria-pressed='true'].i { background: var(--ok); color: var(--surface); } .sw button[aria-pressed='true'].e { background: var(--bad); color: var(--surface); } .sw button[aria-pressed='true'].n { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.frase { font-size: 17px; line-height: 2.1; }
+.mas { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 99px; border: 1.5px dashed var(--line); background: none; color: var(--muted); font-weight: 600; font-size: 13px; } .mas:hover, .mas[aria-pressed='true'] { border-color: var(--pri); color: var(--pri); background: var(--pri-soft); }
+.picker { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-2); animation: ent .2s ease-out; } .picker .lst { max-height: 120px; overflow-y: auto; padding: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.carriles { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 10px; height: 100%; } .carril { display: flex; flex-direction: column; min-height: 0; border-radius: 14px; border: 1.5px dashed var(--line); background: var(--surface-2); transition: border-color .15s, background .15s; } .carril.sobre { border-color: var(--pri); background: var(--pri-soft); }
+.carril h3 { margin: 0; padding: 9px 12px; font-size: 13px; display: flex; align-items: center; gap: 6px; } .carril .sc { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 8px 8px; display: flex; flex-direction: column; gap: 6px; } .carril.i { background: color-mix(in srgb, var(--ok-soft) 55%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 40%, transparent); } .carril.e { background: color-mix(in srgb, var(--bad-soft) 55%, var(--surface)); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.ficha { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 11px; background: var(--surface); border: 1px solid var(--line); cursor: grab; } .ficha .n { flex: 1; min-width: 0; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ficha .n small { display: block; font-weight: 500; color: var(--muted); font-size: 11px; }
+.fl { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-weight: 800; } .fl:hover { background: var(--pri-soft); color: var(--pri); }
+.pasos { display: flex; gap: 6px; margin-bottom: 10px; } .paso { flex: 1; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; font-size: 12.5px; text-align: left; } .paso .num { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-size: 12px; flex: none; } .paso[aria-current='step'] { border-color: var(--pri); background: var(--pri-soft); } .paso[aria-current='step'] .num { background: var(--pri); color: var(--pri-fg); } .paso.hecho .num { background: var(--ok); color: var(--surface); }
+.grande { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); text-align: left; min-width: 0; } .grande:hover { border-color: var(--pri); } .grande.inc { border-color: var(--ok); background: var(--ok-soft); }
+.grande b { display: block; font-size: 14px; } .grande small { color: var(--muted); }
+.rejs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.pie { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--surface-2); }
+.fila { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 10px; } .fila:hover { background: var(--surface-2); } .fila.hij { margin-left: 30px; }
+.chk { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--surface); font-size: 12px; font-weight: 800; flex: none; padding: 0; } .chk.inc { background: var(--ok); border-color: var(--ok); } .chk.exc { background: var(--bad); border-color: var(--bad); } .chk.par { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.fila .n { flex: 1; min-width: 0; font-weight: 600; } .fila .n.exc { color: var(--bad); text-decoration: line-through; } .fila small { color: var(--muted); font-size: 12px; }
+.quitar-e { opacity: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 2px 8px; font-size: 12px; font-weight: 700; color: var(--bad); } .fila:hover .quitar-e, .fila:focus-within .quitar-e, .quitar-e.on { opacity: 1; } .quitar-e.on { background: var(--bad-soft); border-color: var(--bad); }
+.caret { border: 0; background: none; display: grid; place-items: center; width: 22px; height: 22px; color: var(--muted); transition: transform .15s; } .caret[aria-expanded='true'] { transform: rotate(90deg); }
+.resumen { font-size: 13.5px; line-height: 1.7; } .alerta { padding: 8px 10px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); font-size: 12.5px; font-weight: 600; }
+.prueba select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); margin-bottom: 6px; }
+.res { padding: 9px 11px; border-radius: 12px; font-weight: 700; margin-top: 4px; } .res.si { background: var(--ok-soft); color: var(--ok); } .res.no { background: var(--bad-soft); color: var(--bad); } .res small { display: block; font-weight: 500; color: var(--fg); }
 .med { display: flex; flex-wrap: wrap; gap: 6px; }
-.resumen { font-size: 13px; line-height: 1.6; } .resumen b { font-weight: 700; } .inc-t { color: var(--ok); font-weight: 700; } .exc-t { color: var(--bad); font-weight: 700; }
-.alerta { padding: 7px 10px; border-radius: 9px; background: var(--bad-soft); color: var(--bad); font-size: 12.5px; font-weight: 600; }
-.prueba select { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-bottom: 6px; }
-.res { padding: 8px 10px; border-radius: 10px; font-weight: 700; margin-top: 4px; } .res.si { background: var(--ok-soft); color: var(--ok); } .res.no { background: var(--bad-soft); color: var(--bad); } .res small { display: block; font-weight: 500; color: var(--fg); }
 @media (max-width: 1000px) { .marco { grid-template-columns: 1fr; } .vars { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 640px) { .vars { grid-template-columns: repeat(2, 1fr); } .md { grid-template-columns: 1fr; } .md .izq { border-right: 0; border-bottom: 1px solid var(--line); max-height: 120px; } .cols { grid-template-columns: 1fr; } .zona { height: 400px; } }
+@media (max-width: 640px) { .vars { grid-template-columns: repeat(2, 1fr); } .rej, .carriles { grid-template-columns: 1fr; } .zona { height: 460px; } .pasos .paso .t { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 <div class="pag" id="app"></div>
 <script>
 'use strict'
 const AMB = [
-  ['Personal', ['Alimentación', 'Auto', 'Compras', 'Cuidado Personal', 'Educación', 'Salud', 'Servicios', 'Transporte', 'Viajes', 'Otros']],
-  ['Trabajo', ['Alimentación', 'Transporte', 'Herramientas y Equipamiento', 'Auto', 'Otros']],
-  ['Pareja', ['Alimentación', 'Plan Nube', 'Transporte', 'Regalos', 'Compras', 'Salidas', 'Otros']],
-  ['Familia', ['Alimentación', 'Bebé', 'Hogar', 'Educación', 'Salud', 'Otros']],
-  ['Amigos', ['Alimentación', 'Transporte', 'Salidas', 'Regalos', 'Otros']],
+  ['Personal', '#3A3FA6', 'user', ['Alimentación', 'Auto', 'Compras', 'Cuidado Personal', 'Educación', 'Salud', 'Servicios', 'Transporte', 'Viajes', 'Otros']],
+  ['Trabajo', '#1E8A8A', 'bag', ['Alimentación', 'Transporte', 'Herramientas y Equipamiento', 'Auto', 'Otros']],
+  ['Pareja', '#8A8A2E', 'heart', ['Alimentación', 'Plan Nube', 'Transporte', 'Regalos', 'Compras', 'Salidas', 'Otros']],
+  ['Familia', '#E0622F', 'users', ['Alimentación', 'Bebé', 'Hogar', 'Educación', 'Salud', 'Otros']],
+  ['Amigos', '#A8478F', 'star', ['Alimentación', 'Transporte', 'Salidas', 'Regalos', 'Otros']],
 ]
 const MED = ['Yape', 'Plin', 'Sodexo', 'Transferencia', 'Efectivo', 'Otros']
 const kA = (a) => 'a:' + a, kC = (a, c) => 'c:' + a + '>' + c
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-const ic = (p) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`
-const P = { luna: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', sol: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>', buscar: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/>', x: '<path d="m6 6 12 12M18 6 6 18"/>' }
-/* Estado compartido: reglas de clasificación (ámbito/categoría) y de medio de pago */
+const P = { luna: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', sol: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>', buscar: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/>', x: '<path d="m6 6 12 12M18 6 6 18"/>', mas: '<path d="M12 5v14M5 12h14"/>', der: '<path d="m9 6 6 6-6 6"/>', izq: '<path d="m15 6-6 6 6 6"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>', bag: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>', heart: '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>', users: '<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/>', star: '<path d="m12 3 2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.5 6.6 19.4l1.2-6L3.4 9.3l6-.7z"/>' }
+const ic = (n, c = '') => `<svg class="ico ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`
+const amb = (a) => AMB.find(([n]) => n === a)
+const disco = (a) => `<span class="disco">${ic(amb(a)[2], 'g')}</span>`
 let R = { cls: { [kA('Personal')]: 'inc', [kC('Trabajo', 'Alimentación')]: 'inc' }, med: { Sodexo: 'inc' } }
-const E = { v: '1', q: '', abierto: new Set(['Personal']), sel: 'Personal', modo: 'inc', pr: { a: 'Personal', c: 'Alimentación', m: 'Sodexo' }, sug: 0 }
+const E = { v: '1', q: '', abierto: new Set(['Personal']), modo: 'inc', pick: false, paso: 0, pr: { a: 'Personal', c: 'Alimentación', m: 'Sodexo' } }
 const sig = (e) => (e === 'inc' ? 'exc' : e === 'exc' ? null : 'inc')
-function poner(map, k, e) { if (e) map[k] = e; else delete map[k] }
-const simb = (e) => (e === 'inc' ? '✓' : e === 'exc' ? '✕' : '')
-
-/* Mismo criterio que el motor: incluir restringe, excluir gana, sin reglas admite todo */
+const poner = (m, k, e) => { if (e) m[k] = e; else delete m[k] }
+const marcaDe = (e) => (e === 'inc' ? '✓' : e === 'exc' ? '✕' : '')
 function admite(a, c, m) {
-  const cl = Object.entries(R.cls), inc = cl.filter(([, e]) => e === 'inc'), exc = cl.filter(([, e]) => e === 'exc')
-  const coin = (k) => k === kA(a) || k === kC(a, c)
+  const cl = Object.entries(R.cls), inc = cl.filter(([, e]) => e === 'inc'), exc = cl.filter(([, e]) => e === 'exc'), coin = (k) => k === kA(a) || k === kC(a, c)
   const okC = (inc.length === 0 || inc.some(([k]) => coin(k))) && !exc.some(([k]) => coin(k))
-  const mi = Object.entries(R.med), minc = mi.filter(([, e]) => e === 'inc'), mexc = mi.filter(([, e]) => e === 'exc')
-  const okM = (minc.length === 0 || minc.some(([k]) => k === m)) && !mexc.some(([k]) => k === m)
-  const motivo = !okC ? (exc.some(([k]) => coin(k)) ? 'La clasificación está excluida.' : 'La clasificación no está entre las incluidas.') : !okM ? (mexc.some(([k]) => k === m) ? 'El medio de pago está excluido.' : 'El medio de pago no está entre los incluidos.') : ''
-  return { ok: okC && okM, motivo }
+  const mi = Object.entries(R.med), mi_i = mi.filter(([, e]) => e === 'inc'), mi_e = mi.filter(([, e]) => e === 'exc')
+  const okM = (mi_i.length === 0 || mi_i.some(([k]) => k === m)) && !mi_e.some(([k]) => k === m)
+  return { ok: okC && okM, motivo: !okC ? (exc.some(([k]) => coin(k)) ? 'La clasificación está excluida.' : 'La clasificación no está entre las incluidas.') : !okM ? (mi_e.some(([k]) => k === m) ? 'El medio de pago está excluido.' : 'El medio de pago no está entre los incluidos.') : '' }
 }
-function resumen() {
-  const inc = [], exc = []
-  for (const [a, cats] of AMB) {
-    if (R.cls[kA(a)] === 'inc') inc.push(`todo <b>${esc(a)}</b>`); if (R.cls[kA(a)] === 'exc') exc.push(`todo <b>${esc(a)}</b>`)
-    for (const c of cats) { const e = R.cls[kC(a, c)]; if (e === 'inc') inc.push(`${esc(c)} <small>(${esc(a)})</small>`); if (e === 'exc') exc.push(`${esc(c)} <small>(${esc(a)})</small>`) }
+function frases() {
+  const grupo = (e) => {
+    const todo = AMB.filter(([a]) => R.cls[kA(a)] === e).map(([a]) => a), porCat = {}
+    for (const [a, , , cats] of AMB) for (const c of cats) if (R.cls[kC(a, c)] === e) (porCat[c] ??= []).push(a)
+    const out = todo.map((a) => `todo <b>${esc(a)}</b>`)
+    for (const [c, as] of Object.entries(porCat)) out.push(`<b>${esc(c)}</b> <small>(${as.map(esc).join(', ')})</small>`)
+    return out
   }
-  const mi = Object.entries(R.med), minc = mi.filter(([, e]) => e === 'inc').map(([k]) => k), mexc = mi.filter(([, e]) => e === 'exc').map(([k]) => k)
-  return { inc, exc, minc, mexc, falta: inc.length === 0 }
+  const mi = Object.entries(R.med)
+  return { inc: grupo('inc'), exc: grupo('exc'), minc: mi.filter(([, e]) => e === 'inc').map(([k]) => k), mexc: mi.filter(([, e]) => e === 'exc').map(([k]) => k) }
 }
-const chipRegla = (k, e, txt) => `<button class="chip ${e}" data-quitar="${esc(k)}" aria-label="Quitar regla: ${esc(txt)}">${e === 'inc' ? '✓' : '✕'} ${txt} <span class="x">${ic(P.x)}</span></button>`
-function chipsResumen() {
-  const out = []
-  for (const [k, e] of Object.entries(R.cls)) { const [t, r] = [k[0], k.slice(2)]; out.push(chipRegla(k, e, t === 'a' ? `${esc(r)} (todo)` : `${esc(r.split('>')[1])} <small>${esc(r.split('>')[0])}</small>`)) }
-  return out.join('')
-}
-const medios = () => `<div class="med" role="group" aria-label="Medios de pago">${MED.map((m) => `<button class="chip ${R.med[m] ?? ''}" data-med="${m}" aria-label="${m}: ${R.med[m] === 'inc' ? 'incluir' : R.med[m] === 'exc' ? 'excluir' : 'sin regla'}">${simb(R.med[m]) ? simb(R.med[m]) + ' ' : ''}${m}</button>`).join('')}</div>
-  <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">Toca un medio para alternar: sin regla → <b class="inc-t">incluir</b> → <b class="exc-t">excluir</b>.</p>`
+const nombreK = (k) => { const t = k[0], r = k.slice(2); return t === 'a' ? `Todo ${esc(r)}` : `${esc(r.split('>')[1])} <small>${esc(r.split('>')[0])}</small>` }
+const tok = (k, e) => `<span class="tok ${e}"><span class="t">${nombreK(k)}</span><button class="qx" data-quitar="${esc(k)}" aria-label="Quitar regla">${ic('x')}</button></span>`
+const medios = () => `<div class="med" role="group" aria-label="Medios de pago">${MED.map((m) => `<button class="tok ${R.med[m] ?? ''}" data-med="${m}" aria-label="${m}: ${R.med[m] === 'inc' ? 'incluir' : R.med[m] === 'exc' ? 'excluir' : 'sin regla'}">${R.med[m] ? `<span class="marca"><i>${marcaDe(R.med[m])}</i></span>` : ''}<span class="t">${m}</span></button>`).join('')}</div><p class="nota" style="margin:6px 0 0">Toca un medio: sin regla → <b class="inc-t">incluir</b> → <b class="exc-t">excluir</b>.</p>`
 
-/* ---- Variante 1: chips con buscador (acordeones) ---- */
-function v1() {
+function vA() {
   const q = norm(E.q)
-  return `<div class="zona"><div class="barra"><label class="buscar">${ic(P.buscar)}<input id="q" value="${esc(E.q)}" placeholder="Buscar categoría o ámbito…" aria-label="Buscar"></label><span style="font-size:12px;color:var(--muted)">Toca una etiqueta: ✓ incluir → ✕ excluir → nada</span></div><div class="sc">
-  ${AMB.map(([a, cats]) => {
-    const vis = cats.filter((c) => !q || norm(c).includes(q) || norm(a).includes(q)); if (!vis.length) return ''
-    const e = R.cls[kA(a)], abierto = E.abierto.has(a) || Boolean(q)
-    return `<div class="grupo"><div class="cab2"><button class="chip ${e ?? ''}" data-ciclo="${esc(kA(a))}" aria-label="Todo ${esc(a)}: ${e === 'inc' ? 'incluir' : e === 'exc' ? 'excluir' : 'sin regla'}">${simb(e)} Todo ${esc(a)}</button><button class="chip" data-abrir="${esc(a)}" aria-expanded="${abierto}">${abierto ? 'Ocultar' : 'Ver'} categorías (${cats.length})</button></div>
-    ${abierto ? `<div class="chips">${vis.map((c) => { const ec = R.cls[kC(a, c)]; return `<button class="chip ${ec ?? ''}" data-ciclo="${esc(kC(a, c))}" aria-label="${esc(c)} en ${esc(a)}: ${ec === 'inc' ? 'incluir' : ec === 'exc' ? 'excluir' : 'sin regla'}">${simb(ec)} ${esc(c)}</button>` }).join('')}</div>` : ''}</div>`
-  }).join('')}</div></div>`
+  return `<div class="zona"><div class="barra"><label class="buscar">${ic('buscar')}<input id="q" value="${esc(E.q)}" placeholder="Buscar categoría…" aria-label="Buscar"></label><span class="nota">Cada tarjeta es un ámbito. Toca una categoría para alternarla.</span></div><div class="sc"><div class="rej">
+  ${AMB.map(([a, col, , cats]) => { const e = R.cls[kA(a)], vis = cats.filter((c) => !q || norm(c).includes(q)); if (!vis.length && q) return ''
+    return `<section class="card k ${e ?? ''}" style="--k:${col}" aria-label="${esc(a)}"><header>${disco(a)}<b>${esc(a)}</b><div class="sw" role="group" aria-label="Regla para todo ${esc(a)}"><button class="n" aria-pressed="${!e}" data-poner="${esc(kA(a))}|">Nada</button><button class="i" aria-pressed="${e === 'inc'}" data-poner="${esc(kA(a))}|inc">Todo</button><button class="e" aria-pressed="${e === 'exc'}" data-poner="${esc(kA(a))}|exc">Excluir</button></div></header>
+    <div class="cats">${vis.map((c) => { const ec = R.cls[kC(a, c)]; return `<button class="tok ${ec ?? ''}" data-ciclo="${esc(kC(a, c))}" aria-label="${esc(c)} en ${esc(a)}: ${ec === 'inc' ? 'incluir' : ec === 'exc' ? 'excluir' : 'sin regla'}">${ec ? `<span class="marca"><i>${marcaDe(ec)}</i></span>` : ''}<span class="t">${esc(c)}</span></button>` }).join('')}</div></section>` }).join('')}</div></div></div>`
 }
-
-/* ---- Variante 2: matriz categoría × ámbito ---- */
-function v2() {
-  const nombres = [...new Set(AMB.flatMap(([, c]) => c))]
-  return `<div class="zona"><div class="barra"><span style="font-size:12px;color:var(--muted)"><b>Tip:</b> toca el nombre de una fila para aplicar la regla a esa categoría en <b>todos</b> los ámbitos (p. ej. Alimentación).</span></div><div class="sc"><table class="mx" role="grid"><thead><tr><th class="f" scope="col">Categoría</th>${AMB.map(([a]) => { const e = R.cls[kA(a)]; return `<th scope="col"><button class="chip ${e ?? ''}" data-ciclo="${esc(kA(a))}" aria-label="Todo ${esc(a)}">${simb(e)} ${esc(a)}</button></th>` }).join('')}</tr></thead><tbody>
-  ${nombres.map((c) => `<tr><th class="f" scope="row"><button class="chip" data-fila="${esc(c)}" title="Aplicar a todos los ámbitos">${esc(c)}</button></th>${AMB.map(([a, cats]) => { if (!cats.includes(c)) return '<td><div class="cel no" aria-hidden="true"></div></td>'; const e = R.cls[kC(a, c)] ?? (R.cls[kA(a)] === 'inc' ? '' : ''); const amb = R.cls[kA(a)]; return `<td><button class="cel ${e ?? ''}" data-ciclo="${esc(kC(a, c))}" aria-label="${esc(c)} en ${esc(a)}">${simb(e)}${!e && amb ? `<span style="opacity:.35;font-weight:600">${amb === 'inc' ? '✓' : '✕'}</span>` : ''}</button></td>` }).join('')}</tr>`).join('')}
-  </tbody></table></div></div>`
+function vB() {
+  const lista = []
+  for (const [a, , , cats] of AMB) { lista.push(['a', a, '', kA(a)]); for (const c of cats) lista.push(['c', c, a, kC(a, c)]) }
+  const q = norm(E.q), vis = lista.filter(([, n, a]) => !q || norm(n + a).includes(q)).slice(0, 60)
+  const toks = (e) => Object.entries(R.cls).filter(([, x]) => x === e).map(([k]) => tok(k, e)).join(' ')
+  return `<div class="zona"><div class="sc"><div class="frase">Este fondo cubre ${toks('inc') || '<span class="nota">(sin reglas: todo)</span>'} <button class="mas" data-modo="inc" aria-pressed="${E.pick && E.modo === 'inc'}">${ic('mas')} añadir</button>
+  <br>pero <b>no</b> cubre ${toks('exc') || '<span class="nota">nada en particular</span>'} <button class="mas" data-modo="exc" aria-pressed="${E.pick && E.modo === 'exc'}">${ic('mas')} añadir</button></div>
+  ${E.pick ? `<div class="picker"><div class="barra"><b style="font-size:13px">Añadir a «${E.modo === 'inc' ? 'cubre' : 'no cubre'}»</b><label class="buscar">${ic('buscar')}<input id="q" value="${esc(E.q)}" placeholder="Escribe para filtrar…" aria-label="Filtrar"></label><button class="btn" data-modo="cerrar">Listo</button></div>
+  <div class="lst">${vis.map(([t, n, a, k]) => `<button class="tok ${R.cls[k] ?? ''}" data-poner="${esc(k)}|${R.cls[k] === E.modo ? '' : E.modo}">${t === 'a' ? `Todo ${esc(n)}` : `${esc(n)} <small>${esc(a)}</small>`}</button>`).join('') || '<span class="nota">Sin resultados.</span>'}</div></div>` : ''}</div></div>`
 }
-
-/* ---- Variante 3: dos columnas (Disponibles | Reglas) ---- */
-function v3() {
+function vC() {
   const q = norm(E.q), items = []
-  for (const [a, cats] of AMB) { items.push([kA(a), `Todo ${a}`, '']); for (const c of cats) items.push([kC(a, c), c, a]) }
-  const disp = items.filter(([k, n, a]) => !R.cls[k] && (!q || norm(n + a).includes(q)))
-  const sel = items.filter(([k]) => R.cls[k])
-  return `<div class="zona"><div class="barra"><label class="buscar">${ic(P.buscar)}<input id="q" value="${esc(E.q)}" placeholder="Buscar en disponibles…" aria-label="Buscar"></label></div><div class="sc" style="padding:8px"><div class="cols">
-    <div><h3>Disponibles (${disp.length})</h3><div class="sc">${disp.map(([k, n, a]) => `<div class="fila"><span class="n">${esc(n)}${a ? ` <small style="color:var(--muted)">${esc(a)}</small>` : ''}</span><button class="ib i" data-poner="${esc(k)}|inc" aria-label="Incluir ${esc(n)} ${esc(a)}" title="Incluir">+</button><button class="ib e" data-poner="${esc(k)}|exc" aria-label="Excluir ${esc(n)} ${esc(a)}" title="Excluir">−</button></div>`).join('') || '<p style="color:var(--muted);padding:6px">Nada que mostrar.</p>'}</div></div>
-    <div><h3>Reglas aplicadas (${sel.length})</h3><div class="sc">${sel.map(([k, n, a]) => `<div class="fila"><span class="estado ${R.cls[k]}" style="background:${R.cls[k] === 'inc' ? 'var(--ok-soft)' : 'var(--bad-soft)'};color:${R.cls[k] === 'inc' ? 'var(--ok)' : 'var(--bad)'}">${simb(R.cls[k])}</span><span class="n">${esc(n)}${a ? ` <small style="color:var(--muted)">${esc(a)}</small>` : ''}</span><button class="ib" data-ciclo="${esc(k)}" aria-label="Cambiar regla de ${esc(n)}" title="Alternar incluir/excluir">⇄</button><button class="ib" data-quitar="${esc(k)}" aria-label="Quitar ${esc(n)}">${ic(P.x)}</button></div>`).join('') || '<p style="color:var(--muted);padding:6px">Sin reglas: este grupo admite todo.</p>'}</div></div>
-  </div></div></div>`
+  for (const [a, , , cats] of AMB) { items.push([kA(a), `Todo ${a}`, '', a]); for (const c of cats) items.push([kC(a, c), c, a, a]) }
+  const lane = (e) => items.filter(([k, n, a]) => (R.cls[k] ?? '') === e && (e || !q || norm(n + a).includes(q)))
+  const ficha = ([k, n, a, amb0], e) => `<div class="ficha k" draggable="true" data-arr="${esc(k)}" style="--k:${amb(amb0)[1]}"><span class="disco" style="width:26px;height:26px;border-radius:8px">${ic(amb(amb0)[2])}</span><span class="n">${esc(n)}${a ? `<small>${esc(a)}</small>` : ''}</span>${e === '' ? `<button class="fl" data-poner="${esc(k)}|inc" aria-label="Incluir ${esc(n)} ${esc(a)}" title="Incluir">✓</button><button class="fl" data-poner="${esc(k)}|exc" aria-label="Excluir ${esc(n)} ${esc(a)}" title="Excluir">✕</button>` : `<button class="fl" data-poner="${esc(k)}|" aria-label="Quitar ${esc(n)} ${esc(a)}" title="Quitar">${ic('x')}</button>`}</div>`
+  const L = [['', 'Sin regla', ''], ['inc', 'Cubre', 'i'], ['exc', 'No cubre', 'e']]
+  return `<div class="zona"><div class="barra"><label class="buscar">${ic('buscar')}<input id="q" value="${esc(E.q)}" placeholder="Buscar en «Sin regla»…" aria-label="Buscar"></label><span class="nota">Arrastra las fichas entre columnas o usa ✓ y ✕.</span></div><div class="sc" style="padding:10px"><div class="carriles">${L.map(([e, t, c]) => { const l = lane(e); return `<div class="carril ${c}" data-lane="${e}"><h3>${e === 'inc' ? '<span class="inc-t">✓</span>' : e === 'exc' ? '<span class="exc-t">✕</span>' : ''} ${t} <span class="nota">(${l.length})</span></h3><div class="sc">${l.map((x) => ficha(x, e)).join('') || `<p class="nota" style="padding:6px">${e ? 'Suelta aquí.' : 'Nada que mostrar.'}</p>`}</div></div>` }).join('')}</div></div></div>`
 }
-
-/* ---- Variante 4: maestro-detalle ---- */
-function v4() {
-  const [a, cats] = AMB.find(([n]) => n === E.sel), cnt = (n) => AMB.find(([x]) => x === n)[1].filter((c) => R.cls[kC(n, c)]).length
-  const e = R.cls[kA(a)]
-  return `<div class="zona"><div class="md"><div class="izq" role="list" aria-label="Ámbitos">${AMB.map(([n]) => { const ea = R.cls[kA(n)], c = cnt(n); return `<button class="amb" data-sel="${esc(n)}" aria-pressed="${E.sel === n}">${esc(n)}${ea ? `<span class="cnt ${ea}">${simb(ea)} todo</span>` : c ? `<span class="cnt inc">${c}</span>` : ''}</button>` }).join('')}</div>
-  <div class="der"><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px"><b style="font-size:15px">${esc(a)}</b><div class="mini" role="group" aria-label="Regla para todo ${esc(a)}"><button class="n" aria-pressed="${!e}" data-poner="${esc(kA(a))}|">Sin regla</button><button class="i" aria-pressed="${e === 'inc'}" data-poner="${esc(kA(a))}|inc">Incluir todo</button><button class="e" aria-pressed="${e === 'exc'}" data-poner="${esc(kA(a))}|exc">Excluir todo</button></div></div>
-  <div>${cats.map((c) => { const ec = R.cls[kC(a, c)]; return `<span class="pill"><span>${esc(c)}</span><button class="i ${ec === 'inc' ? 'on' : ''}" data-poner="${esc(kC(a, c))}|${ec === 'inc' ? '' : 'inc'}" aria-pressed="${ec === 'inc'}" aria-label="Incluir ${esc(c)}">✓</button><button class="e ${ec === 'exc' ? 'on' : ''}" data-poner="${esc(kC(a, c))}|${ec === 'exc' ? '' : 'exc'}" aria-pressed="${ec === 'exc'}" aria-label="Excluir ${esc(c)}">✕</button></span>` }).join('')}</div>
-  <div style="margin-top:8px;padding-top:10px;border-top:1px dashed var(--line)"><span style="font-size:12px;color:var(--muted)">Atajo:</span> ${[...new Set(AMB.flatMap(([, x]) => x))].filter((c) => AMB.filter(([, x]) => x.includes(c)).length > 1).slice(0, 5).map((c) => `<button class="chip" data-fila="${esc(c)}" title="Alternar ${esc(c)} en todos los ámbitos">${esc(c)} en todos</button>`).join(' ')}</div></div></div></div>`
+function vD() {
+  const nombres = [...new Set(AMB.flatMap(([, , , c]) => c))], p = E.paso
+  const hecho = [Object.keys(R.cls).some((k) => k[0] === 'a' && R.cls[k] === 'inc'), nombres.some((c) => AMB.some(([a, , , cs]) => cs.includes(c) && R.cls[kC(a, c)] === 'inc')), Object.values(R.cls).includes('exc')]
+  const pasos = ['Ámbitos completos', 'Categorías en todos los ámbitos', 'Excepciones']
+  const estC = (c) => { const as = AMB.filter(([, , , cs]) => cs.includes(c)).map(([a]) => R.cls[kC(a, c)]); return as.every((e) => e === 'inc') ? 'inc' : '' }
+  const cuerpo = p === 0 ? `<p class="nota" style="margin:0 0 10px">¿Hay ámbitos que el fondo deba cubrir <b>completos</b>? Si no, pasa al siguiente.</p><div class="rejs">${AMB.map(([a, col, , cats]) => { const e = R.cls[kA(a)]; return `<button class="grande k ${e ?? ''}" style="--k:${col}" data-poner="${esc(kA(a))}|${e === 'inc' ? '' : 'inc'}" aria-pressed="${e === 'inc'}">${disco(a)}<span><b>${esc(a)}</b><small>${cats.length} categorías</small></span>${e === 'inc' ? '<span class="inc-t" style="margin-left:auto">✓</span>' : ''}</button>` }).join('')}</div>`
+    : p === 1 ? `<p class="nota" style="margin:0 0 10px">Marca una categoría y se aplica en <b>todos</b> los ámbitos donde exista. Ideal para «Alimentación» o «Transporte».</p><div class="cats">${nombres.map((c) => { const e = estC(c), n = AMB.filter(([, , , cs]) => cs.includes(c)).length; return `<button class="tok ${e}" data-fila="${esc(c)}" aria-pressed="${e === 'inc'}">${e === 'inc' ? '<span class="marca"><i>✓</i></span>' : ''}<span class="t">${esc(c)}</span><small>${n} ámb.</small></button>` }).join('')}</div>`
+    : `<p class="nota" style="margin:0 0 10px">Lo que marques aquí <b class="exc-t">nunca</b> lo cubrirá el fondo, aunque esté incluido arriba.</p>${AMB.map(([a, col, , cats]) => `<div class="k" style="--k:${col};margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${disco(a)}<b>${esc(a)}</b></div><div class="cats">${cats.map((c) => { const e = R.cls[kC(a, c)]; return `<button class="tok ${e === 'exc' ? 'exc' : ''}" data-poner="${esc(kC(a, c))}|${e === 'exc' ? '' : 'exc'}"><span class="t">${esc(c)}</span></button>` }).join('')}</div></div>`).join('')}`
+  return `<div class="zona"><div class="sc" style="padding-bottom:6px"><div class="pasos">${pasos.map((t, i) => `<button class="paso ${hecho[i] && i !== p ? 'hecho' : ''}" data-paso="${i}" ${i === p ? 'aria-current="step"' : ''}><span class="num">${hecho[i] && i !== p ? '✓' : i + 1}</span><span class="t">${t}</span></button>`).join('')}</div>${cuerpo}</div><div class="pie"><button class="btn" data-paso="${Math.max(0, p - 1)}" ${p === 0 ? 'disabled style="opacity:.4"' : ''}>${ic('izq')} Atrás</button><span class="nota">Paso ${p + 1} de 3</span><button class="btn pri" data-paso="${Math.min(2, p + 1)}" ${p === 2 ? 'disabled style="opacity:.4"' : ''}>Siguiente ${ic('der')}</button></div></div>`
 }
-
-/* ---- Variante 5: escribe y elige (comando) ---- */
-function sugerencias() {
-  const q = norm(E.q); if (!q) return []
-  const nombres = [...new Set(AMB.flatMap(([, c]) => c))].filter((c) => norm(c).includes(q))
-  const out = []
-  for (const c of nombres) { const donde = AMB.filter(([, x]) => x.includes(c)).map(([a]) => a); out.push({ t: 'fila', c, n: `${c} · en todos los ámbitos (${donde.length})` }); for (const a of donde) out.push({ t: 'c', a, c, n: `${c} · ${a}` }) }
-  for (const [a] of AMB) if (norm(a).includes(q)) out.push({ t: 'a', a, n: `Todo ${a}` })
-  return out.slice(0, 12)
+function vE() {
+  return `<div class="zona"><div class="barra"><span class="nota"><b>Casilla</b> = cubrir. <b>Excepto</b> (al pasar el cursor o enfocar) = excluir. Un guion indica que el ámbito cubre solo algunas categorías.</span></div><div class="sc" role="tree" aria-label="Ámbitos y categorías">
+  ${AMB.map(([a, col, , cats]) => { const ea = R.cls[kA(a)], n = cats.filter((c) => R.cls[kC(a, c)] === 'inc').length, abierto = E.abierto.has(a), parcial = !ea && n > 0
+    return `<div class="k" style="--k:${col}"><div class="fila" role="treeitem" aria-expanded="${abierto}"><button class="caret" data-abrir="${esc(a)}" aria-expanded="${abierto}" aria-label="${abierto ? 'Contraer' : 'Expandir'} ${esc(a)}">${ic('der')}</button><button class="chk ${ea === 'inc' ? 'inc' : ea === 'exc' ? 'exc' : parcial ? 'par' : ''}" data-poner="${esc(kA(a))}|${ea === 'inc' ? '' : 'inc'}" role="checkbox" aria-checked="${ea === 'inc' ? 'true' : parcial ? 'mixed' : 'false'}" aria-label="Cubrir todo ${esc(a)}">${ea === 'inc' ? '✓' : ea === 'exc' ? '✕' : parcial ? '–' : ''}</button>${disco(a)}<span class="n ${ea === 'exc' ? 'exc' : ''}">${esc(a)} ${parcial ? `<small>${n} de ${cats.length}</small>` : ''}</span><button class="quitar-e ${ea === 'exc' ? 'on' : ''}" data-poner="${esc(kA(a))}|${ea === 'exc' ? '' : 'exc'}" aria-label="Excepto todo ${esc(a)}">excepto</button></div>
+    ${abierto ? cats.map((c) => { const e = R.cls[kC(a, c)]; return `<div class="fila hij" role="treeitem"><button class="chk ${e === 'inc' ? 'inc' : e === 'exc' ? 'exc' : ''}" data-poner="${esc(kC(a, c))}|${e === 'inc' ? '' : 'inc'}" role="checkbox" aria-checked="${e === 'inc'}" aria-label="Cubrir ${esc(c)} de ${esc(a)}">${marcaDe(e)}</button><span class="n ${e === 'exc' ? 'exc' : ''}">${esc(c)}</span><button class="quitar-e ${e === 'exc' ? 'on' : ''}" data-poner="${esc(kC(a, c))}|${e === 'exc' ? '' : 'exc'}" aria-label="Excepto ${esc(c)} de ${esc(a)}">excepto</button></div>` }).join('') : ''}</div>` }).join('')}</div></div>`
 }
-function v5() {
-  const s = sugerencias()
-  return `<div class="zona"><div class="barra"><label class="buscar">${ic(P.buscar)}<input id="q" value="${esc(E.q)}" placeholder="Escribe: alimentación, transporte, trabajo…" aria-label="Agregar regla" autocomplete="off"></label><span style="font-size:12px;color:var(--muted)"><b>Enter</b> incluye · <b>Shift+Enter</b> excluye · ↑↓ para moverte</span></div><div class="sc">
-  ${s.length ? `<div class="lista-sug" role="listbox" aria-label="Sugerencias">${s.map((x, i) => `<div class="fila ${i === E.sug ? 'sel' : ''}" role="option" aria-selected="${i === E.sug}"><span class="n">${esc(x.n)}</span><button class="ib i" data-sug="${i}|inc" aria-label="Incluir ${esc(x.n)}">+</button><button class="ib e" data-sug="${i}|exc" aria-label="Excluir ${esc(x.n)}">−</button></div>`).join('')}</div>` : `<p style="color:var(--muted);margin:2px 0 8px">Empieza a escribir para buscar. Prueba con <button class="chip" data-q="alimen">alimen</button> <button class="chip" data-q="transp">transp</button> <button class="chip" data-q="trabajo">trabajo</button></p>`}
-  <h2 style="margin-top:12px">Reglas actuales</h2><div style="display:flex;flex-wrap:wrap;gap:6px">${chipsResumen() || '<span style="color:var(--muted)">Sin reglas de clasificación: admite todo (el Fondo General queda así).</span>'}</div></div></div>`
-}
-const VAR = [['1', 'Etiquetas con buscador', 'Toca etiquetas por ámbito: ✓ incluir, ✕ excluir.'], ['2', 'Matriz', 'Categoría × ámbito: una fila aplica a todos los ámbitos.'], ['3', 'Dos columnas', 'Disponibles a la izquierda, reglas a la derecha.'], ['4', 'Ámbito y detalle', 'Elige un ámbito y marca sus categorías.'], ['5', 'Escribe y elige', 'Un buscador con Enter para incluir, Shift+Enter para excluir.']]
+const VAR = [['1', 'Tarjetas por ámbito', 'Una tarjeta de color por ámbito con sus categorías.'], ['2', 'Frase', 'Lo lees como una oración y añades piezas.'], ['3', 'Carriles', 'Arrastra fichas: sin regla, cubre, no cubre.'], ['4', 'Asistente', 'Tres pasos cortos, de lo general a lo particular.'], ['5', 'Árbol con casillas', 'Como un explorador de archivos, con «excepto».']]
+const VIEW = { 1: vA, 2: vB, 3: vC, 4: vD, 5: vE }
 const tema = () => { const t = document.documentElement.dataset.theme; return t ? (t === 'dark' ? 'oscuro' : 'claro') : matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro' }
 function lateral() {
-  const r = resumen(), t = admite(E.pr.a, E.pr.c, E.pr.m), a = AMB.find(([n]) => n === E.pr.a)
+  const f = frases(), t = admite(E.pr.a, E.pr.c, E.pr.m), falta = !f.inc.length
   return `<div class="panel"><h2>Qué cubre este fondo</h2><div class="resumen">
-    ${r.falta ? '<div class="alerta" role="alert">Un fondo específico necesita al menos una regla de clasificación incluida.</div>' : `<span class="inc-t">Incluye:</span> ${r.inc.join(' · ')}`}
-    ${r.exc.length ? `<br><span class="exc-t">Excluye:</span> ${r.exc.join(' · ')}` : ''}
-    <br><b>Medios de pago:</b> ${r.minc.length ? `solo ${r.minc.map(esc).join(', ')}` : 'cualquiera'}${r.mexc.length ? `, menos ${r.mexc.map(esc).join(', ')}` : ''}.</div>
+    ${falta ? '<div class="alerta" role="alert">Un fondo específico necesita al menos una regla de clasificación incluida.</div>' : `<span class="inc-t">Cubre</span> ${f.inc.join(' · ')}`}
+    ${f.exc.length ? `<br><span class="exc-t">No cubre</span> ${f.exc.join(' · ')}` : ''}
+    <br><b>Se paga con</b> ${f.minc.length ? `solo ${f.minc.map(esc).join(', ')}` : 'cualquier medio'}${f.mexc.length ? `, menos ${f.mexc.map(esc).join(', ')}` : ''}.</div>
     <h2 style="margin-top:14px">Probar un gasto</h2><div class="prueba">
     <select id="pa" aria-label="Ámbito">${AMB.map(([n]) => `<option ${n === E.pr.a ? 'selected' : ''}>${n}</option>`).join('')}</select>
-    <select id="pc" aria-label="Categoría">${a[1].map((c) => `<option ${c === E.pr.c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+    <select id="pc" aria-label="Categoría">${amb(E.pr.a)[3].map((c) => `<option ${c === E.pr.c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
     <select id="pm" aria-label="Medio de pago">${MED.map((m) => `<option ${m === E.pr.m ? 'selected' : ''}>${m}</option>`).join('')}</select>
     <div class="res ${t.ok ? 'si' : 'no'}" role="status">${t.ok ? '✓ Este fondo lo cubre' : '✕ No lo cubre'}<small>${t.ok ? 'Cumple clasificación y medio de pago.' : esc(t.motivo) + ' Iría a otro fondo o al General.'}</small></div></div></div>`
 }
 function dibujar() {
   const t = tema()
-  document.getElementById('app').innerHTML = `<header class="cab"><div><h1>Reglas de un fondo · 5 formas de elegir</h1><p>Misma información, cinco maneras de marcar <b class="inc-t">Incluir</b> y <b class="exc-t">Excluir</b>. Todas caben en un espacio de alto fijo (no agrandan el diálogo) y comparten el resumen y el probador de la derecha. Datos de ejemplo; nada se guarda.</p></div><button class="btn" id="tema" aria-label="Cambiar tema">${ic(t === 'claro' ? P.luna : P.sol)} ${t === 'claro' ? 'Oscuro' : 'Claro'}</button></header>
+  document.getElementById('app').innerHTML = `<header class="cab"><div><h1>Reglas de un fondo · 5 diseños nuevos</h1><p>Misma información, otra forma de marcar <b class="inc-t">cubrir</b> (incluir) y <b class="exc-t">no cubrir</b> (excluir). Todos caben en un espacio de alto fijo y comparten el resumen y el probador de la derecha. Datos de ejemplo; nada se guarda.</p></div><button class="btn" id="tema" aria-label="Cambiar tema">${ic(t === 'claro' ? 'luna' : 'sol')} ${t === 'claro' ? 'Oscuro' : 'Claro'}</button></header>
   <nav class="vars" aria-label="Propuestas">${VAR.map(([k, n, d]) => `<button class="var" data-v="${k}" aria-pressed="${E.v === k}"><b><span class="l">${k}</span>${n}</b><small>${d}</small></button>`).join('')}</nav>
-  <div class="marco"><div class="panel"><h2>Clasificación que cubre</h2>${{ 1: v1, 2: v2, 3: v3, 4: v4, 5: v5 }[E.v]()}<h2 style="margin-top:14px">Medios de pago</h2>${medios()}</div>${lateral()}</div>`
+  <div class="marco"><div class="panel"><h2>Clasificación que cubre</h2>${VIEW[E.v]()}<h2 style="margin-top:14px">Medios de pago</h2>${medios()}</div>${lateral()}</div>`
   if (E.enfocar) { const q = document.getElementById('q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length) } E.enfocar = false }
 }
-function aplicarSug(i, e) { const x = sugerencias()[i]; if (!x) return; if (x.t === 'a') poner(R.cls, kA(x.a), e); else if (x.t === 'c') poner(R.cls, kC(x.a, x.c), e); else for (const [a, cats] of AMB) if (cats.includes(x.c)) poner(R.cls, kC(a, x.c), e); E.q = ''; E.sug = 0 }
 document.addEventListener('click', (ev) => {
-  const b = ev.target.closest('[data-v],[data-ciclo],[data-abrir],[data-quitar],[data-poner],[data-sel],[data-fila],[data-med],[data-sug],[data-q],#tema'); if (!b) return
+  const b = ev.target.closest('[data-v],[data-ciclo],[data-abrir],[data-quitar],[data-poner],[data-fila],[data-med],[data-modo],[data-paso],#tema'); if (!b) return
   if (b.id === 'tema') { document.documentElement.dataset.theme = tema() === 'claro' ? 'dark' : 'light'; return dibujar() }
-  if (b.dataset.v) { E.v = b.dataset.v; E.q = ''; return dibujar() }
+  if (b.dataset.v) { E.v = b.dataset.v; E.q = ''; E.pick = false; return dibujar() }
   if (b.dataset.ciclo) poner(R.cls, b.dataset.ciclo, sig(R.cls[b.dataset.ciclo]))
   if (b.dataset.abrir) E.abierto.has(b.dataset.abrir) ? E.abierto.delete(b.dataset.abrir) : E.abierto.add(b.dataset.abrir)
   if (b.dataset.quitar) poner(R.cls, b.dataset.quitar, null)
   if (b.dataset.poner) { const [k, e] = b.dataset.poner.split('|'); poner(R.cls, k, e || null) }
-  if (b.dataset.sel) E.sel = b.dataset.sel
-  if (b.dataset.fila) { const c = b.dataset.fila, next = sig(AMB.filter(([, x]) => x.includes(c)).map(([a]) => R.cls[kC(a, c)]).find((e) => e) ?? null); for (const [a, cats] of AMB) if (cats.includes(c)) poner(R.cls, kC(a, c), next) }
+  if (b.dataset.fila) { const c = b.dataset.fila, as = AMB.filter(([, , , cs]) => cs.includes(c)).map(([a]) => a), todos = as.every((a) => R.cls[kC(a, c)] === 'inc'); for (const a of as) poner(R.cls, kC(a, c), todos ? null : 'inc') }
   if (b.dataset.med) poner(R.med, b.dataset.med, sig(R.med[b.dataset.med]))
-  if (b.dataset.sug) { const [i, e] = b.dataset.sug.split('|'); aplicarSug(Number(i), e) }
-  if (b.dataset.q) { E.q = b.dataset.q; E.enfocar = true }
+  if (b.dataset.modo) { if (b.dataset.modo === 'cerrar') E.pick = false; else { E.pick = !(E.pick && E.modo === b.dataset.modo); E.modo = b.dataset.modo; E.q = '' } }
+  if (b.dataset.paso) E.paso = Number(b.dataset.paso)
   dibujar()
 })
-document.addEventListener('input', (ev) => { if (ev.target.id === 'q') { E.q = ev.target.value; E.sug = 0; E.enfocar = true; dibujar() } })
-document.addEventListener('change', (ev) => { const id = ev.target.id; if (id === 'pa') { E.pr.a = ev.target.value; E.pr.c = AMB.find(([n]) => n === E.pr.a)[1][0] } if (id === 'pc') E.pr.c = ev.target.value; if (id === 'pm') E.pr.m = ev.target.value; if (['pa', 'pc', 'pm'].includes(id)) dibujar() })
-document.addEventListener('keydown', (ev) => { if (E.v !== '5' || ev.target.id !== 'q') return; const n = sugerencias().length
-  if (ev.key === 'ArrowDown') { ev.preventDefault(); E.sug = Math.min(n - 1, E.sug + 1); E.enfocar = true; dibujar() } else if (ev.key === 'ArrowUp') { ev.preventDefault(); E.sug = Math.max(0, E.sug - 1); E.enfocar = true; dibujar() } else if (ev.key === 'Enter' && n) { ev.preventDefault(); aplicarSug(E.sug, ev.shiftKey ? 'exc' : 'inc'); E.enfocar = true; dibujar() } })
+document.addEventListener('input', (ev) => { if (ev.target.id === 'q') { E.q = ev.target.value; E.enfocar = true; dibujar() } })
+document.addEventListener('change', (ev) => { const id = ev.target.id; if (id === 'pa') { E.pr.a = ev.target.value; E.pr.c = amb(E.pr.a)[3][0] } if (id === 'pc') E.pr.c = ev.target.value; if (id === 'pm') E.pr.m = ev.target.value; if (['pa', 'pc', 'pm'].includes(id)) dibujar() })
+let arr = null
+document.addEventListener('dragstart', (e) => { const f = e.target.closest?.('[data-arr]'); if (!f) return; arr = f.dataset.arr; e.dataTransfer.setData('text/plain', arr) })
+document.addEventListener('dragover', (e) => { const l = e.target.closest?.('[data-lane]'); if (!arr || !l) return; e.preventDefault(); document.querySelectorAll('.sobre').forEach((x) => x.classList.remove('sobre')); l.classList.add('sobre') })
+document.addEventListener('drop', (e) => { const l = e.target.closest?.('[data-lane]'); if (!arr || !l) return; e.preventDefault(); poner(R.cls, arr, l.dataset.lane || null); arr = null; dibujar() })
+document.addEventListener('dragend', () => { arr = null; document.querySelectorAll('.sobre').forEach((x) => x.classList.remove('sobre')) })
 dibujar()
 </script>
