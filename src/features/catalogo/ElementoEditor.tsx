@@ -57,10 +57,12 @@ interface Props {
   focoTick?: number
 }
 
-const colorInicial = (kind: CatalogoKind, item: ItemCatalogo | null, hermanos: ItemCatalogo[], contexto: Props['contexto']): ValorColor => {
+const colorInicial = (_kind: CatalogoKind, item: ItemCatalogo | null, hermanos: ItemCatalogo[], contexto: Props['contexto']): ValorColor => {
   if (item) return { hex: item.color_css ?? PALETA[0].hex, modo: item.color_mode === 'inherit' ? 'inherit' : 'own' }
-  if (kind === 'categorias' && contexto) return { hex: contexto.hex, modo: 'inherit' }
-  return { hex: PALETA[(hermanos.length * 3) % PALETA.length].hex, modo: 'own' }
+  // Una categoría nueva nace con color propio (distinto del ámbito y de sus hermanas); heredar del ámbito es una opción explícita.
+  const usados = new Set([...hermanos.map((h) => h.color_css?.toLowerCase()), contexto?.hex?.toLowerCase()])
+  const libre = PALETA.find((c) => !usados.has(c.hex.toLowerCase()))
+  return { hex: (libre ?? PALETA[(hermanos.length * 3) % PALETA.length]).hex, modo: 'own' }
 }
 
 /** Editor de un elemento del catálogo: nombre, ícono y color con vista previa en vivo (claro y oscuro). */
