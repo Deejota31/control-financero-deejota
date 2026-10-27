@@ -46,7 +46,8 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
         <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]" />
         <Dialog.Content
           // Un control interno (p. ej. el explorador de íconos) puede quedarse con Escape para contraerse sin cerrar el diálogo
-          onEscapeKeyDown={(e) => { if ((e.target as HTMLElement | null)?.closest?.('[data-captura-escape]')) e.preventDefault() }}
+          // Mientras haya un control interno abierto que se contrae con Escape (p. ej. el explorador de íconos), Escape es suyo aunque el foco aún no haya llegado a él.
+          onEscapeKeyDown={(e) => { if (document.querySelector('[data-captura-escape]')) e.preventDefault() }}
           onCloseAutoFocus={(e) => {
             e.preventDefault()
             devolverFoco(origen)
@@ -93,7 +94,7 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
         </Dialog.Content>
       </Dialog.Portal>
       <ConfirmDialog open={descartando} onOpenChange={setDescartando} title="¿Descartar los cambios?" description="Tienes cambios sin guardar en este formulario. Si sales ahora, se perderán."
-        confirmLabel="Descartar cambios" cancelLabel="Seguir editando" danger onConfirm={() => { setDescartando(false); onOpenChange(false) }} />
+        confirmLabel="Descartar cambios" cancelLabel="Seguir editando" devolverElFoco={false} danger onConfirm={() => { setDescartando(false); onOpenChange(false) }} />
     </Dialog.Root>
   )
 }
@@ -105,13 +106,15 @@ interface ConfirmProps {
   description: ReactNode
   confirmLabel: string
   cancelLabel?: string
+  /** Al cerrar, devuelve el foco al control que lo abrió. Se desactiva cuando otro diálogo se encarga de restaurarlo. */
+  devolverElFoco?: boolean
   danger?: boolean
   loading?: boolean
   onConfirm: () => void
 }
 
 /** Confirmación previa para acciones destructivas o que afectan a varios registros. */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, cancelLabel = 'Cancelar', danger, loading, onConfirm }: ConfirmProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, cancelLabel = 'Cancelar', devolverElFoco = true, danger, loading, onConfirm }: ConfirmProps) {
   // El diálogo está siempre montado: el origen se captura justo antes de que Radix mueva el foco al abrir.
   const [origen, setOrigen] = useState<HTMLElement | null>(null)
   return (
@@ -122,7 +125,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
           onOpenAutoFocus={() => setOrigen(document.activeElement as HTMLElement | null)}
           onCloseAutoFocus={(e) => {
             e.preventDefault()
-            devolverFoco(origen)
+            if (devolverElFoco) devolverFoco(origen)
           }}
           className="anim-dialog fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-line bg-surface p-6 shadow-pop">
           <AlertDialog.Title className="font-display text-lg font-bold">{title}</AlertDialog.Title>

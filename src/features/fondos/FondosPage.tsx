@@ -9,10 +9,10 @@ import { Field } from '@/components/ui/Field'
 import { MesSelector } from '@/components/ui/MesSelector'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
-import { admite, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
+import { admite, cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatFecha, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
+import { errorImporte, formatFecha, formatMes, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
 import type { Fila, Gasto } from '@/lib/tipos'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
@@ -123,7 +123,7 @@ export function FondosPage() {
   }
 
   /** Simula el cambio, explica su efecto y pide confirmación si afecta a gastos existentes. */
-  async function solicitar(titulo: string, simular: () => Promise<CambioFondos>, aplicar: () => Promise<unknown>, exito: string, alTerminar?: () => void) {
+  async function solicitar(titulo: string, simular: () => Promise<CambioFondos>, aplicar: () => Promise<unknown>, exito: string, alTerminar?: () => void, vista?: Parameters<typeof mut.vistaPrevia.mutateAsync>[0]) {
     try {
       const c = await simular()
       if (c.blocked) {
@@ -136,7 +136,15 @@ export function FondosPage() {
         alTerminar?.()
         return
       }
-      setPendiente({ titulo, cambio: c, aplicar, exito, alTerminar })
+      // Detalle por período (informativo): si no se puede obtener, se muestra el resumen general.
+      let cambio = c
+      if (vista) {
+        try {
+          const v = await mut.vistaPrevia.mutateAsync(vista)
+          if (!v.blocked) cambio = { ...c, periodos: { before: v.before, after: v.after } }
+        } catch { /* sin detalle por período */ }
+      }
+      setPendiente({ titulo, cambio, aplicar, exito, alTerminar })
     } catch (e) {
       toast.error(mensajeDeError(e))
     }
@@ -158,12 +166,12 @@ export function FondosPage() {
   }
 
   function guardarFondo(payload: FondoPayload) {
-    return solicitar('Guardar fondo', () => mut.simular.mutateAsync(payload), () => mut.guardar.mutateAsync(payload), 'Fondo guardado.', () => setForm(null))
+    return solicitar(`Guardar cambios de «${payload.name}»`, () => mut.simular.mutateAsync(payload), () => mut.guardar.mutateAsync(payload), 'Fondo guardado.', () => setForm(null), { kind: 'save_fund', args: payload })
   }
 
   function alternarActivo(f: FondoFila) {
     const payload: FondoPayload = { id: f.id, name: f.name, description: f.description ?? '', icon_key: f.icon_key ?? 'wallet', color_token: f.color_token ?? 'c1', is_general: f.is_general, default_amount: Number(f.default_amount), is_active: !f.is_active }
-    return solicitar(f.is_active ? 'Desactivar fondo' : 'Activar fondo', () => mut.simular.mutateAsync(payload), () => mut.guardar.mutateAsync(payload), f.is_active ? 'Fondo desactivado.' : 'Fondo activado.')
+    return solicitar(`${f.is_active ? 'Desactivar' : 'Activar'} «${f.name}»`, () => mut.simular.mutateAsync(payload), () => mut.guardar.mutateAsync(payload), f.is_active ? 'Fondo desactivado.' : 'Fondo activado.', undefined, { kind: 'save_fund', args: payload })
   }
 
   function mover(t: Tarjeta, delta: -1 | 1) {
@@ -172,7 +180,7 @@ export function FondosPage() {
     const j = i + delta
     if (i < 0 || j < 0 || j >= especificos.length) return
     ;[especificos[i], especificos[j]] = [especificos[j], especificos[i]]
-    return solicitar('Cambiar prioridad', () => mut.simularOrden.mutateAsync(especificos), () => mut.ordenar.mutateAsync(especificos), 'Prioridad actualizada.')
+    return solicitar(`Cambiar la prioridad de «${t.nombre}»`, () => mut.simularOrden.mutateAsync(especificos), () => mut.ordenar.mutateAsync(especificos), 'Prioridad actualizada.', undefined, { kind: 'reorder_funds', args: { ids: especificos } })
   }
 
   /** Arrastrar un fondo antes de otro: mismo cambio de prioridad que «Subir/Bajar», con su simulación previa. */
@@ -181,7 +189,7 @@ export function FondosPage() {
     if (!ids.includes(idOrigen) || !ids.includes(idDestino)) return
     const nuevo = ids.filter((x) => x !== idOrigen)
     nuevo.splice(nuevo.indexOf(idDestino), 0, idOrigen)
-    return solicitar('Cambiar prioridad', () => mut.simularOrden.mutateAsync(nuevo), () => mut.ordenar.mutateAsync(nuevo), 'Prioridad actualizada.')
+    return solicitar(`Cambiar la prioridad de «${datos?.activos.find((x) => x.id === idOrigen)?.nombre ?? 'fondo'}»`, () => mut.simularOrden.mutateAsync(nuevo), () => mut.ordenar.mutateAsync(nuevo), 'Prioridad actualizada.', undefined, { kind: 'reorder_funds', args: { ids: nuevo } })
   }
 
   function abrirForm(f: FondoFila | null, clon = false) {
@@ -300,7 +308,7 @@ export function FondosPage() {
           onClose={() => setPresupuestoDe(null)}
           onSubmit={(amount) => {
             const v = { fund: presupuestoDe.id, period: p.id, amount }
-            return solicitar('Cambiar presupuesto del período', () => mut.simularPresupuesto.mutateAsync(v), () => mut.presupuesto.mutateAsync(v), 'Presupuesto actualizado.', () => setPresupuestoDe(null))
+            return solicitar(`Presupuesto del período de «${presupuestoDe.name}»`, () => mut.simularPresupuesto.mutateAsync(v), () => mut.presupuesto.mutateAsync(v), 'Presupuesto actualizado.', () => setPresupuestoDe(null), { kind: 'set_fund_period_budget', args: v })
           }}
         />
       )}
@@ -364,6 +372,7 @@ function Kpi({ etiqueta, valor, nota, tono, icono: Icono }: { etiqueta: string; 
 
 function EfectoCambio({ cambio, fondos }: { cambio: CambioFondos; fondos: FondoFila[] }) {
   const nombres = new Map(fondos.map((f) => [f.id, f.name]))
+  const porPeriodo = cambio.periodos?.after ? cambiosPorPeriodo(cambio.periodos.before, cambio.periodos.after) : null
   const ids = Array.from(new Set([...Object.keys(cambio.consumption_before), ...Object.keys(cambio.consumption_after ?? {})]))
   const filas = ids
     .map((id) => ({ id, antes: cambio.consumption_before[id] ?? 0, despues: cambio.consumption_after?.[id] ?? 0 }))
@@ -373,19 +382,46 @@ function EfectoCambio({ cambio, fondos }: { cambio: CambioFondos; fondos: FondoF
       <p>
         Este cambio recalcula los períodos abiertos y modifica la imputación de <b>{cambio.changed_expenses}</b> {cambio.changed_expenses === 1 ? 'gasto' : 'gastos'}. Los períodos cerrados no cambian.
       </p>
-      {filas.length > 0 && (
-        <table className="w-full text-left text-sm">
-          <thead><tr className="text-xs text-muted"><th className="py-1">Fondo</th><th className="py-1 text-right">Consumo antes</th><th className="py-1 text-right">Después</th></tr></thead>
-          <tbody>
-            {filas.map((f) => (
-              <tr key={f.id} className="border-t border-line">
-                <td className="py-1.5">{nombres.get(f.id) ?? 'Fondo'}</td>
-                <td className="num py-1.5 text-right">{formatSoles(f.antes)}</td>
-                <td className="num py-1.5 text-right font-semibold text-fg">{formatSoles(f.despues)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {porPeriodo && porPeriodo.length > 0 ? (
+        <div className="flex max-h-[min(50dvh,22rem)] flex-col gap-3 overflow-y-auto pr-1">
+          <p className="text-xs text-muted">Cada período se calcula por separado; no se suman entre sí.</p>
+          {porPeriodo.map((p) => (
+            <section key={p.period_id} aria-label={`Período ${formatMes(p.start)}`} className="rounded-lg border border-line">
+              <h4 className="border-b border-line bg-surface-2 px-3 py-1.5 text-sm font-semibold">{formatMes(p.start)}</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[26rem] text-left text-sm">
+                  <thead><tr className="text-xs text-muted"><th className="px-3 py-1">Fondo</th><th className="px-2 py-1 text-right">Asignado</th><th className="px-2 py-1 text-right">Consumo</th><th className="px-3 py-1 text-right">Impacto</th></tr></thead>
+                  <tbody>
+                    {p.filas.map((x) => (
+                      <tr key={x.fund_id} className="border-t border-line align-top">
+                        <td className="px-3 py-1.5">{x.nombre}</td>
+                        <td className="num px-2 py-1.5 text-right">{x.asignadoAntes === x.asignadoDespues ? formatSoles(x.asignadoAntes) : <>{formatSoles(x.asignadoAntes)} → <b>{formatSoles(x.asignadoDespues)}</b></>}</td>
+                        <td className="num px-2 py-1.5 text-right">{x.consumoAntes === x.consumoDespues ? formatSoles(x.consumoAntes) : <>{formatSoles(x.consumoAntes)} → <b>{formatSoles(x.consumoDespues)}</b></>}</td>
+                        <td className={cn('num px-3 py-1.5 text-right font-semibold', x.impacto > 0 && 'text-ok', x.impacto < 0 && 'text-bad')}>{x.impacto > 0 ? '+' : x.impacto < 0 ? '−' : ''}{formatSoles(Math.abs(x.impacto))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ))}
+          <p className="text-xs text-muted">Impacto = cambio en lo disponible del fondo (asignado − consumo) en ese período.</p>
+        </div>
+      ) : (
+        filas.length > 0 && (
+          <table className="w-full text-left text-sm">
+            <thead><tr className="text-xs text-muted"><th className="py-1">Fondo</th><th className="py-1 text-right">Consumo antes</th><th className="py-1 text-right">Después</th></tr></thead>
+            <tbody>
+              {filas.map((f) => (
+                <tr key={f.id} className="border-t border-line">
+                  <td className="py-1.5">{nombres.get(f.id) ?? 'Fondo'}</td>
+                  <td className="num py-1.5 text-right">{formatSoles(f.antes)}</td>
+                  <td className="num py-1.5 text-right font-semibold text-fg">{formatSoles(f.despues)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
       )}
     </div>
   )

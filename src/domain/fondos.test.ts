@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { admite, admiteClasificacion, admiteMedio, resumirFondo, type Clasificacion, type ReglaAlcance } from './fondos'
+import { admite, admiteClasificacion, admiteMedio, resumirFondo, type Clasificacion, type ReglaAlcance, cambiosPorPeriodo } from './fondos'
 
 const c: Clasificacion = { ambito_id: 'hogar', categoria_id: 'servicios', subcategoria_id: 'luz', payment_method_id: 'yape' }
 const alc = (p: Partial<ReglaAlcance>): ReglaAlcance => ({ ambito_id: null, categoria_id: null, subcategoria_id: null, effect: 'include', ...p })
@@ -41,5 +41,29 @@ describe('resumirFondo', () => {
   })
   it('evita errores de punto flotante', () => {
     expect(resumirFondo(0.3, 0.1).disponible).toBe(0.2)
+  })
+})
+
+describe('cambiosPorPeriodo', () => {
+  const fila = (period_id: string, start: string, fund_id: string, fund_name: string, assigned: number, consumed: number) => ({ period_id, start, fund_id, fund_name, assigned, consumed })
+  it('separa por período, omite lo que no cambia y calcula el impacto en lo disponible', () => {
+    const antes = [fila('p1', '2026-09-01', 'f1', 'Sodexo', 300, 280), fila('p2', '2026-10-01', 'f1', 'Sodexo', 300, 100), fila('p2', '2026-10-01', 'f2', 'Hogar', 500, 400)]
+    const despues = [fila('p1', '2026-09-01', 'f1', 'Sodexo', 300, 280), fila('p2', '2026-10-01', 'f1', 'Sodexo', 0, 0), fila('p2', '2026-10-01', 'f2', 'Hogar', 500, 500)]
+    const r = cambiosPorPeriodo(antes, despues)
+    expect(r.map((p) => p.start)).toEqual(['2026-10-01'])
+    const sodexo = r[0].filas.find((x) => x.nombre === 'Sodexo')!
+    expect(sodexo).toMatchObject({ asignadoAntes: 300, asignadoDespues: 0, consumoAntes: 100, consumoDespues: 0, impacto: -200 })
+    expect(r[0].filas.find((x) => x.nombre === 'Hogar')!.impacto).toBe(-100)
+  })
+  it('un presupuesto del período a cero no se confunde con el predeterminado: solo cambia la fila de ese período', () => {
+    const antes = [fila('p1', '2026-09-01', 'f1', 'Sodexo', 300, 0), fila('p2', '2026-10-01', 'f1', 'Sodexo', 300, 0)]
+    const despues = [fila('p1', '2026-09-01', 'f1', 'Sodexo', 300, 0), fila('p2', '2026-10-01', 'f1', 'Sodexo', 0, 0)]
+    const r = cambiosPorPeriodo(antes, despues)
+    expect(r).toHaveLength(1)
+    expect(r[0].period_id).toBe('p2')
+  })
+  it('un fondo eliminado aparece con «después» en 0', () => {
+    const r = cambiosPorPeriodo([fila('p1', '2026-10-01', 'f1', 'Viejo', 100, 40)], [])
+    expect(r[0].filas[0]).toMatchObject({ asignadoDespues: 0, consumoDespues: 0, impacto: -60 })
   })
 })

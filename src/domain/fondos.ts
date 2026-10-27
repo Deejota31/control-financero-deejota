@@ -71,4 +71,54 @@ export interface CambioFondos {
   changed_expenses: number | null
   consumption_before: Record<string, number>
   consumption_after: Record<string, number> | null
+  /** Detalle por período abierto (función preview_fund_change); puede faltar si la vista previa no estuvo disponible. */
+  periodos?: { before: FilaPeriodoFondo[]; after: FilaPeriodoFondo[] | null }
+}
+
+export interface FilaPeriodoFondo {
+  period_id: string
+  /** Primer día del período (yyyy-MM-dd). */
+  start: string
+  fund_id: string
+  fund_name: string
+  assigned: number
+  consumed: number
+}
+
+export interface CambioPorPeriodo {
+  period_id: string
+  start: string
+  filas: {
+    fund_id: string
+    nombre: string
+    asignadoAntes: number
+    asignadoDespues: number
+    consumoAntes: number
+    consumoDespues: number
+    /** Variación del disponible (asignado − consumo) del fondo en ese período: lo que gana o pierde de margen. */
+    impacto: number
+  }[]
+}
+
+const r2 = (n: number) => Math.round(n * 100) / 100
+
+/**
+ * Compara el estado por período antes/después y deja solo lo que cambia. Cada período se trata por separado: sumar varios
+ * períodos abiertos no equivale al consumo de un solo mes. Un fondo que desaparece (eliminado) se muestra con «después» en 0.
+ */
+export function cambiosPorPeriodo(antes: FilaPeriodoFondo[], despues: FilaPeriodoFondo[]): CambioPorPeriodo[] {
+  const clave = (f: FilaPeriodoFondo) => `${f.period_id}|${f.fund_id}`
+  const a = new Map(antes.map((f) => [clave(f), f]))
+  const b = new Map(despues.map((f) => [clave(f), f]))
+  const porPeriodo = new Map<string, CambioPorPeriodo>()
+  for (const k of new Set([...a.keys(), ...b.keys()])) {
+    const x = a.get(k), y = b.get(k), ref = (x ?? y)!
+    const asignadoAntes = x?.assigned ?? 0, asignadoDespues = y?.assigned ?? 0
+    const consumoAntes = x?.consumed ?? 0, consumoDespues = y?.consumed ?? 0
+    if (r2(asignadoAntes) === r2(asignadoDespues) && r2(consumoAntes) === r2(consumoDespues)) continue
+    const p = porPeriodo.get(ref.period_id) ?? { period_id: ref.period_id, start: ref.start, filas: [] }
+    p.filas.push({ fund_id: ref.fund_id, nombre: ref.fund_name, asignadoAntes, asignadoDespues, consumoAntes, consumoDespues, impacto: r2((asignadoDespues - consumoDespues) - (asignadoAntes - consumoAntes)) })
+    porPeriodo.set(ref.period_id, p)
+  }
+  return [...porPeriodo.values()].sort((m, n) => m.start.localeCompare(n.start))
 }

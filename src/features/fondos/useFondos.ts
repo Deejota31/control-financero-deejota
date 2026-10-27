@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns'
-import type { CambioFondos } from '@/domain/fondos'
+import type { CambioFondos, FilaPeriodoFondo } from '@/domain/fondos'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
@@ -123,6 +123,14 @@ export function useFondoMutaciones() {
     for (const k of ['fondos', 'gastos', 'periodo', 'dashboard']) qc.invalidateQueries({ queryKey: [k] })
   }
 
+  /** Estado por período antes/después del cambio (la operación se ejecuta y se revierte en el servidor; no guarda nada). */
+  const vistaPrevia = useMutation({
+    mutationFn: async (v: { kind: 'save_fund' | 'reorder_funds' | 'set_fund_period_budget' | 'delete_fund'; args: unknown }) => {
+      const { data, error } = await supabase.rpc('preview_fund_change', { p_kind: v.kind, p_args: v.args as Json })
+      if (error) throw error
+      return data as unknown as { blocked: string | null; before: FilaPeriodoFondo[]; after: FilaPeriodoFondo[] | null }
+    },
+  })
   const simular = useMutation({
     mutationFn: async (payload: FondoPayload) => {
       const { data, error } = await supabase.rpc('save_fund', { p: payload as unknown as Json, p_dry_run: true })
@@ -195,5 +203,5 @@ export function useFondoMutaciones() {
     },
   })
 
-  return { simular, guardar, simularOrden, ordenar, simularPresupuesto, presupuesto, cerrarPeriodo, simularEliminar, eliminar }
+  return { simular, vistaPrevia, guardar, simularOrden, ordenar, simularPresupuesto, presupuesto, cerrarPeriodo, simularEliminar, eliminar }
 }

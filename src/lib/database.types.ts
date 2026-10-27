@@ -684,6 +684,9 @@ isOneToOne: false
 "fund_admits_scope":
 { Args: { "p_ambito": string,"p_cat": string,"p_fund": string,"p_sub": string }; Returns: boolean
                            },
+"fund_period_detail":
+{ Args: { "hid": string }; Returns: Json
+                           },
 "is_household_member":
 { Args: { "hid": string }; Returns: boolean
                            },
@@ -706,6 +709,9 @@ isOneToOne: false
                            },
 "preview_expense":
 { Args: { "p": Json }; Returns: Json
+                           },
+"preview_fund_change":
+{ Args: { "p_args": Json,"p_kind": string }; Returns: Json
                            },
 "recalc_period":
 { Args: { "p_period": string }; Returns: undefined

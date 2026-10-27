@@ -110,7 +110,10 @@ test.describe('Fondos presupuestales', () => {
     await dialogo.getByRole('button', { name: 'Guardar' }).click()
     const confirmacion = page.getByRole('alertdialog')
     await expect(confirmacion).toContainText('recalcula los períodos abiertos')
-    await expect(confirmacion).toContainText('Consumo antes')
+    // Identifica el fondo por su nombre y desglosa cada período abierto: asignado y consumo antes → después, con su impacto
+    await expect(confirmacion).toContainText('«Hogar»')
+    await expect(confirmacion.getByRole('region', { name: /^Período / }).first()).toContainText('S/ 700.00 → S/ 600.00')
+    await expect(confirmacion).toContainText('Impacto')
 
     // Cancelar: nada cambia
     await confirmacion.getByRole('button', { name: 'Cancelar' }).click()

@@ -1,5 +1,5 @@
 import { Check, ChevronDown, ChevronUp, Search, X } from 'lucide-react'
-import { createElement, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { createElement, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { buscarIconos, nombreDe, SECCIONES_ICONOS, type Sugerencia } from '@/domain/iconos'
 import { ICONOS_CATALOGO } from '@/domain/iconosCatalogo'
 import { cn } from '@/lib/cn'
@@ -55,9 +55,17 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
     setTimeout(() => botonRef.current?.focus(), 0)
   }
 
+  // Escape contrae el explorador estando donde esté el foco (el diálogo que lo contiene no se cierra mientras esté abierto).
+  useEffect(() => {
+    if (!abierto) return
+    const alPulsar = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') contraer() }
+    document.addEventListener('keydown', alPulsar)
+    return () => document.removeEventListener('keydown', alPulsar)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abierto])
+
   /** Flechas: mueve el foco por la rejilla (izquierda/derecha por orden; arriba/abajo por columna). */
   function teclas(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); contraer(); return }
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return
     const botones = Array.from(rejillaRef.current?.querySelectorAll<HTMLButtonElement>('button[data-ico]') ?? [])
     const i = botones.indexOf(document.activeElement as HTMLButtonElement)
