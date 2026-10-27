@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Ban, ChevronLeft, ChevronRight, Copy, Eye, Pencil, Repeat, Undo2 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/Button'
 import { ChipK, TinteK } from '@/components/ui/ChipK'
 import { FilaHint, Hint } from '@/components/ui/Hint'
@@ -53,7 +53,7 @@ function Th({ children, activo, dir, onClick, alinear }: { children: ReactNode; 
 function Accion({ label, tono, children, ...p }: { label: string; tono?: 'bad' | 'ok'; children: ReactNode } & React.ComponentProps<'button'>) {
   return (
     <button type="button" aria-label={label} title={label}
-      className={cn('grid size-8 place-items-center rounded-lg text-muted transition-colors hover:bg-pri-soft hover:text-pri disabled:pointer-events-none disabled:opacity-30', tono === 'bad' && 'hover:bg-bad-soft hover:text-bad', tono === 'ok' && 'hover:bg-ok-soft hover:text-ok')} {...p}>
+      className={cn('grid size-8 place-items-center rounded-lg text-muted [@media(pointer:coarse)]:size-11 transition-colors hover:bg-pri-soft hover:text-pri disabled:pointer-events-none disabled:opacity-30', tono === 'bad' && 'hover:bg-bad-soft hover:text-bad', tono === 'ok' && 'hover:bg-ok-soft hover:text-ok')} {...p}>
       {children}
     </button>
   )
@@ -82,16 +82,31 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
   )
 }
 
+/** Ancho del contenedor desde el que cabe la tabla completa; por debajo se usan tarjetas (un solo DOM a la vez, sin controles duplicados). */
+const ANCHO_TABLA = 940
+
 export function TablaGastos(p: Props) {
+  const raiz = useRef<HTMLDivElement>(null)
+  const [ancha, setAncha] = useState(true)
+  useLayoutEffect(() => {
+    const el = raiz.current
+    if (!el) return
+    const medir = () => setAncha(el.clientWidth >= ANCHO_TABLA)
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const { filas, filtros, nom, fondoPorId, formato, seleccion } = p
   const seleccionadas = filas.filter((f) => seleccion.has(f.id)).length
   const todas = filas.length > 0 && seleccionadas === filas.length
   const parcial = seleccionadas > 0 && !todas
 
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition-opacity', p.recargando && 'opacity-60')} aria-busy={p.cargando}>
+    <div ref={raiz} className={cn('overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition-opacity', p.recargando && 'opacity-60')} aria-busy={p.cargando}>
+      {ancha ? (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[940px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-surface-2/70 text-muted">
               <th className="w-12 px-0 text-center">
@@ -152,6 +167,63 @@ export function TablaGastos(p: Props) {
           </tbody>
         </table>
       </div>
+      ) : (
+      <div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface-2/60 px-3 py-2 text-xs">
+          <label className="inline-flex min-h-9 items-center gap-2 font-medium">
+            <input type="checkbox" className="size-4 accent-[var(--pri)]" aria-label="Seleccionar todos los de esta página" checked={todas} ref={(el) => { if (el) el.indeterminate = parcial }} onChange={p.onAlternarTodas} />
+            Todos
+          </label>
+          <span className="ml-auto text-muted" id="orden-tarjetas">Ordenar</span>
+          <div role="group" aria-labelledby="orden-tarjetas" className="flex gap-1">
+            {([['fecha', 'Fecha'], ['descripcion', 'Nombre'], ['monto', 'Importe']] as const).map(([col, et]) => {
+              const activo = filtros.orden === col
+              return (
+                <button key={col} type="button" aria-pressed={activo} onClick={() => p.onOrdenar(col)}
+                  className={cn('inline-flex min-h-9 items-center gap-1 rounded-md border px-2.5 font-semibold', activo ? 'border-pri bg-pri-soft text-pri' : 'border-line bg-surface text-muted')}>
+                  {et}{activo && (filtros.dir === 'asc' ? <ArrowUp className="size-3" aria-hidden="true" /> : <ArrowDown className="size-3" aria-hidden="true" />)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <ul className="flex flex-col">
+          {filas.map((g) => {
+            const amb = nom.ambito.get(g.ambito_id), cat = nom.categoria.get(g.categoria_id), sub = g.subcategoria_id ? nom.sub.get(g.subcategoria_id) : null, med = nom.medio.get(g.payment_method_id)
+            const anulado = g.status === 'annulled'
+            const marcada = seleccion.has(g.id)
+            return (
+              <li key={g.id} className={cn('flex min-w-0 flex-col gap-2 border-b border-line px-3 py-3 last:border-0', marcada && 'bg-pri-soft/60 shadow-[inset_3px_0_0_var(--pri)]', anulado && 'text-muted')}>
+                <div className="flex min-w-0 items-start gap-2">
+                  <label className="grid size-9 shrink-0 cursor-pointer place-items-center">
+                    <input type="checkbox" className="size-4 accent-[var(--pri)]" aria-label={`Seleccionar ${g.description}`} checked={marcada} onChange={() => p.onAlternar(g)} />
+                  </label>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('break-words font-semibold', anulado && 'line-through')}>{g.description}</p>
+                    <p className="num text-xs text-muted">{formatFecha(g.expense_date, formato)} · {g.expense_type === 'fixed' ? 'Fijo' : 'Variable'}{g.is_recurring ? ' · Recurrente' : ''}{anulado ? ' · Anulado' : ''}</p>
+                  </div>
+                  <p className={cn('num shrink-0 text-base font-bold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 pl-11">
+                  <ChipK color={cat?.color_css}><ItemIcon name={cat?.icon_key} className="size-3" /> {cat?.name}{sub ? ` › ${sub.name}` : ''}</ChipK>
+                  <ChipK color={amb?.color_css}>{amb?.name}</ChipK>
+                  <ChipK color={med?.color_css}>{med?.name}</ChipK>
+                  {!anulado && <ChipsFondos g={g} fondoPorId={fondoPorId} />}
+                </div>
+                <div className="flex flex-wrap justify-end gap-1 pl-11">
+                  <Accion label={`Ver detalle de ${g.description}`} onClick={() => p.onDetalle(g)}><Eye className="size-4" aria-hidden="true" /></Accion>
+                  <Accion label={`Editar ${g.description}`} disabled={anulado} onClick={() => p.onEditar(g)}><Pencil className="size-4" aria-hidden="true" /></Accion>
+                  <Accion label={`Clonar ${g.description}`} onClick={() => p.onClonar(g)}><Copy className="size-4" aria-hidden="true" /></Accion>
+                  {anulado
+                    ? <Accion label={`Restaurar ${g.description}`} tono="ok" onClick={() => p.onConfirmar('restaurar', g)}><Undo2 className="size-4" aria-hidden="true" /></Accion>
+                    : <Accion label={`Anular ${g.description}`} tono="bad" onClick={() => p.onConfirmar('anular', g)}><Ban className="size-4" aria-hidden="true" /></Accion>}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+      )}
       <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/40 px-4 py-3 text-sm">
         <span className="text-muted">Mostrando <b className="num text-fg">{(filtros.pagina - 1) * TAMANO_PAGINA + 1}–{Math.min(p.total, filtros.pagina * TAMANO_PAGINA)}</b> de <b className="num text-fg">{p.total}</b></span>
         <div className="flex items-center gap-2">

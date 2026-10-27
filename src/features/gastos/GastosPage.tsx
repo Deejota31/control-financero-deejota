@@ -1,9 +1,10 @@
 import { subMonths, endOfMonth, startOfMonth } from 'date-fns'
-import { Ban, Download, FileStack, ListChecks, Plus, Receipt, Undo2, X } from 'lucide-react'
+import { Ban, Download, FileStack, ListChecks, Plus, Receipt, SlidersHorizontal, Undo2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/cn'
 import { Combobox, type ComboOption } from '@/components/ui/Combobox'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { ConfirmDialog } from '@/components/ui/Dialog'
@@ -56,6 +57,9 @@ export function GastosPage() {
 
   const [form, setForm] = useState<{ modo: Exclude<ModoGasto, 'nuevo'>; gasto?: GastoConFondos } | null>(null)
   const { abrir: abrirNuevo } = useRegistroGasto()
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
+  // Filtros avanzados activos (los de período y la búsqueda se ven siempre o tienen su propio control).
+  const nActivos = [filtros.ambito, filtros.categoria, filtros.subcategoria, filtros.medio, filtros.fondo, filtros.tipo].filter(Boolean).length + (filtros.estado !== 'active' ? 1 : 0)
   const [lote, setLote] = useState(() => params.get('lote') === '1')
   const [plantillas, setPlantillas] = useState(false)
   const [detalle, setDetalle] = useState<GastoConFondos | null>(null)
@@ -145,12 +149,18 @@ export function GastosPage() {
         </div>
       </div>
 
-      <section aria-label="Filtros" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-56 flex-1 flex-col gap-1.5">
-            <label htmlFor="buscar" className="text-sm font-medium">Buscar</label>
-            <input id="buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Descripción…" className="rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" />
+      <section aria-label="Filtros" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3 sm:p-4">
+        <div className="flex items-end gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <label htmlFor="buscar" className="text-sm font-medium max-sm:sr-only">Buscar</label>
+            <input id="buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Descripción…" className="min-w-0 rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" />
           </div>
+          <Button variant="secondary" aria-expanded={filtrosAbiertos} aria-controls="filtros-avanzados" onClick={() => setFiltrosAbiertos((a) => !a)} className="shrink-0 sm:hidden">
+            <SlidersHorizontal className="size-4" aria-hidden="true" /> Filtros{nActivos > 0 && <span className="rounded-full bg-pri px-1.5 text-xs text-pri-fg" aria-label={`${nActivos} filtros activos`}>{nActivos}</span>}
+          </Button>
+        </div>
+        <div id="filtros-avanzados" className={cn('flex-col gap-3 sm:flex', filtrosAbiertos ? 'flex' : 'hidden')}>
+        <div className="flex flex-wrap items-end gap-3">
           <div className="flex w-44 flex-col gap-1.5"><label htmlFor="f-desde" className="text-sm font-medium">Desde</label><DatePicker id="f-desde" value={filtros.desde} onChange={(d) => cambiar({ desde: d })} formato={formato} /></div>
           <div className="flex w-44 flex-col gap-1.5"><label htmlFor="f-hasta" className="text-sm font-medium">Hasta</label><DatePicker id="f-hasta" value={filtros.hasta} onChange={(d) => cambiar({ hasta: d })} formato={formato} /></div>
           <div className="flex gap-1.5">
@@ -168,6 +178,7 @@ export function GastosPage() {
           <Filtro etiqueta="Estado" id="f-estado"><Combobox id="f-estado" value={filtros.estado} searchable={false} options={ESTADOS} onChange={(v) => cambiar({ estado: (v ?? 'active') as FiltrosGastos['estado'] })} /></Filtro>
         </div>
         {hayFiltros && <div><Button variant="ghost" onClick={() => { setTexto(''); limpiar() }}><X className="size-4" aria-hidden="true" /> Limpiar filtros</Button></div>}
+        </div>
       </section>
 
       {seleccion.size > 0 && (
