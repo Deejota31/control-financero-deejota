@@ -214,17 +214,17 @@ test.describe('Gastos', () => {
     await page.getByRole('button', { name: 'Registrar mensuales' }).click()
     const lote = page.getByRole('dialog')
     // Solo la plantilla de esta prueba se registra; el resto se omite o marca "No aplica este mes".
-    const decisiones = lote.getByRole('radiogroup', { name: /^Decisión para / })
+    const decisiones = lote.getByRole('combobox', { name: /^Decisión para / })
     await expect(decisiones.first()).toBeVisible()
-    await expect(lote.getByRole('radiogroup', { name: `Decisión para ${nombre}` })).toBeVisible()
+    await expect(lote.getByRole('combobox', { name: `Decisión para ${nombre}` })).toBeVisible()
     const total = await decisiones.count()
     for (let i = 0; i < total; i++) {
       const grupo = decisiones.nth(i)
       const etiqueta = await grupo.getAttribute('aria-label')
       if (etiqueta === `Decisión para ${nombre}`) continue
-      await grupo.getByRole('radio', { name: i % 2 ? 'Omitir' : 'No aplica este mes' }).click()
+      await elegir(page, grupo, i % 2 ? 'Omitir' : 'No aplica este mes')
     }
-    await expect(lote.getByText(/Se registrarán 1 gasto por S\/ 12\.34/)).toBeVisible()
+    await expect(lote.getByText(/1 gasto por S\/ 12\.34/).first()).toBeVisible()
     await lote.getByRole('button', { name: 'Revisar y registrar' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Registrar' }).click()
     await expect(page.getByText('Se registró 1 gasto por S/ 12.34.').or(page.getByText('Se registraron 1 gasto por S/ 12.34.'))).toBeVisible()
@@ -233,7 +233,8 @@ test.describe('Gastos', () => {
     await buscar(page, `Gasto ${nombre}`)
     await expect(page.getByRole('row').filter({ hasText: `Gasto ${nombre}` })).toHaveCount(1)
     await page.getByRole('button', { name: 'Registrar mensuales' }).click()
-    await expect(page.getByRole('dialog').getByRole('row').filter({ hasText: nombre })).toContainText('Ya registrada este mes')
+    await page.getByRole('dialog').getByText(/^Ya registradas este mes/).click()
+    await expect(page.getByRole('dialog').getByRole('listitem').filter({ hasText: nombre })).toContainText('Ya registrada este mes')
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).first().click()
 
     // Limpieza
