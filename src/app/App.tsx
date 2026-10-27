@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
 import { HintProvider } from '@/components/ui/Hint'
@@ -8,14 +9,16 @@ import { RecoverPage } from '@/features/auth/RecoverPage'
 import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { PublicOnly, RequireAuth } from '@/features/auth/RouteGuards'
 import { SessionExpiredPage } from '@/features/auth/SessionExpiredPage'
-import { CatalogoPage } from '@/features/catalogo/CatalogoPage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { FondosPage } from '@/features/fondos/FondosPage'
-import { GastosPage } from '@/features/gastos/GastosPage'
-import { ConfiguracionPage } from '@/features/perfil/ConfiguracionPage'
-import { SaludPage } from '@/features/salud/SaludPage'
 import { ThemeProvider, useTema } from '@/features/tema/ThemeProvider'
 import { AppLayout } from './AppLayout'
+
+// Cada módulo se carga al visitarlo: el primer paquete (acceso + estructura) queda ligero y los gráficos/catálogos pesados no bloquean el inicio.
+const CatalogoPage = lazy(() => import('@/features/catalogo/CatalogoPage').then((m) => ({ default: m.CatalogoPage })))
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const FondosPage = lazy(() => import('@/features/fondos/FondosPage').then((m) => ({ default: m.FondosPage })))
+const GastosPage = lazy(() => import('@/features/gastos/GastosPage').then((m) => ({ default: m.GastosPage })))
+const ConfiguracionPage = lazy(() => import('@/features/perfil/ConfiguracionPage').then((m) => ({ default: m.ConfiguracionPage })))
+const SaludPage = lazy(() => import('@/features/salud/SaludPage').then((m) => ({ default: m.SaludPage })))
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },

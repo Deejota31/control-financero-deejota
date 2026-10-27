@@ -1,7 +1,8 @@
 import { LogOut, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useHogar } from '@/features/dashboard/useDashboard'
@@ -111,7 +112,9 @@ function Estructura() {
           </div>
         </header>
         <main id="contenido" tabIndex={-1} className="p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:p-8 lg:pb-24">
-          <Outlet />
+          <Suspense fallback={<div role="status" aria-label="Cargando módulo" className="flex flex-col gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /></div>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 
