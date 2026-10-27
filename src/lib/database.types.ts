@@ -523,14 +523,14 @@ isOneToOne: false
                   ]
                 },"subcategorias": {
                   Row: {
-                    "categoria_id": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
+                    "categoria_id": string,"color_hex": string | null,"color_mode": string,"created_at": string,"household_id": string,"icon_key": string,"id": string,"is_active": boolean,"name": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "categoria_id": string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
+                    "categoria_id": string,"color_hex"?: string | null,"color_mode"?: string,"created_at"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "categoria_id"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
+                    "categoria_id"?: string,"color_hex"?: string | null,"color_mode"?: string,"created_at"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {

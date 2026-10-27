@@ -7,20 +7,18 @@ import { Combobox } from '@/components/ui/Combobox'
 import { ConfirmDialog } from '@/components/ui/Dialog'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { ItemIcon } from '@/components/ui/ItemIcon'
-import { armonizar } from '@/domain/color'
 import { cn } from '@/lib/cn'
 import { codigoDeError, mensajeDeError } from '@/lib/errors'
+import { ArmonizarDialog, type CambioArmonia } from './ArmonizarDialog'
 import { ElementoEditor, type ItemCatalogo } from './ElementoEditor'
 import { opciones, useCatalogo, useCatalogoMutaciones, type Catalogo, type CatalogoKind } from './useCatalogo'
 
 const CONFIG: Record<CatalogoKind, { label: string; singular: string; color: boolean; genero: 'm' | 'f' }> = {
   ambitos: { label: 'Ámbitos', singular: 'ámbito', color: true, genero: 'm' },
   categorias: { label: 'Categorías', singular: 'categoría', color: true, genero: 'f' },
-  subcategorias: { label: 'Subcategorías', singular: 'subcategoría', color: false, genero: 'f' },
+  subcategorias: { label: 'Subcategorías', singular: 'subcategoría', color: true, genero: 'f' },
   medios_pago: { label: 'Medios de pago', singular: 'medio de pago', color: true, genero: 'm' },
 }
-
-const esOtros = (n: string) => /^otros?$/i.test(n.trim())
 
 export function CatalogoPage() {
   const catalogo = useCatalogo()
@@ -127,16 +125,18 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
     })
   }
 
-  /** Reparte la paleta entre los elementos de la lista (sin tocar «Otros») y permite deshacerlo. */
-  function aplicarArmonia() {
-    const objetivo = items.filter((i) => !esOtros(i.name))
-    const nuevos = armonizar(objetivo.length)
-    const previos = objetivo.map((i) => ({ id: i.id, values: { color_hex: i.color_hex ?? null, ...(kind === 'categorias' ? { color_mode: (i.color_mode === 'inherit' ? 'inherit' : 'own') as 'own' | 'inherit' } : {}) } }))
-    const cambios = objetivo.map((i, n) => ({ id: i.id, values: { color_hex: nuevos[n], ...(kind === 'categorias' ? { color_mode: 'own' as const } : {}) } }))
+  /** Aplica los cambios elegidos en el diálogo de armonía y permite deshacerlos (restaura modo y color previos). */
+  function aplicarArmonia(cambios: CambioArmonia[]) {
+    const conHerencia = kind === 'categorias' || kind === 'subcategorias'
+    const previos = cambios.map((c) => {
+      const it = items.find((i) => i.id === c.id)!
+      return { id: c.id, values: conHerencia && it.color_mode === 'inherit' ? { color_hex: null, color_mode: 'inherit' as const } : { color_hex: it.color_hex ?? null, ...(conHerencia ? { color_mode: 'own' as const } : {}) } }
+    })
+    const nuevos = cambios.map((c) => ({ id: c.id, values: { color_hex: c.hex, ...(conHerencia ? { color_mode: 'own' as const } : {}) } }))
     setArmonizando(false)
-    mut.colorear.mutate(cambios, {
-      onSuccess: () => toast.success('Paleta armonizada.', {
-        action: { label: 'Deshacer', onClick: () => mut.colorear.mutate(previos.map((p) => ({ id: p.id, values: p.values.color_mode === 'inherit' ? { color_hex: null, color_mode: 'inherit' } : p.values })), { onError: (e) => toast.error(mensajeDeError(e)) }) },
+    mut.colorear.mutate(nuevos, {
+      onSuccess: () => toast.success(`Paleta armonizada en ${cambios.length} ${cambios.length === 1 ? 'elemento' : 'elementos'}.`, {
+        action: { label: 'Deshacer', onClick: () => mut.colorear.mutate(previos, { onError: (e) => toast.error(mensajeDeError(e)) }) },
       }),
       onError: (e) => toast.error(mensajeDeError(e)),
     })
@@ -179,7 +179,7 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
           description={necesitaPadre ? 'Primero crea el elemento superior.' : `Crea ${cfg.genero === 'f' ? 'la primera' : 'el primero'} para poder usarl${cfg.genero === 'f' ? 'a' : 'o'} en tus gastos.`}
         />
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,350px)_minmax(0,1fr)_280px]">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
           <ul aria-label={`Lista de ${cfg.label.toLowerCase()}`} className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
             {items.map((it, i) => {
               const activo = seleccionado?.id === it.id
@@ -235,14 +235,7 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
         loading={mut.eliminar.isPending}
         onConfirm={confirmarBorrado}
       />
-      <ConfirmDialog
-        open={armonizando}
-        onOpenChange={setArmonizando}
-        title="¿Armonizar la paleta?"
-        description={`Se asignará un color distinto a cada elemento de esta lista${kind === 'categorias' ? ' (las categorías pasan a color propio)' : ''}. «Otros» no cambia. Podrás deshacerlo justo después.`}
-        confirmLabel="Armonizar"
-        onConfirm={aplicarArmonia}
-      />
+      {armonizando && <ArmonizarDialog items={items} hereda={kind === 'categorias' ? 'ámbito' : kind === 'subcategorias' ? 'categoría' : null} onConfirmar={aplicarArmonia} onClose={() => setArmonizando(false)} />}
     </section>
   )
 }

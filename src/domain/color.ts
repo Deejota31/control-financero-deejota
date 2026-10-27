@@ -1,13 +1,44 @@
-/** Colores del Catálogo: paleta de 20, conversiones HEX/RGB/HSV y tratamiento por tema con contraste garantizado. */
+/** Colores del Catálogo y de los fondos: paleta de 36, conversiones HEX/RGB/HSV y tratamiento por tema con contraste garantizado. */
 
+/** Paleta de 36 colores en seis familias (fríos, verdes, cálidos, rojos y rosas, violetas y neutros). */
+export const FAMILIAS_COLOR = ["Azules","Verdes","Cálidos","Rojos y rosas","Violetas","Neutros"] as const
 export const PALETA = [
-  { nombre: 'Índigo', hex: '#4F46E5' }, { nombre: 'Azul', hex: '#2563EB' }, { nombre: 'Celeste', hex: '#0EA5E9' },
-  { nombre: 'Turquesa', hex: '#06B6D4' }, { nombre: 'Teal', hex: '#0D9488' }, { nombre: 'Esmeralda', hex: '#059669' },
-  { nombre: 'Verde', hex: '#16A34A' }, { nombre: 'Lima', hex: '#65A30D' }, { nombre: 'Oliva', hex: '#7C8B2A' },
-  { nombre: 'Amarillo', hex: '#CA8A04' }, { nombre: 'Ámbar', hex: '#D97706' }, { nombre: 'Naranja', hex: '#EA580C' },
-  { nombre: 'Coral', hex: '#F0614E' }, { nombre: 'Rojo', hex: '#DC2626' }, { nombre: 'Carmesí', hex: '#BE123C' },
-  { nombre: 'Rosa', hex: '#DB2777' }, { nombre: 'Magenta', hex: '#C026D3' }, { nombre: 'Violeta', hex: '#7C3AED' },
-  { nombre: 'Púrpura', hex: '#7E22CE' }, { nombre: 'Pizarra', hex: '#64748B' },
+  { nombre: 'Índigo', hex: '#4F46E5', familia: 'Azules' },
+  { nombre: 'Azul', hex: '#2563EB', familia: 'Azules' },
+  { nombre: 'Celeste', hex: '#0EA5E9', familia: 'Azules' },
+  { nombre: 'Turquesa', hex: '#06B6D4', familia: 'Azules' },
+  { nombre: 'Cobalto', hex: '#1D4ED8', familia: 'Azules' },
+  { nombre: 'Marino', hex: '#1E40AF', familia: 'Azules' },
+  { nombre: 'Teal', hex: '#0D9488', familia: 'Verdes' },
+  { nombre: 'Esmeralda', hex: '#059669', familia: 'Verdes' },
+  { nombre: 'Verde', hex: '#16A34A', familia: 'Verdes' },
+  { nombre: 'Lima', hex: '#65A30D', familia: 'Verdes' },
+  { nombre: 'Oliva', hex: '#7C8B2A', familia: 'Verdes' },
+  { nombre: 'Menta', hex: '#10B981', familia: 'Verdes' },
+  { nombre: 'Amarillo', hex: '#CA8A04', familia: 'Cálidos' },
+  { nombre: 'Ámbar', hex: '#D97706', familia: 'Cálidos' },
+  { nombre: 'Naranja', hex: '#EA580C', familia: 'Cálidos' },
+  { nombre: 'Coral', hex: '#F0614E', familia: 'Cálidos' },
+  { nombre: 'Terracota', hex: '#B45309', familia: 'Cálidos' },
+  { nombre: 'Mostaza', hex: '#A16207', familia: 'Cálidos' },
+  { nombre: 'Rojo', hex: '#DC2626', familia: 'Rojos y rosas' },
+  { nombre: 'Carmesí', hex: '#BE123C', familia: 'Rojos y rosas' },
+  { nombre: 'Rosa', hex: '#DB2777', familia: 'Rojos y rosas' },
+  { nombre: 'Magenta', hex: '#C026D3', familia: 'Rojos y rosas' },
+  { nombre: 'Frambuesa', hex: '#9D174D', familia: 'Rojos y rosas' },
+  { nombre: 'Rubí', hex: '#E11D48', familia: 'Rojos y rosas' },
+  { nombre: 'Violeta', hex: '#7C3AED', familia: 'Violetas' },
+  { nombre: 'Púrpura', hex: '#7E22CE', familia: 'Violetas' },
+  { nombre: 'Lavanda', hex: '#8B5CF6', familia: 'Violetas' },
+  { nombre: 'Ciruela', hex: '#6B21A8', familia: 'Violetas' },
+  { nombre: 'Orquídea', hex: '#A855F7', familia: 'Violetas' },
+  { nombre: 'Berenjena', hex: '#581C87', familia: 'Violetas' },
+  { nombre: 'Pizarra', hex: '#64748B', familia: 'Neutros' },
+  { nombre: 'Grafito', hex: '#374151', familia: 'Neutros' },
+  { nombre: 'Piedra', hex: '#78716C', familia: 'Neutros' },
+  { nombre: 'Cobre', hex: '#92400E', familia: 'Neutros' },
+  { nombre: 'Arena', hex: '#A8A29E', familia: 'Neutros' },
+  { nombre: 'Carbón', hex: '#1F2937', familia: 'Neutros' },
 ] as const
 
 /** Equivalente HEX (tema claro) de los tokens heredados de antes, para calcular tonos de elementos sin color libre. */

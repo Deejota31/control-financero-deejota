@@ -32,7 +32,8 @@ export function useCatalogo() {
       const porAmbito = new Map(ambitos.map((x) => [x.id, x]))
       const categorias = ((c.data ?? []) as Categoria[]).map((x) => ({ ...x, color_css: colorEfectivo(x, porAmbito.get(x.ambito_id)).hex }))
       const porCategoria = new Map(categorias.map((x) => [x.id, x]))
-      const subcategorias = ((s.data ?? []) as Subcategoria[]).map((x) => ({ ...x, color_css: porCategoria.get(x.categoria_id)?.color_css ?? '#58587A' }))
+      // Subcategoría: hereda el color efectivo de su categoría o usa el suyo (se guarda el modo, no una copia del HEX heredado).
+      const subcategorias = ((s.data ?? []) as Subcategoria[]).map((x) => ({ ...x, color_css: colorEfectivo(x, { color_hex: porCategoria.get(x.categoria_id)?.color_css ?? null }).hex }))
       const medios = ((m.data ?? []) as MedioPago[]).map((x) => ({ ...x, color_css: hexPropio(x) }))
       return {
         ambitos, categorias, subcategorias, medios,

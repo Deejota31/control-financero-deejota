@@ -57,7 +57,7 @@ test.describe('Selector de íconos', () => {
     await expect(d.getByText('Sugerido por el nombre')).toHaveCount(0)
   })
 
-  test('el explorador tiene altura fija y los resultados se desplazan dentro; el formulario no crece', async ({ page }) => {
+  test('la cuadrícula se ajusta a los resultados (máx. ~240 px con scroll interno) y el diálogo nunca crece más que la pantalla', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
     await irACatalogo(page)
@@ -66,33 +66,32 @@ test.describe('Selector de íconos', () => {
     await d.getByLabel('Nombre').fill('Algo')
     await abrir(page)
     const b = bloque(page)
-    const altura = async () => Math.round((await b.boundingBox())!.height)
-    const h0 = await altura()
-    expect(h0).toBeGreaterThanOrEqual(260)
-    expect(h0).toBeLessThanOrEqual(320)
-    const dialogo = async () => Math.round((await d.boundingBox())!.height)
-    const hd = await dialogo()
+    const rejilla = b.getByRole('radiogroup')
+    const altoRejilla = async () => Math.round((await rejilla.boundingBox())!.height)
     const sec = b.getByRole('combobox', { name: 'Sección de íconos' })
-    for (const v of ['todos', 'alimentacion', 'transporte', 'sugeridos', 'ocio']) {
+    await sec.selectOption('sugeridos')
+    const pocos = await altoRejilla()
+    expect(pocos, 'con pocos resultados no se reservan cientos de píxeles vacíos').toBeLessThan(140)
+    await sec.selectOption('todos')
+    const muchos = await altoRejilla()
+    expect(muchos).toBeLessThanOrEqual(241)
+    expect(muchos).toBeGreaterThan(pocos)
+    expect(await rejilla.evaluate((e) => e.scrollHeight > e.clientHeight), 'hay scroll interno cuando no caben').toBe(true)
+    for (const v of ['alimentacion', 'transporte', 'sugeridos', 'ocio']) {
       await sec.selectOption(v)
-      expect(await altura()).toBe(h0)
-      expect(await dialogo()).toBe(hd)
+      expect(Math.round((await d.boundingBox())!.height)).toBeLessThanOrEqual(900 * 0.92 + 1)
     }
     await buscar(page, 'a')
-    expect(await altura()).toBe(h0)
+    expect(await altoRejilla()).toBeLessThanOrEqual(241)
     await buscar(page, 'xyzqw')
     await expect(b.getByText(/No hay íconos para/)).toBeVisible()
-    expect(await altura()).toBe(h0)
-    expect(await dialogo()).toBe(hd)
     // «Todos» desborda dentro de su propia rejilla (scroll interno), no del formulario
     await buscar(page, '')
     await sec.selectOption('todos')
-    const rejilla = b.getByRole('radiogroup')
     const { sh, ch, ow } = await rejilla.evaluate((e) => ({ sh: e.scrollHeight, ch: e.clientHeight, ow: e.scrollWidth - e.clientWidth }))
     expect(sh).toBeGreaterThan(ch)
     expect(ow).toBeLessThanOrEqual(1) // sin scroll horizontal
     expect(await rejilla.getByRole('radio').count()).toBeGreaterThanOrEqual(115)
-    expect(await dialogo()).toBe(hd)
   })
 
   test('busca ignorando tildes y mayúsculas, por sinónimos, y muestra resultados vacíos', async ({ page }) => {
@@ -252,13 +251,12 @@ test.describe('Selector de íconos', () => {
       await abrir(page)
       await bloque(page).getByRole('combobox', { name: 'Sección de íconos' }).selectOption('todos')
       const caja = (await bloque(page).boundingBox())!
-      expect(caja.height, `${w}x${h}`).toBeLessThanOrEqual(h <= 768 ? 320 : 321)
-      expect(caja.height, `${w}x${h}`).toBeGreaterThanOrEqual(250)
+      expect(caja.height, `${w}x${h}`).toBeLessThanOrEqual(Math.min(352, h * 0.7) + 1)
       expect(caja.x + caja.width, `${w}x${h}`).toBeLessThanOrEqual(w + 1)
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${w}x${h}`).toBeLessThanOrEqual(1)
       const rejilla = bloque(page).getByRole('radiogroup')
       expect(await rejilla.evaluate((e) => e.scrollWidth - e.clientWidth), `${w}x${h}`).toBeLessThanOrEqual(1)
-      await page.getByRole('button', { name: 'Contraer' }).click()
+      await page.getByRole('button', { name: 'Contraer', exact: true }).click()
     }
   })
 })

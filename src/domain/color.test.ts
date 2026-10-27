@@ -22,8 +22,8 @@ describe('color', () => {
     }
   })
 
-  it('los 20 colores de la paleta cumplen 4.5:1 (texto) y 3:1 (ícono) en claro y oscuro', () => {
-    expect(PALETA).toHaveLength(20)
+  it('los 36 colores de la paleta cumplen 4.5:1 (texto) y 3:1 (ícono) en claro y oscuro', () => {
+    expect(PALETA).toHaveLength(36)
     for (const c of PALETA) {
       for (const tema of ['claro', 'oscuro'] as const) {
         const t = tonos(c.hex, tema)!
@@ -52,5 +52,13 @@ describe('color', () => {
     const c = armonizar(5)
     expect(new Set(c).size).toBe(5)
     expect(armonizar(0)).toEqual([])
+  })
+})
+
+describe('paleta ampliada', () => {
+  it('tiene 36 colores únicos con nombre en seis familias', () => {
+    expect(new Set(PALETA.map((c) => c.hex)).size).toBe(36)
+    expect(new Set(PALETA.map((c) => c.nombre)).size).toBe(36)
+    expect(new Set(PALETA.map((c) => c.familia)).size).toBe(6)
   })
 })

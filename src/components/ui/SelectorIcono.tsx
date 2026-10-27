@@ -121,7 +121,7 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
 
       {abierto && (
         <div id={idBloque} role="group" aria-label="Explorador de íconos" data-captura-escape onKeyDown={teclas}
-          className="flex h-[clamp(260px,40vh,320px)] flex-col overflow-hidden rounded-lg border border-line bg-surface-2/40">
+          className="flex max-h-[min(22rem,70dvh)] flex-col overflow-hidden rounded-lg border border-line bg-surface-2/40">
           <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-2">
             <label className="flex min-w-0 flex-1 basis-28 items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 focus-within:border-pri">
               <Search className="size-4 shrink-0 text-muted" aria-hidden="true" />
@@ -138,9 +138,9 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
             </label>
             <button type="button" onClick={contraer} className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-semibold text-pri hover:bg-pri-soft">Listo <Check className="size-4" aria-hidden="true" /></button>
           </div>
-          <div ref={rejillaRef} role="radiogroup" aria-label={consulta ? 'Resultados de la búsqueda' : 'Íconos'} className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div ref={rejillaRef} role="radiogroup" aria-label={consulta ? 'Resultados de la búsqueda' : 'Íconos'} className="max-h-60 min-h-0 overflow-y-auto p-2">
             {resultados.length === 0 ? (
-              <p className="grid h-full place-items-center px-4 text-center text-sm text-muted">No hay íconos para «{consulta}». Prueba con otra palabra o elige una sección.</p>
+              <p className="grid place-items-center px-4 py-8 text-center text-sm text-muted">No hay íconos para «{consulta}». Prueba con otra palabra o elige una sección.</p>
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5">
                 {resultados.map((r) => (

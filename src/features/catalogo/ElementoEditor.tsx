@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -13,7 +13,6 @@ import { sugerirIconos } from '@/domain/iconos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
 import { EditorColor, type ValorColor } from './EditorColor'
-import { VistaPreviaColor, type ElementoPrevia } from './VistaPreviaColor'
 import { useCatalogoMutaciones, type CatalogoKind, type CatalogoValores } from './useCatalogo'
 
 export interface ItemCatalogo {
@@ -32,7 +31,7 @@ export interface ItemCatalogo {
 const CONFIG: Record<CatalogoKind, { singular: string; color: boolean; genero: 'm' | 'f' }> = {
   ambitos: { singular: 'ámbito', color: true, genero: 'm' },
   categorias: { singular: 'categoría', color: true, genero: 'f' },
-  subcategorias: { singular: 'subcategoría', color: false, genero: 'f' },
+  subcategorias: { singular: 'subcategoría', color: true, genero: 'f' },
   medios_pago: { singular: 'medio de pago', color: true, genero: 'm' },
 }
 
@@ -59,6 +58,7 @@ interface Props {
 
 const colorInicial = (_kind: CatalogoKind, item: ItemCatalogo | null, hermanos: ItemCatalogo[], contexto: Props['contexto']): ValorColor => {
   if (item) return { hex: item.color_css ?? PALETA[0].hex, modo: item.color_mode === 'inherit' ? 'inherit' : 'own' }
+  if (_kind === 'subcategorias' && contexto) return { hex: contexto.hex, modo: 'inherit' }
   // Una categoría nueva nace con color propio (distinto del ámbito y de sus hermanas); heredar del ámbito es una opción explícita.
   const usados = new Set([...hermanos.map((h) => h.color_css?.toLowerCase()), contexto?.hex?.toLowerCase()])
   const libre = PALETA.find((c) => !usados.has(c.hex.toLowerCase()))
@@ -82,6 +82,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
   const nombre = useWatch({ control, name: 'name' })
   const iconoForm = useWatch({ control, name: 'icon_key' })
   const refNombre = useRef<HTMLInputElement | null>(null)
+  const idForm = useId()
   const { ref: refRhf, ...regNombre } = register('name')
 
   useEffect(() => { if (focoTick) refNombre.current?.focus() }, [focoTick])
@@ -92,16 +93,10 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
   const icono = autoSugerido ? sugeridos[0].id : iconoForm
 
   const sucio = isDirty || color.hex !== guardado.hex || color.modo !== guardado.modo
-  const hexEfectivo = cfg.color ? (color.modo === 'inherit' && contexto ? contexto.hex : color.hex) : (contexto?.hex ?? PALETA[0].hex)
-
-  const previa: ElementoPrevia[] = useMemo(() => {
-    const base = hermanos.map((h) => ({ id: h.id, nombre: h.name, icono: h.icon_key, hex: h.color_css ?? PALETA[0].hex }))
-    const borrador = { id: item?.id ?? 'nuevo', nombre: nombre || (item?.name ?? 'Nuevo'), icono, hex: hexEfectivo }
-    return item ? base.map((b) => (b.id === item.id ? borrador : b)) : [...base, borrador]
-  }, [hermanos, item, nombre, icono, hexEfectivo])
+  const hexEfectivo = color.modo === 'inherit' && contexto ? contexto.hex : color.hex
 
   const onSubmit = handleSubmit((v) => {
-    const colorValues: Partial<CatalogoValores> = !cfg.color ? {} : kind === 'categorias'
+    const colorValues: Partial<CatalogoValores> = !cfg.color ? {} : kind === 'categorias' || kind === 'subcategorias'
       ? { color_mode: color.modo, color_hex: color.modo === 'inherit' ? null : color.hex }
       : { color_hex: color.hex }
     const values: CatalogoValores = {
@@ -127,7 +122,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
   const descartar = () => { reset({ name: item?.name ?? '', icon_key: item?.icon_key ?? 'tag' }); setColor(guardado); setIconoManual(false); setOk(false) }
 
   const formulario = (
-    <form onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-3.5', modo === 'panel' && 'rounded-xl border border-line bg-surface p-4')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
+    <form id={idForm} onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-3.5', modo === 'panel' && 'max-w-3xl rounded-xl border border-line bg-surface p-4')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
       <Field label="Nombre" error={errors.name?.message}>
         {(p) => <Input {...p} {...regNombre} ref={(el) => { refRhf(el); refNombre.current = el }} autoFocus={modo === 'modal'} onChange={(e) => { setOk(false); void regNombre.onChange(e) }} />}
       </Field>
@@ -138,17 +133,11 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
       {cfg.color && (
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium">Color</span>
-          <EditorColor valor={color} onChange={(v) => { setOk(false); setColor(v) }} ambito={kind === 'categorias' ? contexto : null} />
+          <EditorColor valor={color} onChange={(v) => { setOk(false); setColor(v) }} padre={kind === 'categorias' && contexto ? { ...contexto, tipo: 'ámbito' } : kind === 'subcategorias' && contexto ? { ...contexto, tipo: 'categoría' } : null} />
         </div>
       )}
-      {!cfg.color && contexto && <p className="text-sm text-muted">Las subcategorías usan el color de su categoría.</p>}
-      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
-        {modo === 'modal' ? (
-          <>
-            <Button variant="secondary" onClick={onClose} disabled={mut.guardar.isPending}>Cancelar</Button>
-            <Button type="submit" loading={mut.guardar.isPending}>{mut.guardar.isPending ? 'Guardando…' : 'Guardar'}</Button>
-          </>
-        ) : (
+      {modo === 'panel' && (
+      <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center gap-3 rounded-b-xl border-t border-line bg-surface px-4 py-3">
           <>
             <Button type="submit" loading={mut.guardar.isPending} disabled={!sucio}>{mut.guardar.isPending ? 'Guardando…' : 'Guardar cambios'}</Button>
             <Button variant="ghost" disabled={!sucio || mut.guardar.isPending} onClick={descartar}>Descartar</Button>
@@ -159,19 +148,23 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
                     : ok ? <><CheckCircle2 className="size-4" aria-hidden="true" />Cambios guardados</> : 'Sin cambios'}
             </p>
           </>
-        )}
       </div>
+      )}
     </form>
   )
 
-  const vistaPrevia = <VistaPreviaColor elementos={previa} actualId={item?.id ?? 'nuevo'} />
-
   if (modo === 'modal') {
     return (
-      <Modal open onOpenChange={(o) => !o && onClose?.()} title={`${cfg.genero === 'f' ? 'Nueva' : 'Nuevo'} ${cfg.singular}`} size="lg">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">{formulario}<div>{vistaPrevia}</div></div>
+      <Modal open onOpenChange={(o) => !o && onClose?.()} title={`${cfg.genero === 'f' ? 'Nueva' : 'Nuevo'} ${cfg.singular}`} size="md" sucio={sucio}
+        footer={(cerrar) => (
+          <>
+            <Button variant="secondary" onClick={cerrar} disabled={mut.guardar.isPending}>Cancelar</Button>
+            <Button type="submit" form={idForm} loading={mut.guardar.isPending}>{mut.guardar.isPending ? 'Guardando…' : 'Guardar'}</Button>
+          </>
+        )}>
+        {formulario}
       </Modal>
     )
   }
-  return <>{formulario}<div className="min-w-0 lg:col-span-2 xl:col-span-1">{vistaPrevia}</div></>
+  return formulario
 }
