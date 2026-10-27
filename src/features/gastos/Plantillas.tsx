@@ -16,7 +16,7 @@ import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
-import { formatSoles, fromIso, parseImporte, toIso } from '@/lib/format'
+import { errorImporte, formatSoles, fromIso, parseImporte, sumarImportes, toIso } from '@/lib/format'
 import type { Plantilla } from '@/lib/tipos'
 import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { finDeMes, mesDeFecha, useFondos, usePeriodo } from '@/features/fondos/useFondos'
@@ -39,7 +39,7 @@ const schema = z
     expense_type: z.enum(['fixed', 'variable']),
     day_of_month: z.string().refine((v) => v === '' || (/^\d+$/.test(v) && +v >= 1 && +v <= 31), 'Un día entre 1 y 31.'),
   })
-  .refine((v) => v.default_amount === '' || parseImporte(v.default_amount) !== null, { path: ['default_amount'], message: 'Ingresa un importe mayor que 0.' })
+  .superRefine((v, ctx) => { const e = v.default_amount === '' ? null : errorImporte(v.default_amount); if (e) ctx.addIssue({ code: 'custom', path: ['default_amount'], message: e }) })
   .refine((v) => v.is_amount_variable || parseImporte(v.default_amount) !== null, { path: ['default_amount'], message: 'Ingresa el importe sugerido o márcala como importe variable.' })
 type Values = z.infer<typeof schema>
 
@@ -229,11 +229,11 @@ function LoteMes({ mes, onClose }: { mes: string; onClose: () => void }) {
   const errorFila = (p: Plantilla) => {
     const f = fila(p)
     if (f.decision !== 'include') return null
-    if (parseImporte(f.amount) === null) return 'Ingresa el importe.'
+    const ei = errorImporte(f.amount); if (ei) return ei
     if (!f.method) return 'Elige el medio de pago.'
     return null
   }
-  const total = incluidas.reduce((s, p) => s + (parseImporte(fila(p).amount) ?? 0), 0)
+  const total = sumarImportes(incluidas.map((p) => parseImporte(fila(p).amount) ?? 0))
   const invalido = incluidas.some((p) => errorFila(p))
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
 

@@ -13,7 +13,7 @@ import { sugerirIconos } from '@/domain/iconos'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { cn } from '@/lib/cn'
-import { parseMontoNoNegativo } from '@/lib/format'
+import { errorImporte, parseMontoNoNegativo } from '@/lib/format'
 import type { Catalogo } from '@/features/catalogo/useCatalogo'
 import type { Fila } from '@/lib/tipos'
 import type { FondoPayload } from './useFondos'
@@ -36,8 +36,8 @@ const schema = z.object({
   color_token: z.string().min(1),
   is_general: z.boolean(),
   is_active: z.boolean(),
-  default_amount: z.string().refine((v) => parseMontoNoNegativo(v) !== null, 'Ingresa un importe válido (por ejemplo 250.00).'),
-  period_amount: z.string().refine((v) => v === '' || parseMontoNoNegativo(v) !== null, 'Ingresa un importe válido.'),
+  default_amount: z.string().superRefine((v, ctx) => { const e = errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
+  period_amount: z.string().superRefine((v, ctx) => { const e = v === '' ? null : errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
 })
 type Values = z.infer<typeof schema>
 

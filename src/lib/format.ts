@@ -48,20 +48,4 @@ export function fromIso(iso: string): Date {
   return parse(iso, 'yyyy-MM-dd', new Date())
 }
 
-/**
- * Interpreta un importe escrito por el usuario: acepta "1,284.50", "1284.5", "S/ 12" y rechaza el resto.
- * Devuelve null si no es un decimal positivo con hasta 2 decimales.
- */
-export function parseImporte(texto: string): number | null {
-  const limpio = texto.replace(/S\/|\s/gi, '').replace(/,/g, '')
-  if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return null
-  const n = Number(limpio)
-  return n > 0 ? n : null
-}
-
-/** Como `parseImporte` pero admite 0 (presupuestos de fondos). */
-export function parseMontoNoNegativo(texto: string): number | null {
-  const limpio = texto.replace(/S\/|\s/gi, '').replace(/,/g, '')
-  if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return null
-  return Number(limpio)
-}
+export { analizarImporte, errorImporte, parseImporte, parseMontoNoNegativo, sumarImportes, IMPORTE_MAX_CENTIMOS } from './importe'

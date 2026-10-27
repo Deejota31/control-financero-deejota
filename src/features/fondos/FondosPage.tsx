@@ -12,7 +12,7 @@ import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { admite, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { formatFecha, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
+import { errorImporte, formatFecha, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
 import type { Fila, Gasto } from '@/lib/tipos'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
@@ -403,7 +403,7 @@ function PresupuestoDialog({ fondo, actual, cargando, onClose, onSubmit }: { fon
           if (n !== null) onSubmit(n)
         }}
       >
-        <Field label="Importe asignado (S/)" error={n === null ? 'Ingresa un importe válido.' : undefined}>
+        <Field label="Importe asignado (S/)" error={errorImporte(valor, { permitirCero: true }) ?? undefined}>
           {(p) => <MoneyInput {...p} value={valor} onChange={setValor} invalid={n === null} />}
         </Field>
         <div className="flex justify-end gap-2">

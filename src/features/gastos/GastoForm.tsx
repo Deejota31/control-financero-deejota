@@ -14,7 +14,7 @@ import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
-import { formatSoles, parseImporte, toIso } from '@/lib/format'
+import { errorImporte, formatSoles, parseImporte, toIso } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import type { Gasto } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
@@ -34,7 +34,7 @@ export type ModoGasto = 'nuevo' | 'editar' | 'clonar'
 
 const schema = z.object({
   expense_date: z.string().min(1, 'Elige una fecha.'),
-  amount: z.string().refine((v) => parseImporte(v) !== null, 'Ingresa un importe mayor que 0 (por ejemplo 25.50).'),
+  amount: z.string().superRefine((v, ctx) => { const e = errorImporte(v); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
   ambito_id: z.string().min(1, 'Elige un ámbito.'),
   categoria_id: z.string().min(1, 'Elige una categoría.'),
   subcategoria_id: z.string(),
