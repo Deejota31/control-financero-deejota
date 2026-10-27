@@ -17,6 +17,7 @@ import { useFondos } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
 import { GastoForm, type ModoGasto } from './GastoForm'
+import { useRegistroGasto } from './RegistroGasto'
 import { TablaGastos } from './TablaGastos'
 import { LoteDialog, PlantillasDialog } from './Plantillas'
 import { TAMANO_PAGINA, gastosParaExportar, useFiltrosGastos, useGastoMutaciones, useGastosPagina, type FiltrosGastos, type GastoConFondos } from './useGastos'
@@ -53,7 +54,8 @@ export function GastosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textoDebounced])
 
-  const [form, setForm] = useState<{ modo: ModoGasto; gasto?: GastoConFondos } | null>(() => (params.get('nuevo') === '1' ? { modo: 'nuevo' } : null))
+  const [form, setForm] = useState<{ modo: Exclude<ModoGasto, 'nuevo'>; gasto?: GastoConFondos } | null>(null)
+  const { abrir: abrirNuevo } = useRegistroGasto()
   const [lote, setLote] = useState(() => params.get('lote') === '1')
   const [plantillas, setPlantillas] = useState(false)
   const [detalle, setDetalle] = useState<GastoConFondos | null>(null)
@@ -62,8 +64,8 @@ export function GastosPage() {
   const [exportando, setExportando] = useState(false)
 
   useEffect(() => {
-    if (params.get('nuevo') || params.get('lote')) {
-      setParams((p) => { const o = new URLSearchParams(p); o.delete('nuevo'); o.delete('lote'); return o }, { replace: true })
+    if (params.get('lote')) {
+      setParams((p) => { const o = new URLSearchParams(p); o.delete('lote'); return o }, { replace: true })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -139,7 +141,7 @@ export function GastosPage() {
           <Button variant="secondary" onClick={() => setPlantillas(true)}><FileStack className="size-4" aria-hidden="true" /> Plantillas</Button>
           <Button variant="secondary" onClick={() => setLote(true)}><ListChecks className="size-4" aria-hidden="true" /> Registrar mensuales</Button>
           <Button variant="secondary" onClick={exportarFiltro} loading={exportando}><Download className="size-4" aria-hidden="true" /> Exportar CSV</Button>
-          <Button onClick={() => setForm({ modo: 'nuevo' })}><Plus className="size-4" aria-hidden="true" /> Nuevo gasto</Button>
+          <Button onClick={abrirNuevo}><Plus className="size-4" aria-hidden="true" /> Nuevo gasto</Button>
         </div>
       </div>
 
@@ -190,7 +192,7 @@ export function GastosPage() {
             <EmptyState icon={Receipt} title="Primero configura tu catálogo" description="Para registrar un gasto necesitas al menos un ámbito, una categoría y un medio de pago (Catálogo) y un fondo que lo cubra (Fondos)."
               action={<div className="flex gap-2"><Button onClick={() => navigate('/catalogo')}>Ir al Catálogo</Button><Button variant="secondary" onClick={() => navigate('/fondos')}>Ir a Fondos</Button></div>} />
           ) : (
-            <EmptyState icon={Receipt} title="Aún no hay gastos en este período" description="Registra el primero o crea gastos desde tus plantillas mensuales." action={<Button onClick={() => setForm({ modo: 'nuevo' })}>Nuevo gasto</Button>} />
+            <EmptyState icon={Receipt} title="Aún no hay gastos en este período" description="Registra el primero o crea gastos desde tus plantillas mensuales." action={<Button onClick={abrirNuevo}>Nuevo gasto</Button>} />
           )
         )
       ) : (

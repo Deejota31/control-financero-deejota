@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export const email = process.env.E2E_USER_EMAIL
 export const password = process.env.E2E_USER_PASSWORD
@@ -21,4 +21,10 @@ export function vigilarConsola(page: Page): string[] {
   })
   page.on('pageerror', (e) => errores.push(e.message))
   return errores
+}
+
+/** Abre un selector (combobox) y elige la opción exacta. */
+export async function elegir(page: Page, selector: Locator, opcion: string) {
+  await selector.click()
+  await page.getByRole('option', { name: opcion, exact: true }).click()
 }

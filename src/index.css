@@ -158,3 +158,6 @@ body {
 /* Etiquetas y superficies con el color de un elemento (--k); el texto se mezcla con el del tema para mantener contraste */
 .chip-k { --k: var(--muted); display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%; border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); background: color-mix(in srgb, var(--k) 12%, var(--surface)); color: color-mix(in srgb, var(--k) 40%, var(--fg)); padding: 0.125rem 0.6rem; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; white-space: nowrap; }
 .tinte-k { --k: var(--muted); background: color-mix(in srgb, var(--k) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 30%, transparent); color: color-mix(in srgb, var(--k) 65%, var(--fg)); }
+
+/* Los disparadores globales de «Registrar gasto» se ocultan mientras un diálogo bloquea la pantalla. */
+body[data-scroll-locked] .fab-gasto { display: none; }
