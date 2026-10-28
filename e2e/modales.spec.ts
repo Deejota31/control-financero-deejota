@@ -3,7 +3,7 @@ import { expect, test } from './fixtures'
 import { email, iniciarSesion, password } from './helpers'
 
 const TAMANOS = [
-  { w: 360, h: 800 }, { w: 390, h: 844 }, { w: 768, h: 1024 }, { w: 1024, h: 768 }, { w: 1366, h: 768 }, { w: 1440, h: 900 }, { w: 844, h: 390 },
+  { w: 320, h: 640 }, { w: 375, h: 812 }, { w: 430, h: 932 }, { w: 640, h: 360 }, { w: 1920, h: 1080 }, { w: 360, h: 800 }, { w: 390, h: 844 }, { w: 768, h: 1024 }, { w: 1024, h: 768 }, { w: 1366, h: 768 }, { w: 1440, h: 900 }, { w: 844, h: 390 },
 ]
 
 /** Geometría real: los controles no rebasan la tarjeta, el cuerpo no se desplaza en horizontal y las acciones quedan dentro de la ventana. */

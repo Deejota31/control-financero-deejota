@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router'
 import { Alert } from '@/components/ui/Alert'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
-import { useEstadoPeriodo, useHoy } from '@/features/fondos/useEstadoPeriodo'
+import { useHoy } from '@/features/fondos/useHoy'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { resumirFondo, round2 } from '@/domain/fondos'
@@ -62,7 +62,6 @@ export function SaludPage() {
   const finMes = finDeMes(mes)
   const hoyZona = useHoy()
   const formato = usePerfil().data?.date_format ?? 'dd/MM/yyyy'
-  const estadoPeriodo = useEstadoPeriodo(mes, finMes, hoyZona)
   const desdeHist = sumarMeses(mes, -MESES_BASE)
 
   const catalogo = useCatalogo()
@@ -149,9 +148,9 @@ export function SaludPage() {
   const compromisosMes = totalCompromisos(analisis.delMes)
 
   return (
-    <div className="grid w-full min-w-0 items-start gap-6 xl:grid-cols-2 xl:[&>:not(section)]:col-span-2">
+    <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-2 xl:[&>:not(section)]:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="w-full max-w-md"><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} estado={estadoPeriodo} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></div>
+        <div className="w-full max-w-md"><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></div>
         <p className="max-w-2xl text-sm text-muted">Las cifras se calculan con tus gastos reales. Lo marcado como <b>Sugerencia</b> o <b>Estimación</b> es orientativo, no una certeza.</p>
       </div>
 

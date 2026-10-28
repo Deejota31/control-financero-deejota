@@ -226,10 +226,10 @@ export function TablaGastos(p: Props) {
       )}
       <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/40 px-4 py-3 text-sm">
         <span className="text-muted">Mostrando <b className="num text-fg">{(filtros.pagina - 1) * TAMANO_PAGINA + 1}–{Math.min(p.total, filtros.pagina * TAMANO_PAGINA)}</b> de <b className="num text-fg">{p.total}</b></span>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" disabled={filtros.pagina <= 1} onClick={() => p.onCambiar({ pagina: filtros.pagina - 1 })}><ChevronLeft className="size-4" aria-hidden="true" /> Anterior</Button>
-          <span className="num text-muted">Página {filtros.pagina} de {p.paginas}</span>
-          <Button variant="secondary" disabled={filtros.pagina >= p.paginas} onClick={() => p.onCambiar({ pagina: filtros.pagina + 1 })}>Siguiente <ChevronRight className="size-4" aria-hidden="true" /></Button>
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+          <Button variant="secondary" className="px-2.5 sm:px-4" disabled={filtros.pagina <= 1} onClick={() => p.onCambiar({ pagina: filtros.pagina - 1 })}><ChevronLeft className="size-4" aria-hidden="true" /> Anterior</Button>
+          <span className="num text-center text-xs text-muted sm:text-sm">Página {filtros.pagina} de {p.paginas}</span>
+          <Button variant="secondary" className="px-2.5 sm:px-4" disabled={filtros.pagina >= p.paginas} onClick={() => p.onCambiar({ pagina: filtros.pagina + 1 })}>Siguiente <ChevronRight className="size-4" aria-hidden="true" /></Button>
         </div>
       </nav>
     </div>

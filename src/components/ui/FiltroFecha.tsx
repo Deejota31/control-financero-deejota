@@ -1,13 +1,13 @@
 import * as Popover from '@radix-ui/react-popover'
 import { addDays, differenceInCalendarDays, endOfMonth, format, startOfMonth, subMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Lock } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
 import { formatMes, fromIso, toIso } from '@/lib/format'
 import { Button } from './Button'
 import { DatePicker } from './DatePicker'
-import { Pill } from './States'
+import { estadoDelMes, TEXTO_ESTADO, type EstadoMes } from '@/domain/periodo'
 
 /** «01 oct – 31 oct 2026» (con año en ambos extremos si difieren). */
 export function resumenPeriodo(desde: string, hasta: string): string {
@@ -22,7 +22,8 @@ const ultimo = (iso: string) => toIso(endOfMonth(fromIso(iso)))
 /** ¿El rango es exactamente un mes natural? */
 export const esMesNatural = (desde: string, hasta: string) => desde === primero(desde) && hasta === ultimo(desde)
 
-export type EstadoPeriodo = 'open' | 'closed' | null
+const COLOR_ESTADO: Record<EstadoMes, string> = { open: 'text-ok', closed: 'text-bad', future: 'text-pri' }
+const FONDO_ESTADO: Record<EstadoMes, string> = { open: 'bg-ok-soft', closed: 'bg-bad-soft', future: 'bg-pri-soft' }
 
 interface Props {
   /** «rango»: Desde/Hasta libres (Dashboard, Gastos). «mes»: solo períodos mensuales (Fondos: el presupuesto es mensual y no se prorratea). */
@@ -33,8 +34,6 @@ interface Props {
   /** Hoy en la zona horaria del usuario (yyyy-MM-dd). */
   hoy: string
   onAplicar: (desde: string, hasta: string) => void
-  /** Estado del período mostrado; null = no se indica. */
-  estado?: EstadoPeriodo
   /** Último mes (primer día) al que se puede avanzar. */
   maximo?: string
   className?: string
@@ -44,7 +43,7 @@ interface Props {
  * Selector de período compartido: flechas para ir al período anterior o siguiente, mes y año visibles, indicador de estado del período y un
  * popover con accesos rápidos y selección de fechas con calendario. Cambiar el período solo cambia lo que se consulta; no modifica registros.
  */
-export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, estado = null, maximo, className }: Props) {
+export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, maximo, className }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [d, setD] = useState(desde)
   const [h, setH] = useState(hasta)
@@ -52,6 +51,7 @@ export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, estad
   const [mesSel, setMesSel] = useState(primero(desde))
   const mesNatural = esMesNatural(desde, hasta)
   const etiqueta = mesNatural ? formatMes(desde) : resumenPeriodo(desde, hasta)
+  const estado: EstadoMes | null = mesNatural ? estadoDelMes(desde, hoy) : null
   const mesActual = primero(hoy)
   const tope = maximo ?? (modo === 'mes' ? mesActual : undefined)
 
@@ -69,11 +69,14 @@ export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, estad
 
   return (
     <div className={cn('flex min-w-0 items-center gap-2', className)}>
-      <div className="flex h-10 min-w-0 flex-1 items-center rounded-lg border border-line bg-surface">
-        <button type="button" aria-label={mesNatural ? 'Mes anterior' : 'Período anterior'} onClick={() => mover(-1)} className="grid h-full w-9 shrink-0 place-items-center rounded-l-lg text-muted hover:bg-surface-2 hover:text-fg"><ChevronLeft className="size-4" aria-hidden="true" /></button>
+      <div className="flex h-12 min-w-0 flex-1 items-center rounded-lg border border-line bg-surface">
+        <button type="button" aria-label={mesNatural ? 'Ir al mes anterior' : 'Ir al período anterior'} onClick={() => mover(-1)} className="grid h-full w-9 shrink-0 place-items-center rounded-l-lg text-muted hover:bg-surface-2 hover:text-fg"><ChevronLeft className="size-4" aria-hidden="true" /></button>
         <Popover.Root open={abierto} onOpenChange={abrir}>
           <Popover.Trigger asChild>
-            <button type="button" aria-label={`Período: ${etiqueta}`} className="num h-full min-w-0 flex-1 truncate px-1 text-center text-sm font-semibold hover:bg-surface-2">{etiqueta}</button>
+            <button type="button" aria-label={`Período: ${etiqueta}${estado ? ` · ${TEXTO_ESTADO[estado]}` : ''}`} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 hover:bg-surface-2">
+              <span className="num max-w-full truncate text-sm font-semibold leading-tight">{etiqueta}</span>
+              {estado ? <span className={cn('rounded-full px-2 text-[10.5px] font-semibold leading-4', COLOR_ESTADO[estado], FONDO_ESTADO[estado])}>{TEXTO_ESTADO[estado]}</span> : <span className="text-[10.5px] leading-4 text-muted">Rango personalizado</span>}
+            </button>
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content align="start" side="bottom" sideOffset={6} collisionPadding={12} aria-label="Elegir período" onEscapeKeyDown={(e) => e.stopPropagation()}
@@ -120,10 +123,8 @@ export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, estad
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
-        <button type="button" aria-label={mesNatural ? 'Mes siguiente' : 'Período siguiente'} disabled={siguienteBloqueado} onClick={() => mover(1)} className="grid h-full w-9 shrink-0 place-items-center rounded-r-lg text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-40"><ChevronRight className="size-4" aria-hidden="true" /></button>
+        <button type="button" aria-label={mesNatural ? 'Ir al mes siguiente' : 'Ir al período siguiente'} disabled={siguienteBloqueado} onClick={() => mover(1)} className="grid h-full w-9 shrink-0 place-items-center rounded-r-lg text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-40"><ChevronRight className="size-4" aria-hidden="true" /></button>
       </div>
-      {estado === 'open' && <Pill tone="ok" className="shrink-0 px-2 text-[11px]">Período abierto</Pill>}
-      {estado === 'closed' && <Pill tone="neutral" className="shrink-0 px-2 text-[11px]"><Lock className="size-3" aria-hidden="true" /> Período cerrado</Pill>}
     </div>
   )
 }

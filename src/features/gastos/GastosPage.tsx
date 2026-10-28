@@ -10,14 +10,14 @@ import { aCsv, descargar } from '@/lib/csv'
 import { mensajeDeError } from '@/lib/errors'
 import { formatSoles } from '@/lib/format'
 import { useDebounced } from '@/lib/useDebounced'
-import { opciones, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
+import { opciones, opcionesDistinguidas, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
 import { useFondos } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
 import { GastoForm, type ModoGasto } from './GastoForm'
 import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
-import { useEstadoPeriodo, useHoy } from '@/features/fondos/useEstadoPeriodo'
+import { useHoy } from '@/features/fondos/useHoy'
 import * as Popover from '@radix-ui/react-popover'
 import { useRegistroGasto } from './RegistroGasto'
 import { TablaGastos } from './TablaGastos'
@@ -134,7 +134,6 @@ export function GastosPage() {
 
   const pendiente = mut.anular.isPending || mut.restaurar.isPending
   const hoyZona = useHoy()
-  const estadoPeriodo = useEstadoPeriodo(filtros.desde, filtros.hasta, hoyZona)
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
@@ -155,11 +154,11 @@ export function GastosPage() {
 
       <BarraFiltros contador={nActivos + (filtros.medio ? 0 : 0)}
         acciones={hayFiltros ? <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" onClick={() => { setTexto(''); limpiar() }} className="shrink-0 px-2.5"><X className="size-4" aria-hidden="true" /></Button> : undefined}>
-        <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={filtros.desde} hasta={filtros.hasta} formato={formato} hoy={hoyZona} estado={estadoPeriodo} onAplicar={(d, h) => cambiar({ desde: d, hasta: h })} /></CeldaFiltro>
+        <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={filtros.desde} hasta={filtros.hasta} formato={formato} hoy={hoyZona} onAplicar={(d, h) => cambiar({ desde: d, hasta: h })} /></CeldaFiltro>
         <CeldaFiltro peso={1.2} min="9.5rem"><Combobox id="f-medio" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio de pago" onChange={(v) => cambiar({ medio: v ?? '' })} /></CeldaFiltro>
         <CeldaFiltro peso={0.8} min="6.5rem"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => cambiar({ ambito: v ?? '', categoria: '', subcategoria: '' })} /></CeldaFiltro>
-        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable options={opciones(categoriasFiltro, filtros.categoria)} placeholder="Categoría" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></CeldaFiltro>
-        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-sub" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable disabled={!filtros.categoria} options={opciones(subsFiltro, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable options={opcionesDistinguidas(categoriasFiltro, filtros.categoria, (c) => catalogo.ambitos.find((a) => a.id === c.ambito_id)?.name)} placeholder="Categoría" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-sub" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable disabled={!filtros.categoria} options={opcionesDistinguidas(subsFiltro, filtros.subcategoria, (x) => { const c = catalogo.categorias.find((k) => k.id === x.categoria_id); return c ? `${c.name} · ${catalogo.ambitos.find((a) => a.id === c.ambito_id)?.name ?? ''}` : undefined })} placeholder="Subcategoría" onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></CeldaFiltro>
         <CeldaFiltro peso={0.7} min="6rem"><Combobox id="f-tipo" aria-label="Tipo" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => cambiar({ tipo: (v ?? '') as FiltrosGastos['tipo'] })} /></CeldaFiltro>
         <CeldaFiltro peso={0.7} min="7.5rem"><Combobox id="f-estado" aria-label="Estado" value={filtros.estado} searchable={false} options={ESTADOS} onChange={(v) => cambiar({ estado: (v ?? 'active') as FiltrosGastos['estado'] })} /></CeldaFiltro>
         <CeldaFiltro peso={0} min="2.5rem">

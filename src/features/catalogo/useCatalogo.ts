@@ -59,6 +59,21 @@ export function opciones(
     .map((i) => ({ value: i.id, label: i.is_active ? i.name : `${i.name} (inactivo)`, icon: i.icon_key, color: i.color_css ?? i.color_token }))
 }
 
+/**
+ * Como `opciones`, pero distingue las entidades que comparten nombre. Varias categorías se llaman igual en ámbitos distintos (y varias
+ * subcategorías bajo categorías distintas): son registros diferentes con su propio ID, así que no se fusionan ni se ocultan; cuando un nombre
+ * se repite en la lista se le añade su contexto («Alimentación · Personal»). Con un solo elemento por nombre no cambia nada.
+ */
+export function opcionesDistinguidas<T extends { id: string; name: string; icon_key: string; color_token?: string | null; color_css?: string; is_active: boolean }>(
+  items: T[],
+  actual: string | null | undefined,
+  contexto: (item: T) => string | undefined,
+): ComboOption[] {
+  const veces = new Map<string, number>()
+  for (const i of items) veces.set(i.name, (veces.get(i.name) ?? 0) + 1)
+  return opciones(items.map((i) => ((veces.get(i.name) ?? 0) > 1 && contexto(i) ? { ...i, name: `${i.name} · ${contexto(i)}` } : i)), actual)
+}
+
 export interface CatalogoValores {
   name: string
   icon_key: string

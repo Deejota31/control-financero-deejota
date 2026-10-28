@@ -10,7 +10,7 @@ import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
 import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
 import { Combobox } from '@/components/ui/Combobox'
-import { useHoy } from './useEstadoPeriodo'
+import { useHoy } from './useHoy'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { DetalleFondo } from './DetalleFondo'
 import { cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
@@ -231,20 +231,22 @@ export function FondosPage() {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <BarraFiltros className="w-full md:w-[34rem]">
-          <CeldaFiltro peso={2} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} estado={cerrado ? 'closed' : 'open'} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
+      <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
+        <BarraFiltros className="w-full min-w-0 md:flex-1">
+          <CeldaFiltro peso={1.4} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
           {!cerrado && (
-            <CeldaFiltro peso={1} min="9rem">
+            <CeldaFiltro peso={0.8} min="9rem">
               <Combobox id="f-estado-fondos" aria-label="Estado" value={filtro} searchable={false} options={[{ value: 'activos', label: 'Activos' }, { value: 'inactivos', label: 'Inactivos' }, { value: 'todos', label: 'Todos' }]} onChange={(v) => setFiltro((v ?? 'activos') as typeof filtro)} />
             </CeldaFiltro>
           )}
+          <CeldaFiltro peso={3} min="12rem" completa>
+            <label className="flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri">
+              <Search className="size-4 shrink-0" aria-hidden="true" />
+              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" className="sin-anillo min-w-0 flex-1 bg-transparent text-sm text-fg placeholder:text-muted" />
+            </label>
+          </CeldaFiltro>
         </BarraFiltros>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <label className="flex h-10 w-60 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri">
-            <Search className="size-4 shrink-0" aria-hidden="true" />
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" className="sin-anillo min-w-0 flex-1 bg-transparent text-sm text-fg placeholder:text-muted" />
-          </label>
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
           {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
           {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
         </div>
