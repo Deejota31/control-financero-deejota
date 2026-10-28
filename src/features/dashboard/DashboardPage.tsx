@@ -1,6 +1,6 @@
 import { ArrowLeftRight, ArrowRight, Minus, Receipt, TrendingDown, TrendingUp, Trophy, Wallet, X } from 'lucide-react'
 import { useMemo, useState, type ComponentType } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
@@ -10,16 +10,13 @@ import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { diasEnRango, esMesCompleto, rangoAnterior, serieDiaria, variacion } from '@/domain/dashboard'
 import { hayCruzados, paramsGastos } from '@/domain/filtrosCruzados'
-import { resumirFondo, round2 } from '@/domain/fondos'
 import { resumirPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, toIso } from '@/lib/format'
 import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
-import { finDeMes, mesDeFecha, usePeriodo } from '@/features/fondos/useFondos'
 import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
-import { useEstadoLote, usePlantillas } from '@/features/gastos/usePlantillas'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { Dona, GraficoAcumulado, GraficoDiario, type PuntoGrafico, type SegmentoDona } from './Graficos'
 import { PresupuestoConsolidado } from './PresupuestoConsolidado'
@@ -28,7 +25,6 @@ import { useDashboardPanel } from './useDashboard'
 import { useFiltrosDashboard } from './useFiltrosDashboard'
 
 const HOY = toIso(new Date())
-const MES_ACTUAL = mesDeFecha(new Date())
 const TIPOS = [{ value: 'fixed', label: 'Fijo', icon: 'repeat' }, { value: 'variable', label: 'Variable', icon: 'tag' }]
 
 function Tarjeta({ titulo, descripcion, derecha, children, className, filtrada }: { titulo: string; descripcion?: string; derecha?: React.ReactNode; children: React.ReactNode; className?: string; filtrada?: boolean }) {
@@ -73,9 +69,6 @@ export function DashboardPage() {
   const perfil = usePerfil()
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const panelQ = useDashboardPanel(filtros, ant, valido)
-  const plantillasQ = usePlantillas()
-  const periodoActual = usePeriodo(MES_ACTUAL)
-  const loteQ = useEstadoLote(periodoActual.data?.id, MES_ACTUAL, finDeMes(MES_ACTUAL))
 
   const [topModo, setTopModo] = useState<'categorias' | 'subcategorias'>('categorias')
   const [hoverAmbito, setHoverAmbito] = useState<string | null>(null)
@@ -129,14 +122,6 @@ export function DashboardPage() {
   const listaTop = topModo === 'categorias' ? panel?.por_categoria : panel?.por_subcategoria
   const top = useMemo(() => (listaTop ?? []).slice(0, 5).map((t) => ({ ...t, total: Number(t.total), cantidad: Number(t.cantidad) })), [listaTop])
   const totalTop = useMemo(() => (listaTop ?? []).reduce((s, t) => s + Number(t.total), 0), [listaTop])
-  const recientes = panel?.recientes ?? []
-  const fondosLista = useMemo(() => [...(panel?.fondos ?? [])].sort((a, b) => Number(a.es_general) - Number(b.es_general) || a.prioridad - b.prioridad), [panel?.fondos])
-
-  const pendientes = useMemo(() => {
-    const activas = (plantillasQ.data ?? []).filter((p) => p.is_active)
-    const reg = loteQ.data?.registradas ?? new Set<string>()
-    return { activas: activas.length, pendientes: activas.filter((p) => !reg.has(p.id)).length }
-  }, [plantillasQ.data, loteQ.data])
 
   const irAGastos = () => navigate(`/gastos?${paramsGastos(filtros)}`)
 
@@ -202,8 +187,6 @@ export function DashboardPage() {
           </section>
 
           <PresupuestoConsolidado r={resumen} etiquetaPeriodo={etiquetaPeriodo} />
-
-          <AnalisisDashboard catalogo={catalogo} filtros={filtros} serie={panel?.serie ?? []} hoy={HOY} formato={formato} seleccionar={seleccionar} />
 
           <Tarjeta titulo="Gasto acumulado" filtrada={hayFiltrosSerie} descripcion={`${etiquetaPeriodo} · día a día${hayFiltrosSerie ? ' · solo el gasto que cumple los filtros' : ''} · selecciona un día para filtrar`}>
             <div className="flex flex-wrap gap-2">
@@ -318,56 +301,7 @@ export function DashboardPage() {
             </Tarjeta>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Tarjeta titulo="Consumo de fondos" descripcion={presupuesto !== null ? 'Períodos que toca el rango' : undefined} derecha={<Link to="/fondos" className="text-sm font-medium text-pri underline">Ver fondos</Link>}>
-              {fondosLista.length === 0 ? <p className="text-sm text-muted">Sin fondos activos.</p> : (
-                <ul className="flex flex-col gap-3">
-                  {fondosLista.map((f) => {
-                    const r = resumirFondo(round2(Number(f.asignado)), round2(Number(f.consumido)))
-                    const filtrado = Number(f.consumido_filtrado)
-                    return (
-                      <li key={f.fund_id}>
-                        <div className="flex justify-between gap-2 text-sm"><span className="truncate font-medium">{f.nombre}</span><span className={cn('num', r.disponible < 0 && 'text-bad')}>{formatSoles(r.disponible)}</span></div>
-                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label={`Consumo de ${f.nombre}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(r.pct))}>
-                          <div className={cn('h-full rounded-full', r.estado === 'negativo' ? 'bg-bad' : r.estado === 'ok' ? 'bg-pri' : 'bg-acc')} style={{ width: `${Math.min(100, r.pct)}%` }} />
-                        </div>
-                        {cruzados && <p className="mt-0.5 text-xs text-muted">Con filtros actuales: <span className="num">{formatSoles(filtrado)}</span></p>}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-              {Number(panel?.excedente ?? 0) > 0 && <p className="rounded-lg bg-acc-soft px-3 py-2 text-sm text-warn">Excedente absorbido por el Fondo General: <b className="num">{formatSoles(Number(panel?.excedente ?? 0))}</b></p>}
-            </Tarjeta>
-
-            <Tarjeta titulo="Gastos recientes" filtrada={cruzados} derecha={<Link to={`/gastos?${paramsGastos(filtros)}`} className="text-sm font-medium text-pri underline">Ver todos</Link>}>
-              {recientes.length === 0 ? <p className="text-sm text-muted">No hay movimientos con estos filtros.</p> : (
-                <ul className="divide-y divide-line">
-                  {recientes.map((g) => {
-                    const cat = catalogo.categorias.find((c) => c.id === g.categoria_id)
-                    return (
-                      <li key={g.id} className="flex items-center gap-3 py-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={cat?.icon_key} color={cat?.color_css} /></span>
-                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{g.description}</span><span className="block text-xs text-muted">{formatFecha(g.expense_date, formato)} · {cat?.name}</span></span>
-                        <span className="num text-sm font-medium">{formatSoles(Number(g.amount))}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </Tarjeta>
-
-            <Tarjeta titulo="Gastos mensuales" descripcion={`Plantillas de ${formatMes(MES_ACTUAL)}`}>
-              {pendientes.activas === 0 ? (
-                <p className="text-sm text-muted">Aún no tienes plantillas. Crea una para registrar tus gastos fijos en un paso.</p>
-              ) : pendientes.pendientes > 0 ? (
-                <p className="text-sm"><b>{pendientes.pendientes}</b> de {pendientes.activas} plantillas pendientes de registrar este mes.</p>
-              ) : (
-                <p className="text-sm text-ok">Todas las plantillas de este mes ya están registradas.</p>
-              )}
-              <Button variant="secondary" onClick={() => navigate('/gastos?lote=1')} className="w-fit">Registrar mensuales</Button>
-            </Tarjeta>
-          </div>
+          <AnalisisDashboard catalogo={catalogo} filtros={filtros} serie={panel?.serie ?? []} hoy={HOY} formato={formato} seleccionar={seleccionar} />
         </div>
       )}
     </div>

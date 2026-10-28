@@ -39,7 +39,7 @@ test.describe('Dashboard', () => {
     for (const t of ['Gasto del período', 'Movimientos', 'Variación vs período anterior', 'Mayor gasto']) await expect(kpi(page, t)).toBeVisible()
     for (const t of ['Presupuesto asignado', 'Gastado del período', 'Disponible consolidado', 'Exceso sobre el presupuesto']) await expect(page.getByText(t, { exact: true })).toBeVisible()
     await expect(page.getByText(/Cierre proyectado \(estimación\)/)).toBeVisible()
-    for (const h of ['Presupuesto consolidado', 'Gasto acumulado', 'Distribución por ámbito', 'Top 5 categorías', 'Consumo de fondos', 'Gastos recientes', 'Gastos mensuales']) {
+    for (const h of ['Presupuesto consolidado', 'Gasto acumulado', 'Distribución por ámbito', 'Top 5 categorías', 'Perfil de gasto', 'Ranking con tendencia']) {
       await expect(page.getByRole('heading', { name: h })).toBeVisible()
     }
     await expect(page.locator('.recharts-surface').first()).toBeVisible()
@@ -253,15 +253,12 @@ test.describe('Dashboard', () => {
     await expect(page.getByText('La fecha inicial es posterior a la final. Ajusta el rango.')).toBeVisible()
   })
 
-  test('accesos rápidos: registrar gasto y registrar mensuales', async ({ page }) => {
+  test('acceso rápido: registrar gasto desde el Dashboard sin salir de él', async ({ page }) => {
     await iniciarSesion(page)
     await page.locator('button.fab-gasto:visible').click()
     await expect(page).toHaveURL(/\/$/) // el formulario global se abre sin salir del dashboard
     await expect(page.getByRole('dialog', { name: 'Nuevo gasto' })).toBeVisible()
     await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click()
-    await page.getByRole('link', { name: 'Dashboard' }).first().click()
-    await page.getByRole('button', { name: 'Registrar mensuales' }).click()
-    await expect(page.getByRole('dialog', { name: 'Registrar gastos mensuales' })).toBeVisible()
   })
 
   test('un gasto nuevo en Gastos se refleja en los KPIs del Dashboard y al anularlo vuelve', async ({ page }) => {

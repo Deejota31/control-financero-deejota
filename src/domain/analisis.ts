@@ -1,6 +1,6 @@
 /**
  * Cálculos de los gráficos de análisis del Dashboard. Son funciones puras: reciben filas agregadas (RPC `dashboard_analisis`) y los mismos
- * filtros cruzados del panel, así ranking, perfil y flujo comparten reglas y números con los KPIs.
+ * filtros cruzados del panel, así ranking y perfil comparten reglas y números con los KPIs.
  */
 export type Dim = 'ambito' | 'categoria' | 'subcategoria' | 'medio'
 
@@ -14,8 +14,6 @@ export interface FilaAnalisis {
   tipo: 'fixed' | 'variable' | string
   monto: number
   cantidad?: number
-  /** Solo en las filas de flujo: fondo imputado (null = sin asignar). */
-  fund_id?: string | null
 }
 
 export interface FiltrosAnalisis {
@@ -120,46 +118,4 @@ export function perfil(r: ResultadoRanking, historico: FilaAnalisis[], dim: Dim,
   })
   const mayor = Math.max(10, ...ejes.flatMap((e) => [e.pct, e.ref ?? 0]))
   return { ejes, max: Math.ceil(mayor / 10) * 10 }
-}
-
-export interface Flujo {
-  ambitos: { id: string; monto: number }[]
-  fondos: { id: string | null; monto: number }[]
-  medios: { id: string; monto: number }[]
-  /** Importe ámbito → fondo, clave `${ambito}|${fondo ?? 'sin'}`. */
-  aF: Map<string, number>
-  /** Importe fondo → medio, clave `${fondo ?? 'sin'}|${medio}`. */
-  fM: Map<string, number>
-  total: number
-}
-
-/**
- * Flujo ámbito → fondo → medio desde las imputaciones reales (todos los filtros cruzados). Un gasto repartido aparece una vez por fondo con
- * su importe imputado, así el total coincide con el gasto; lo no imputado va a «Sin asignar» (fondo null). Los nodos se distinguen por tipo.
- */
-export function flujo(filas: FilaAnalisis[], f: FiltrosAnalisis): Flujo {
-  const fs = filtrar(filas, f)
-  const A = new Map<string, number>(), F = new Map<string, number>(), M = new Map<string, number>(), aF = new Map<string, number>(), fM = new Map<string, number>()
-  const add = (m: Map<string, number>, k: string, v: number) => m.set(k, round2((m.get(k) ?? 0) + v))
-  for (const r of fs) {
-    const fk = r.fund_id ?? 'sin'
-    add(A, r.ambito_id, r.monto); add(F, fk, r.monto); add(M, r.medio_id, r.monto)
-    add(aF, `${r.ambito_id}|${fk}`, r.monto); add(fM, `${fk}|${r.medio_id}`, r.monto)
-  }
-  const ord = <T extends { monto: number }>(a: T[]) => a.sort((x, y) => y.monto - x.monto)
-  return {
-    ambitos: ord([...A].map(([id, monto]) => ({ id, monto }))),
-    fondos: ord([...F].map(([id, monto]) => ({ id: id === 'sin' ? null : id, monto }))),
-    medios: ord([...M].map(([id, monto]) => ({ id, monto }))),
-    aF, fM, total: round2([...A.values()].reduce((s, v) => s + v, 0)),
-  }
-}
-
-/** Recorridos que pasan por un fondo: solo sus conexiones y los ámbitos/medios que realmente llegan o salen de él. */
-export function recorridosDe(fl: Flujo, fondo: string | null): { ambitos: Set<string>; medios: Set<string>; aF: Set<string>; fM: Set<string> } {
-  const fk = fondo ?? 'sin'
-  const out = { ambitos: new Set<string>(), medios: new Set<string>(), aF: new Set<string>(), fM: new Set<string>() }
-  for (const k of fl.aF.keys()) { const [a, f] = k.split('|'); if (f === fk) { out.aF.add(k); out.ambitos.add(a) } }
-  for (const k of fl.fM.keys()) { const [f, m] = k.split('|'); if (f === fk) { out.fM.add(k); out.medios.add(m) } }
-  return out
 }

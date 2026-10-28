@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filtrar, flujo, perfil, ranking, recorridosDe, seisMeses, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
+import { filtrar, perfil, ranking, seisMeses, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
 
 const SIN: FiltrosAnalisis = { ambito: '', categoria: '', subcategoria: '', medio: '', tipo: '', dia: '' }
 const f = (o: Partial<FilaAnalisis> & { monto: number }): FilaAnalisis => ({ ambito_id: 'A1', categoria_id: 'C1', subcategoria_id: null, medio_id: 'M1', tipo: 'variable', cantidad: 1, ...o })
@@ -71,31 +71,5 @@ describe('perfil', () => {
     expect(p.ejes[0].pct).toBe(60)
     expect(p.ejes[0].ref).toBe(50)
     expect(p.max).toBe(60)
-  })
-})
-
-describe('flujo', () => {
-  const filas = [
-    f({ monto: 74.5, fund_id: 'F1', ambito_id: 'A1', medio_id: 'M1' }),
-    f({ monto: 15.5, fund_id: 'FG', ambito_id: 'A1', medio_id: 'M1' }),
-    f({ monto: 20, fund_id: 'F1', ambito_id: 'A2', medio_id: 'M2' }),
-    f({ monto: 5, fund_id: null, ambito_id: 'A2', medio_id: 'M1' }),
-  ]
-  it('no duplica gastos repartidos: el total es la suma de lo imputado más lo sin asignar', () => {
-    const x = flujo(filas, SIN)
-    expect(x.total).toBe(115)
-    expect(x.fondos.find((n) => n.id === null)?.monto).toBe(5) // Sin asignar
-    expect(x.ambitos.find((n) => n.id === 'A1')?.monto).toBe(90)
-  })
-  it('seleccionar un fondo resalta solo los recorridos que pasan por él', () => {
-    const x = flujo(filas, SIN)
-    const r = recorridosDe(x, 'F1')
-    expect([...r.ambitos].sort()).toEqual(['A1', 'A2'])
-    expect([...r.medios].sort()).toEqual(['M1', 'M2'])
-    expect(r.aF.has('A1|FG')).toBe(false) // el fondo ajeno no se resalta aunque comparta ámbito y medio
-    expect(r.fM.has('FG|M1')).toBe(false)
-  })
-  it('aplica los filtros cruzados', () => {
-    expect(flujo(filas, { ...SIN, ambito: 'A2' }).total).toBe(25)
   })
 })

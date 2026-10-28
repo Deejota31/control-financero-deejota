@@ -92,6 +92,7 @@ test.describe('Accesibilidad (axe)', () => {
       await auditar(page, `selector abierto (${tema})`)
       await page.keyboard.press('Escape')
       await d.getByRole('button', { name: 'Cancelar' }).click()
+      if (await page.getByRole('button', { name: 'Descartar cambios' }).isVisible({ timeout: 800 }).catch(() => false)) await page.getByRole('button', { name: 'Descartar cambios' }).click()
 
       // Calendario
       await page.getByRole('button', { name: 'Nuevo gasto' }).click()
