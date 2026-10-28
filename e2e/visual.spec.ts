@@ -94,8 +94,9 @@ test.describe('Revisión visual y de accesibilidad', () => {
     await page.keyboard.press('ArrowDown')
     await page.keyboard.press('Enter')
     await expect(dialogo.getByRole('combobox', { name: 'Ámbito', exact: true })).toContainText('Hogar')
-    // El foco queda dentro del diálogo y Escape lo cierra
+    // El foco queda dentro del diálogo; con cambios sin guardar Escape pide confirmar y descartar lo cierra
     await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Descartar cambios' }).click()
     await expect(dialogo).toBeHidden()
     await expect(page.getByRole('button', { name: 'Nuevo gasto' })).toBeFocused()
   })

@@ -50,3 +50,9 @@
 | Registro global de gastos | Un único `GastoForm` montado por `RegistroGastoProvider`: el + central (móvil) y el botón flotante (escritorio) lo abren sin cambiar de ruta; se ocultan con un diálogo abierto. |
 | Tabla o tarjetas según el ancho real | Fondos usa consultas de contenedor y Gastos mide el contenedor (un solo DOM a la vez); la barra lateral es compacta entre 1024 y 1279 px y la inferior cubre hasta 1023 px. |
 | Módulos con carga diferida | Cada página se importa bajo demanda; el paquete inicial pasó de 1,61 MB (467 kB gzip) a 278 kB (87 kB gzip). |
+| Barra lateral con dos modos | `BarraLateral` + `useBarraLateral`: expandida/compacta con tooltips, preferencia separada para escritorio y pantallas medianas (no se pisan), animación que respeta movimiento reducido. |
+| Colores: paleta de 36 y selector compartido | `SelectorColor`/`ColorCompacto`; `is_valid_color` admite #RRGGBB, así los fondos guardan color libre en `color_token`. Subcategorías: `color_mode` (inherit/own) con color efectivo dinámico. |
+| Armonizar con selección | `ArmonizarDialog` previsualiza color actual y propuesto, deja escoger y avisa antes de pasar elementos de heredado a propio. La propuesta depende solo de la posición en la lista. |
+| Vista previa por período de cambios en fondos | `preview_fund_change` ejecuta la operación real dentro de un bloque que siempre se revierte y devuelve asignado/consumo por período abierto y fondo. |
+| Análisis del Dashboard en una fila | Calendario, perfil y ranking (`dashboard_analisis`): los filtros cruzados se aplican en el cliente para que cada gráfico excluya su propia dimensión. El gráfico de flujo se retiró a petición. |
+| Gastos imputados | `DetalleFondo`: el reparto sale de las imputaciones guardadas; el motivo solo se explica cuando hay información real (sin reconstruir reglas históricas). |

@@ -46,6 +46,9 @@ export const TOKEN_HEX: Record<string, string> = {
   c1: '#3A3FA6', c2: '#E0622F', c3: '#1E8A8A', c4: '#A8478F', c5: '#8A8A2E', pri: '#3A3FA6', acc: '#B4411F', muted: '#58587A',
 }
 
+/** Nombres de los colores heredados de antes (tokens), para no mostrarlos como «Personalizado». */
+const NOMBRE_TOKEN: Record<string, string> = { '#3a3fa6': 'Índigo clásico', '#e0622f': 'Naranja', '#1e8a8a': 'Verde azulado', '#a8478f': 'Magenta', '#8a8a2e': 'Oliva', '#b4411f': 'Terracota', '#58587a': 'Gris pizarra' }
+
 export type Rgb = [number, number, number]
 export type Tema = 'claro' | 'oscuro'
 
@@ -132,7 +135,8 @@ export function tonos(hex: string, tema: Tema): Tonos | null {
 }
 
 export function nombreDeColor(hex: string): string {
-  return PALETA.find((c) => c.hex.toLowerCase() === hex.toLowerCase())?.nombre ?? 'Personalizado'
+  const h = hex.toLowerCase()
+  return PALETA.find((c) => c.hex.toLowerCase() === h)?.nombre ?? NOMBRE_TOKEN[h] ?? 'Personalizado'
 }
 
 interface ConColor { color_hex?: string | null; color_token?: string | null }

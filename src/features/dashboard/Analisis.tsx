@@ -252,7 +252,7 @@ function Ranking({ r, dim, info, ctx, filtros, seleccionar, cargando, error }: {
                   <button type="button" aria-pressed={sel} onClick={() => seleccionar(dim, it.id)}
                     className={cn('grid w-full grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-2', sel && 'bg-pri-soft ring-1 ring-pri')}>
                     <span className="num text-[11px] font-semibold text-muted">{i + 1}</span>
-                    <span className="flex min-w-0 items-center gap-1.5"><ItemIcon name={x?.icon_key} color={x?.color_css} className="size-3.5 shrink-0" /><span className="min-w-0 truncate text-xs font-medium">{x?.name ?? 'Sin nombre'}{dup && cx && <span className="font-normal text-muted"> · {cx}</span>}</span></span>
+                    <span className="flex min-w-0 items-center gap-1.5"><ItemIcon name={x?.icon_key} color={x?.color_css} className="size-3.5 shrink-0" /><span className="min-w-0 truncate text-xs font-medium">{x?.name ?? 'Sin nombre'}</span>{dup && cx && <span className="shrink-0 text-[10px] text-muted">· {cx}</span>}</span>
                     <span className="flex items-center gap-1.5"><Spark v={it.serie} color={col} /><span className="num text-xs font-semibold">{formatSoles(it.monto)}</span></span>
                     <span />
                     <span className="h-1.5 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(2, it.pct)}%`, background: col }} /></span>
