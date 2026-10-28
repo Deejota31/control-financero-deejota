@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Area, CartesianGrid, ComposedChart, Line, Pie, PieChart, ReferenceLine, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, Bar, BarChart, CartesianGrid, ComposedChart, Line, Pie, PieChart, Rectangle, ReferenceLine, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from 'recharts'
 import { TarjetaFlotante, FilaHint } from '@/components/ui/Hint'
 import type { PuntoDiario } from '@/domain/dashboard'
 import { cn } from '@/lib/cn'
-import { formatFecha, formatMes, formatSoles, formatSolesCorto } from '@/lib/format'
+import { formatFecha, formatSoles, formatSolesCorto } from '@/lib/format'
 
 const EJE = { fill: 'var(--muted)', fontSize: 12 }
 
@@ -15,17 +15,12 @@ interface TooltipProps {
   formato: string
   /** El ritmo ideal solo es comparable con el acumulado cuando no hay filtros cruzados. */
   mostrarIdeal: boolean
-  /** Serie completa: sirve para calcular qué parte del mes representa el día. */
-  serie: PuntoGrafico[]
 }
 
-/** Tooltip del gráfico temporal: gasto del día, su peso en el mes, acumulado y ritmo ideal. */
-function TooltipDia({ active, payload, formato, mostrarIdeal, serie }: TooltipProps) {
+/** Tooltip de los gráficos temporales (acumulado y diario). */
+function TooltipDia({ active, payload, formato, mostrarIdeal }: TooltipProps) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
-  const mes = p.fecha.slice(0, 7)
-  const totalMes = serie.filter((x) => x.fecha.startsWith(mes)).reduce((t, x) => t + x.gasto, 0)
-  const nombreMes = formatMes(p.fecha).split(' ')[0]
   const dif = mostrarIdeal && p.acumulado !== null && p.ideal !== null ? p.acumulado - p.ideal : null
   return (
     <TarjetaFlotante className="min-w-52">
@@ -33,7 +28,6 @@ function TooltipDia({ active, payload, formato, mostrarIdeal, serie }: TooltipPr
       <div className="flex flex-col gap-0.5">
         <FilaHint etiqueta="Gasto del día" valor={formatSoles(p.gasto)} destacado />
         <FilaHint etiqueta="Movimientos" valor={p.cantidad} />
-        {totalMes > 0 && <FilaHint etiqueta={`% de ${nombreMes}`} valor={`${((p.gasto / totalMes) * 100).toFixed(1)} % de ${formatSoles(totalMes)}`} />}
         {p.acumulado !== null && <FilaHint etiqueta="Acumulado" valor={formatSoles(p.acumulado)} />}
         {mostrarIdeal && p.ideal !== null && <FilaHint etiqueta="Ritmo ideal" valor={formatSoles(p.ideal)} />}
         {dif !== null && <FilaHint etiqueta={dif > 0 ? 'Por encima del ideal' : 'Por debajo del ideal'} valor={<span className={dif > 0 ? 'text-bad' : 'text-ok'}>{formatSoles(Math.abs(dif))}</span>} />}
@@ -68,12 +62,38 @@ export function GraficoAcumulado({ serie, formato, dia, onDia, mostrarIdeal, res
           <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} />
-          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} serie={serie} />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
+          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
           <Area type="monotone" dataKey="acumulado" stroke="var(--c1)" strokeWidth={2.5} fill="var(--c1)" fillOpacity={0.12} connectNulls={false} dot={false} activeDot={{ r: 6, stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} name="Gasto acumulado" />
           {mostrarIdeal && <Line type="linear" dataKey="ideal" stroke="var(--muted)" strokeWidth={2} strokeDasharray="1 5" strokeLinecap="round" dot={false} activeDot={false} isAnimationActive={false} name="Ritmo ideal" />}
           <Line type="linear" dataKey="proyeccion" stroke="var(--c2)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Proyección de cierre" />
           {dia && <ReferenceLine x={dia} stroke="var(--pri)" strokeWidth={2} label={{ value: tickDia(dia), position: 'top', fill: 'var(--pri)', fontSize: 11 }} />}
         </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+export function GraficoDiario({ serie, formato, dia, onDia }: Omit<GraficoTemporalProps, 'mostrarIdeal'>) {
+  return (
+    <div role="img" aria-label="Gasto por día del período. Selecciona una barra para filtrar por ese día." className="h-36 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={serie} margin={{ top: 4, right: 12, bottom: 0, left: 0 }} onClick={(s) => { const f = diaDeEstado(s, serie); if (f) onDia(f) }} style={{ cursor: 'pointer' }}>
+          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
+          <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} tickCount={3} />
+          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={false} />} cursor={{ fill: 'var(--surface-2)' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
+          <Bar
+            dataKey="gasto"
+            name="Gasto diario"
+            isAnimationActive={false}
+            shape={(p: unknown) => {
+              const props = p as { x: number; y: number; width: number; height: number; payload: PuntoGrafico }
+              const seleccionada = dia === props.payload.fecha
+              return <Rectangle {...props} radius={[3, 3, 0, 0]} fill={seleccionada ? 'var(--pri)' : 'var(--c1)'} fillOpacity={dia && !seleccionada ? 0.35 : 1} />
+            }}
+          />
+          {dia && <ReferenceLine x={dia} stroke="var(--pri)" strokeWidth={2} strokeDasharray="3 3" />}
+        </BarChart>
       </ResponsiveContainer>
     </div>
   )

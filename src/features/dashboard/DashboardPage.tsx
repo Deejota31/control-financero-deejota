@@ -18,7 +18,7 @@ import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { usePerfil } from '@/features/perfil/usePerfil'
-import { Dona, GraficoAcumulado, type PuntoGrafico, type SegmentoDona } from './Graficos'
+import { Dona, GraficoAcumulado, GraficoDiario, type PuntoGrafico, type SegmentoDona } from './Graficos'
 import { PresupuestoConsolidado } from './PresupuestoConsolidado'
 import { SelectorPeriodo } from './SelectorPeriodo'
 import { useDashboardPanel } from './useDashboard'
@@ -199,6 +199,10 @@ export function DashboardPage() {
               <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-[var(--c1)]" /> Gasto acumulado</span>
               {proyeccion !== null && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'var(--c2)' }} /> Proyección de cierre</span>}
               {!hayFiltrosSerie && presupuesto !== null && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dotted" style={{ borderColor: 'var(--muted)' }} /> Ritmo ideal</span>}
+            </div>
+            <div className="border-t border-line pt-3">
+              <p className="mb-1 text-sm font-semibold">Gasto diario</p>
+              <GraficoDiario serie={serie} formato={formato} dia={filtros.dia || null} onDia={(f) => seleccionar('dia', f)} />
             </div>
             {filtros.dia && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-2 text-sm" role="status">
