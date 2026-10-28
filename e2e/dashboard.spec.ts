@@ -87,11 +87,12 @@ test.describe('Dashboard', () => {
 
   test('seleccionar un día con el gráfico filtra todo el panel y se quita con Limpiar filtros', async ({ page }) => {
     await iniciarSesion(page)
-    // gráfico de barras: clic dentro del área de datos
-    const barras = page.getByRole('img', { name: /^Gasto por día/ })
+    // gráfico acumulado: clic dentro del área de datos (el gráfico de barras diario se retiró: el calendario cubre ese detalle)
+    const barras = page.getByRole('img', { name: /^Gasto acumulado de/ })
     await barras.scrollIntoViewIfNeeded()
     const caja = (await barras.boundingBox())!
     await page.mouse.move(caja.x + caja.width * 0.12, caja.y + caja.height * 0.5, { steps: 6 })
+    await expect(page.getByRole('tooltip').or(page.getByText('% de ')).first()).toBeVisible()
     await page.mouse.down()
     await page.mouse.up()
     await expect(page.getByRole('button', { name: /^Día: \d{2}\/\d{2}\/\d{4}/ })).toBeVisible()
