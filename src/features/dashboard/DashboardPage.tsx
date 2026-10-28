@@ -301,7 +301,7 @@ export function DashboardPage() {
             </Tarjeta>
           </div>
 
-          <AnalisisDashboard catalogo={catalogo} filtros={filtros} serie={panel?.serie ?? []} hoy={HOY} formato={formato} seleccionar={seleccionar} />
+          <AnalisisDashboard catalogo={catalogo} filtros={filtros} hoy={HOY} seleccionar={seleccionar} />
         </div>
       )}
     </div>

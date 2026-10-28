@@ -5,7 +5,7 @@ import { ItemIcon } from '@/components/ui/ItemIcon'
 import { perfil, ranking, type Dim, type FilaAnalisis, type FiltrosAnalisis } from '@/domain/analisis'
 import type { ClaveFiltro } from '@/domain/filtrosCruzados'
 import { cn } from '@/lib/cn'
-import { formatFecha, formatFechaLarga, formatSoles, formatSolesCorto } from '@/lib/format'
+import { formatSoles, formatSolesCorto } from '@/lib/format'
 import { colorVar } from '@/lib/icons'
 import { supabase } from '@/lib/supabase'
 import type { Catalogo } from '@/features/catalogo/useCatalogo'
@@ -28,10 +28,7 @@ export function useAnalisis(desde: string, hasta: string, habilitado: boolean) {
 interface Props {
   catalogo: Catalogo
   filtros: FiltrosAnalisis & { desde: string; hasta: string }
-  /** Serie diaria del panel (con todos los filtros salvo el día). */
-  serie: { fecha: string; monto: number; cantidad: number }[]
   hoy: string
-  formato: string
   seleccionar: (clave: ClaveFiltro, valor: string) => void
 }
 
@@ -40,10 +37,10 @@ type Info = (d: Dim, id: string) => { name: string; icon_key: string; color_css?
 type Ctx = (d: Dim, id: string) => string | undefined
 
 /**
- * Análisis conectado en una fila: calendario, perfil y ranking comparten los filtros cruzados del Dashboard. Cursor o foco muestran el
+ * Análisis conectado en una fila: perfil y ranking comparten los filtros cruzados del Dashboard. Cursor o foco muestran el
  * detalle en una tarjeta flotante; clic o toque selecciona y filtra todo el panel. No se abre ninguna modal al seleccionar.
  */
-export function AnalisisDashboard({ catalogo, filtros, serie, hoy, formato, seleccionar }: Props) {
+export function AnalisisDashboard({ catalogo, filtros, hoy, seleccionar }: Props) {
   const q = useAnalisis(filtros.desde, filtros.hasta, filtros.desde <= filtros.hasta)
   const [dim, setDim] = useState<Dim>('categoria')
 
@@ -63,8 +60,7 @@ export function AnalisisDashboard({ catalogo, filtros, serie, hoy, formato, sele
   const p = useMemo(() => (datos && r ? perfil(r, datos.historico, dim, filtros) : null), [datos, r, dim, filtros])
 
   return (
-    <section aria-label="Análisis conectado" className="grid gap-4 lg:grid-cols-3">
-      <Calendario serie={serie} filtros={filtros} hoy={hoy} formato={formato} seleccionar={seleccionar} />
+    <section aria-label="Análisis conectado" className="grid gap-4 lg:grid-cols-2">
       <Perfil p={p} r={r} dim={dim} setDim={setDim} info={info} ctx={ctx} cargando={q.isPending} />
       <Ranking r={r} dim={dim} info={info} ctx={ctx} filtros={filtros} seleccionar={seleccionar} cargando={q.isPending} error={q.isError} />
     </section>
@@ -88,59 +84,6 @@ function Chips({ dim, setDim }: { dim: Dim; setDim: (d: Dim) => void }) {
     <div role="group" aria-label="Agrupar por" className="flex flex-wrap gap-1">
       {DIMS.map((d) => <button key={d.v} type="button" aria-pressed={dim === d.v} onClick={() => setDim(d.v)} className={cn('rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors', dim === d.v ? 'border-pri bg-pri-soft text-pri' : 'border-line text-muted hover:bg-surface-2')}>{d.l}</button>)}
     </div>
-  )
-}
-
-/* ------------------------------- Calendario ------------------------------- */
-
-function Calendario({ serie, filtros, hoy, formato, seleccionar }: Pick<Props, 'serie' | 'filtros' | 'hoy' | 'formato' | 'seleccionar'>) {
-  const [y, m] = filtros.hasta.split('-').map(Number)
-  const primero = new Date(Date.UTC(y, m - 1, 1)), dias = new Date(Date.UTC(y, m, 0)).getUTCDate()
-  const offset = (primero.getUTCDay() + 6) % 7 // lunes = 0
-  const prefijo = `${y}-${String(m).padStart(2, '0')}-`
-  const delMes = serie.filter((s) => s.fecha.startsWith(prefijo))
-  const porDia = new Map(delMes.map((s) => [s.fecha, s]))
-  const totalMes = delMes.reduce((s, x) => s + Number(x.monto), 0)
-  const max = Math.max(1, ...delMes.map((x) => Number(x.monto))) // escala estable: depende del mes y de los filtros de clasificación, no del día elegido
-  const mesTxt = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(primero)
-  const celdas = [...Array.from({ length: offset }, () => null), ...Array.from({ length: dias }, (_, i) => i + 1)]
-
-  return (
-    <Caja titulo={`Calendario · ${mesTxt}`} nota="Más intenso = más gasto ese día.">
-      <div role="group" aria-label={`Días de ${mesTxt}`} className="grid grid-cols-7 gap-[3px]">
-        {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d) => <span key={d} aria-hidden="true" className="text-center text-[10px] font-semibold text-muted">{d}</span>)}
-        {celdas.map((d, i) => {
-          if (d === null) return <span key={`v${i}`} aria-hidden="true" />
-          const fecha = `${prefijo}${String(d).padStart(2, '0')}`
-          const dato = porDia.get(fecha), monto = Number(dato?.monto ?? 0), futuro = fecha > hoy, sel = filtros.dia === fecha
-          const nivel = monto > 0 ? 20 + (monto / max) * 70 : 0
-          const boton = (
-            <button type="button" disabled={futuro} aria-pressed={sel}
-              aria-label={`Día ${d} (${formatFecha(fecha, formato)}): ${futuro ? 'aún no ocurre' : monto > 0 ? formatSoles(monto) : 'sin gasto'}${sel ? ', seleccionado' : ''}`}
-              onClick={() => seleccionar('dia', fecha)}
-              className={cn('grid aspect-square w-full place-items-center rounded-md border text-[11px] font-semibold transition-transform', futuro ? 'border-dashed border-line text-muted/40' : monto === 0 ? 'border-line text-muted hover:bg-surface-2' : 'border-transparent hover:z-10 hover:scale-110 hover:shadow-md', monto > 0 && nivel > 62 ? 'text-white' : 'text-fg', sel && 'ring-2 ring-fg ring-offset-1 ring-offset-surface')}
-              style={nivel ? { background: `color-mix(in srgb, var(--pri) ${nivel}%, var(--surface))` } : undefined}>{d}</button>
-          )
-          if (futuro) return <span key={fecha}>{boton}</span>
-          return (
-            <Hint key={fecha} side="top" contenido={
-              <div className="flex min-w-44 flex-col gap-0.5">
-                <p className="mb-1 font-display font-bold first-letter:uppercase">{formatFechaLarga(fecha)}</p>
-                <FilaHint etiqueta="Gasto" valor={monto > 0 ? formatSoles(monto) : 'Sin gasto'} destacado />
-                {monto > 0 && <><FilaHint etiqueta="Movimientos" valor={String(dato?.cantidad ?? 0)} /><FilaHint etiqueta={`% de ${new Intl.DateTimeFormat('es-PE', { month: 'long', timeZone: 'UTC' }).format(primero)}`} valor={`${((monto / Math.max(totalMes, 1)) * 100).toFixed(1)} % de ${formatSoles(totalMes)}`} /></>}
-                <p className="mt-1 text-[11px] text-muted">{sel ? 'Clic para quitar el día' : 'Clic para filtrar todo el panel'}</p>
-              </div>}>{boton}</Hint>
-          )
-        })}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted" aria-label="Leyenda">
-        <span className="inline-flex items-center gap-1">menos<span aria-hidden="true" className="h-2.5 w-14 rounded" style={{ background: 'linear-gradient(to right, color-mix(in srgb, var(--pri) 20%, var(--surface)), var(--pri))' }} />más</span>
-        <span className="inline-flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm border border-line" />sin gasto</span>
-        <span className="inline-flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm border border-dashed border-line" />futuro</span>
-        <span className="inline-flex items-center gap-1"><span aria-hidden="true" className="size-2.5 rounded-sm ring-2 ring-fg" />elegido</span>
-        <span className="num">máx. {formatSoles(max)}</span>
-      </div>
-    </Caja>
   )
 }
 

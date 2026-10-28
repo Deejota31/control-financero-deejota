@@ -4,19 +4,19 @@ import { email, iniciarSesion, password, vigilarConsola } from './helpers'
 test.describe('Análisis conectado del Dashboard', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
-  test('calendario, perfil y ranking van en una fila al final, tras Distribución y Top 5, y no queda ni el flujo ni las tarjetas anteriores', async ({ page }) => {
+  test('perfil y ranking van en una fila al final, tras Distribución y Top 5, y no queda ni el flujo ni las tarjetas anteriores', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
     const an = page.getByRole('region', { name: 'Análisis conectado' })
-    const cal = an.getByRole('region', { name: /^Calendario · / }), per = an.getByRole('region', { name: 'Perfil de gasto' }), ran = an.getByRole('region', { name: 'Ranking con tendencia' })
-    for (const c of [cal, per, ran]) await expect(c).toBeVisible()
-    const [a, b, c] = await Promise.all([cal.boundingBox(), per.boundingBox(), ran.boundingBox()])
-    expect(Math.abs(a!.y - b!.y)).toBeLessThanOrEqual(2) // misma fila
-    expect(Math.abs(b!.y - c!.y)).toBeLessThanOrEqual(2)
-    expect(a!.x).toBeLessThan(b!.x)
+    const per = an.getByRole('region', { name: 'Perfil de gasto' }), ran = an.getByRole('region', { name: 'Ranking con tendencia' })
+    for (const c of [per, ran]) await expect(c).toBeVisible()
+    await expect(an.getByRole('region', { name: /^Calendario · / })).toHaveCount(0) // el mapa de calor se retiró
+    await expect(page.getByRole('img', { name: /^Gasto por día/ })).toBeVisible() // el gráfico de barras diario se conserva
+    const [b, c] = await Promise.all([per.boundingBox(), ran.boundingBox()])
+    expect(Math.abs(b!.y - c!.y)).toBeLessThanOrEqual(2) // misma fila
     expect(b!.x).toBeLessThan(c!.x)
     const top5 = await page.getByRole('region', { name: 'Top 5 categorías' }).boundingBox()
-    expect(a!.y).toBeGreaterThan(top5!.y + top5!.height - 2) // al final, debajo de Distribución / Top 5
+    expect(b!.y).toBeGreaterThan(top5!.y + top5!.height - 2) // al final, debajo de Distribución / Top 5
     await expect(page.getByRole('region', { name: 'Flujo del dinero' })).toHaveCount(0)
     for (const t of ['Consumo de fondos', 'Gastos recientes', 'Gastos mensuales']) await expect(page.getByRole('heading', { name: t })).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1)
@@ -27,6 +27,13 @@ test.describe('Análisis conectado del Dashboard', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
     const an = page.getByRole('region', { name: 'Análisis conectado' })
+    // Perfil: cada eje muestra su detalle con la referencia histórica (antes de filtrar, con todos los ejes)
+    const eje = an.getByRole('img', { name: /: \d+(\.\d)? %$/ }).first()
+    if (await eje.count()) {
+      await eje.scrollIntoViewIfNeeded()
+      await eje.hover({ force: true })
+      await expect(page.getByRole('tooltip')).toContainText('Referencia histórica')
+    }
     const ranking = an.getByRole('list', { name: 'Ranking' })
     const primero = ranking.getByRole('button').first()
     await expect(primero).toBeVisible()
@@ -42,19 +49,15 @@ test.describe('Análisis conectado del Dashboard', () => {
     await expect(primero).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByRole('dialog')).toHaveCount(0)
     await expect(page).toHaveURL(/categoria=/)
-    // Un día del calendario se combina con la categoría sin perderla, con detalle al pasar el cursor
-    const dia = an.getByRole('group', { name: /^Días de / }).getByRole('button', { name: /: S\/ / }).first()
-    await dia.hover()
-    await expect(page.getByRole('tooltip')).toContainText('Movimientos')
-    await dia.click()
-    await expect(dia).toHaveAttribute('aria-pressed', 'true')
+    // Un día elegido en las barras se combina con la categoría; su popup trae movimientos y el porcentaje del mes
+    const barras = page.getByRole('img', { name: /^Gasto por día/ })
+    await barras.scrollIntoViewIfNeeded()
+    const caja = (await barras.boundingBox())!
+    await page.mouse.move(caja.x + caja.width * 0.12, caja.y + caja.height * 0.5, { steps: 6 })
+    await expect(page.getByText(/^% de /).first()).toBeVisible()
+    await page.mouse.down()
+    await page.mouse.up()
     await expect(page).toHaveURL(/categoria=.*dia=|dia=.*categoria=/)
-    // Perfil: cada eje muestra su detalle con la referencia histórica
-    const eje = an.getByRole('img', { name: /: \d+(\.\d)? %$/ }).first()
-    if (await eje.count()) {
-      await eje.focus()
-      await expect(page.getByRole('tooltip')).toContainText('Referencia histórica')
-    }
     await page.getByRole('button', { name: 'Limpiar filtros' }).click()
     await expect(page).not.toHaveURL(/categoria=|dia=/)
     expect(errores).toEqual([])
