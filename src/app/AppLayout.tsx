@@ -87,7 +87,7 @@ function Estructura() {
             </button>
           </div>
         </header>
-        <main id="contenido" tabIndex={-1} className="p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:p-8 lg:pb-24">
+        <main id="contenido" tabIndex={-1} className="px-4 py-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-6 lg:pb-24">
           <Suspense fallback={<div role="status" aria-label="Cargando módulo" className="flex flex-col gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /></div>}>
             <Outlet />
           </Suspense>

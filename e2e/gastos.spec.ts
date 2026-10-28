@@ -152,6 +152,7 @@ test.describe('Gastos', () => {
     await page.getByRole('combobox', { exact: true, name: 'Ámbito' }).click()
     await page.getByRole('option', { name: 'Trabajo' }).click()
     await expect(page).toHaveURL(/ambito=/)
+    await page.getByRole('button', { name: /^Más filtros/ }).click()
     await page.getByRole('combobox', { exact: true, name: 'Fondo' }).click()
     await page.getByRole('option', { name: 'Alimentos Sodexo' }).click()
     await expect(page).toHaveURL(/fondo=/)
@@ -171,7 +172,7 @@ test.describe('Gastos', () => {
     await page.goto('/gastos?desde=2020-01-01')
     await expect(page.getByRole('table')).toBeVisible()
     await expect(page.getByText(/Página 1 de [2-9]/)).toBeVisible()
-    await page.getByRole('button', { name: 'Siguiente' }).click()
+    await page.getByRole('button', { name: 'Siguiente', exact: true }).click()
     await expect(page.getByText(/Página 2 de/)).toBeVisible()
     await expect(page).toHaveURL(/pagina=2/)
 

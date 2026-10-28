@@ -94,7 +94,7 @@ test.describe('Dashboard', () => {
     await page.mouse.move(caja.x + caja.width * 0.12, caja.y + caja.height * 0.5, { steps: 6 })
     await page.mouse.down()
     await page.mouse.up()
-    await expect(page.getByRole('button', { name: /^Día: \d{2}\/\d{2}\/\d{4}/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Quitar día' })).toBeVisible()
     await expect(page).toHaveURL(/dia=\d{4}-\d{2}-\d{2}/)
     const dia = new URL(page.url()).searchParams.get('dia')!
     await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(sqlTotal(`and expense_date = '${dia}'`), 2)
@@ -317,7 +317,8 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
     await iniciarSesion(page)
     const barra = page.getByRole('region', { name: 'Filtros del dashboard' })
     await expect(barra).toBeVisible()
-    const nombres = [/^Período:/, /^Día:/, 'Ámbito', 'Categoría', 'Subcategoría', 'Medio de pago', 'Tipo de gasto']
+    // Orden exacto: Fecha · Medio de pago · Ámbito · Categoría · Subcategoría · Tipo
+    const nombres = [/^Período:/, 'Medio de pago', 'Ámbito', 'Categoría', 'Subcategoría', 'Tipo de gasto']
     const cajas = [] as { y: number; h: number; x2: number }[]
     for (const n of nombres) {
       const el = typeof n === 'string' ? barra.getByRole('combobox', { name: n, exact: true }) : barra.getByRole('button', { name: n })
@@ -325,6 +326,7 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
       cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
     }
     for (const b of [(await barra.getByRole('button', { name: 'Limpiar filtros' }).boundingBox())!]) cajas.push({ y: b.y, h: b.height, x2: b.x + b.width })
+    for (let i = 1; i < cajas.length - 1; i++) expect(cajas[i].x2, 'orden de izquierda a derecha').toBeGreaterThan(cajas[i - 1].x2)
     const y0 = cajas[0].y + cajas[0].h / 2
     for (const c of cajas) expect(Math.abs(c.y + c.h / 2 - y0), 'centrado vertical').toBeLessThanOrEqual(2)
     const caja = (await barra.boundingBox())!
@@ -349,9 +351,10 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
     const [d, h] = [new URL(page.url()).searchParams.get('desde')!, new URL(page.url()).searchParams.get('hasta')!]
     const esperado = Number(sqlLocal(`select coalesce(sum(amount), 0) from public.expenses where household_id = ${HID} and status = 'active' and expense_date between '${d}' and '${h}'`))
     await expect.poll(() => valorKpi(page, 'Gasto del período')).toBeCloseTo(esperado, 2)
-    // limpiar rango vuelve al mes actual
+    // «Este mes» (accesos rápidos) vuelve al mes actual
     await page.getByRole('button', { name: /^Período:/ }).click()
-    await page.getByRole('button', { name: 'Limpiar rango' }).click()
+    await page.getByRole('button', { name: 'Este mes', exact: true }).click()
+    await page.getByRole('button', { name: 'Aplicar', exact: true }).click()
     await expect(page).not.toHaveURL(/desde=/)
   })
 

@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { Alert } from '@/components/ui/Alert'
 import { ItemIcon } from '@/components/ui/ItemIcon'
-import { MesSelector } from '@/components/ui/MesSelector'
+import { FiltroFecha } from '@/components/ui/FiltroFecha'
+import { useEstadoPeriodo, useHoy } from '@/features/fondos/useEstadoPeriodo'
+import { usePerfil } from '@/features/perfil/usePerfil'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { resumirFondo, round2 } from '@/domain/fondos'
 import { total, type GastoBasico } from '@/domain/dashboard'
@@ -22,7 +24,7 @@ const MESES_BASE = 3
 
 function Seccion({ pregunta, etiqueta, tono, periodo, explicacion, children }: { pregunta: string; etiqueta: string; tono: 'ok' | 'warn' | 'neutral'; periodo: string; explicacion: string; children: React.ReactNode }) {
   return (
-    <section aria-label={pregunta} className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-6">
+    <section aria-label={pregunta} className="flex h-full flex-col gap-4 rounded-lg border border-line bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="font-display text-lg font-bold">{pregunta}</h2>
@@ -58,6 +60,9 @@ export function SaludPage() {
   const mes = params.get('mes') ?? MES_ACTUAL
   const esActual = mes === MES_ACTUAL
   const finMes = finDeMes(mes)
+  const hoyZona = useHoy()
+  const formato = usePerfil().data?.date_format ?? 'dd/MM/yyyy'
+  const estadoPeriodo = useEstadoPeriodo(mes, finMes, hoyZona)
   const desdeHist = sumarMeses(mes, -MESES_BASE)
 
   const catalogo = useCatalogo()
@@ -131,7 +136,7 @@ export function SaludPage() {
   }
   const nombreSub = (id: string) => catalogo.subcategorias.find((s) => s.id === id)
 
-  if (cargando) return <div role="status" aria-label="Cargando salud financiera" className="mx-auto flex max-w-5xl flex-col gap-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /><Skeleton className="h-48" /></div>
+  if (cargando) return <div role="status" aria-label="Cargando salud financiera" className="flex w-full min-w-0 flex-col gap-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /><Skeleton className="h-48" /></div>
   if (falla) return <ErrorState message="No se pudo calcular la salud financiera." onRetry={() => consultas.forEach((q) => q.refetch())} />
 
   const gastado = total(analisis.delMes)
@@ -144,10 +149,10 @@ export function SaludPage() {
   const compromisosMes = totalCompromisos(analisis.delMes)
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <div className="grid w-full min-w-0 items-start gap-6 xl:grid-cols-2 xl:[&>:not(section)]:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <MesSelector mes={mes} onChange={(m) => setParams({ mes: m }, { replace: true })} maximo={MES_ACTUAL} />
-        <p className="max-w-xl text-sm text-muted">Las cifras se calculan con tus gastos reales. Lo marcado como <b>Sugerencia</b> o <b>Estimación</b> es orientativo, no una certeza.</p>
+        <div className="w-full max-w-md"><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} estado={estadoPeriodo} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></div>
+        <p className="max-w-2xl text-sm text-muted">Las cifras se calculan con tus gastos reales. Lo marcado como <b>Sugerencia</b> o <b>Estimación</b> es orientativo, no una certeza.</p>
       </div>
 
       {!hayDatos ? (

@@ -26,7 +26,7 @@ export function CatalogoPage() {
 
   if (catalogo.isPending) {
     return (
-      <div className="mx-auto flex max-w-4xl flex-col gap-3" role="status" aria-label="Cargando catálogo">
+      <div className="flex w-full min-w-0 flex-col gap-3" role="status" aria-label="Cargando catálogo">
         <Skeleton className="h-10 w-full" />
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-14 w-full" />
@@ -37,7 +37,7 @@ export function CatalogoPage() {
   if (catalogo.isError) return <ErrorState message="No se pudo cargar el catálogo." onRetry={catalogo.refetch} />
 
   return (
-    <div className="mx-auto flex max-w-[1760px] flex-col gap-4">
+    <div className="flex w-full min-w-0 flex-col gap-4">
       <p className="text-sm text-muted">
         Las opciones usadas por gastos anteriores no se eliminan: se desactivan y conservan su significado en el histórico. Cambiar un color solo cambia cómo se ve, nunca los importes.
       </p>
@@ -179,7 +179,7 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
           description={necesitaPadre ? 'Primero crea el elemento superior.' : `Crea ${cfg.genero === 'f' ? 'la primera' : 'el primero'} para poder usarl${cfg.genero === 'f' ? 'a' : 'o'} en tus gastos.`}
         />
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(18rem,30%)_minmax(0,1fr)]">
           <ul aria-label={`Lista de ${cfg.label.toLowerCase()}`} className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
             {items.map((it, i) => {
               const activo = seleccionado?.id === it.id

@@ -1,4 +1,4 @@
-import { Banknote, Lock, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
+import { Banknote, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
 import { useMemo, useState, type ComponentType } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -6,9 +6,12 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog, Modal } from '@/components/ui/Dialog'
 import { Field } from '@/components/ui/Field'
-import { MesSelector } from '@/components/ui/MesSelector'
 import { MoneyInput } from '@/components/ui/MoneyInput'
-import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
+import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
+import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
+import { Combobox } from '@/components/ui/Combobox'
+import { useHoy } from './useEstadoPeriodo'
+import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { DetalleFondo } from './DetalleFondo'
 import { cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
@@ -22,7 +25,7 @@ import { EliminarFondoDialog } from './EliminarFondoDialog'
 import { FondoForm, type FondoInicial } from './FondoForm'
 import { TablaFondos, type FilaFondo } from './TablaFondos'
 import {
-  mesDeFecha, useAsignacionesPeriodo, useFondoMutaciones, useFondos, usePeriodo, usePresupuestosPeriodo, useSnapshotsPeriodo,
+  finDeMes, mesDeFecha, useAsignacionesPeriodo, useFondoMutaciones, useFondos, usePeriodo, usePresupuestosPeriodo, useSnapshotsPeriodo,
   type FondoPayload,
 } from './useFondos'
 
@@ -65,6 +68,7 @@ export function FondosPage() {
   const cerrado = periodo.data?.status === 'closed'
   const snapshots = useSnapshotsPeriodo(periodo.data?.id, cerrado)
   const mut = useFondoMutaciones()
+  const hoyZona = useHoy()
 
   const [form, setForm] = useState<FondoInicial | null>(null)
   const [detalle, setDetalle] = useState<string | null>(null)
@@ -211,7 +215,7 @@ export function FondosPage() {
 
   if (cargando) {
     return (
-      <div className="mx-auto flex max-w-5xl flex-col gap-4" role="status" aria-label="Cargando fondos">
+      <div className="flex w-full min-w-0 flex-col gap-4" role="status" aria-label="Cargando fondos">
         <Skeleton className="h-12 w-full" />
         <div className="grid gap-3 sm:grid-cols-3"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         <Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" />
@@ -226,24 +230,24 @@ export function FondosPage() {
   const detalleFondo = detalle ? [...datos.activos, ...datos.inactivos].find((t) => t.id === detalle) : null
 
   return (
-    <div className="mx-auto flex max-w-[1240px] flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <MesSelector mes={mes} onChange={(m) => setParams({ mes: m }, { replace: true })} maximo={MES_ACTUAL} />
-        <Pill tone={cerrado ? 'neutral' : 'ok'}>{cerrado ? <><Lock className="size-3" aria-hidden="true" /> Período cerrado</> : 'Período abierto'}</Pill>
-        <label className="flex w-64 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-muted focus-within:border-pri">
-          <Search className="size-4 shrink-0" aria-hidden="true" />
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" className="min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-muted" />
-        </label>
-        {!cerrado && (
-          <div role="group" aria-label="Estado" className="inline-flex rounded-lg bg-surface-2 p-0.5 text-sm font-semibold">
-            {([['activos', 'Activos'], ['inactivos', 'Inactivos'], ['todos', 'Todos']] as const).map(([k, n]) => (
-              <button key={k} type="button" aria-pressed={filtro === k} onClick={() => setFiltro(k)} className={cn('rounded-md px-3 py-1', filtro === k ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{n}</button>
-            ))}
-          </div>
-        )}
-        <span className="flex-1" />
-        {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
-        {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <BarraFiltros className="w-full md:w-[34rem]">
+          <CeldaFiltro peso={2} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} estado={cerrado ? 'closed' : 'open'} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
+          {!cerrado && (
+            <CeldaFiltro peso={1} min="9rem">
+              <Combobox id="f-estado-fondos" aria-label="Estado" value={filtro} searchable={false} options={[{ value: 'activos', label: 'Activos' }, { value: 'inactivos', label: 'Inactivos' }, { value: 'todos', label: 'Todos' }]} onChange={(v) => setFiltro((v ?? 'activos') as typeof filtro)} />
+            </CeldaFiltro>
+          )}
+        </BarraFiltros>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label className="flex h-10 w-60 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri">
+            <Search className="size-4 shrink-0" aria-hidden="true" />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar fondo por nombre…" aria-label="Buscar fondo" className="sin-anillo min-w-0 flex-1 bg-transparent text-sm text-fg placeholder:text-muted" />
+          </label>
+          {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
+          {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
+        </div>
       </div>
 
       {cerrado && <Alert tone="info">Este período está cerrado: se muestra el resultado histórico tal como quedó. Editar fondos hoy no lo modifica.</Alert>}

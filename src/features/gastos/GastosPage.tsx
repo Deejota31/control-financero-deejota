@@ -1,23 +1,24 @@
-import { subMonths, endOfMonth, startOfMonth } from 'date-fns'
-import { Ban, Download, FileStack, ListChecks, Plus, Receipt, SlidersHorizontal, Undo2, X } from 'lucide-react'
+import { Ban, Download, FileStack, ListChecks, Plus, Receipt, Search, SlidersHorizontal, Undo2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/cn'
 import { Combobox, type ComboOption } from '@/components/ui/Combobox'
-import { DatePicker } from '@/components/ui/DatePicker'
 import { ConfirmDialog } from '@/components/ui/Dialog'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
 import { aCsv, descargar } from '@/lib/csv'
 import { mensajeDeError } from '@/lib/errors'
-import { formatSoles, toIso } from '@/lib/format'
+import { formatSoles } from '@/lib/format'
 import { useDebounced } from '@/lib/useDebounced'
 import { opciones, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
 import { useFondos } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
 import { GastoForm, type ModoGasto } from './GastoForm'
+import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
+import { FiltroFecha } from '@/components/ui/FiltroFecha'
+import { useEstadoPeriodo, useHoy } from '@/features/fondos/useEstadoPeriodo'
+import * as Popover from '@radix-ui/react-popover'
 import { useRegistroGasto } from './RegistroGasto'
 import { TablaGastos } from './TablaGastos'
 import { LoteDialog, PlantillasDialog } from './Plantillas'
@@ -57,7 +58,6 @@ export function GastosPage() {
 
   const [form, setForm] = useState<{ modo: Exclude<ModoGasto, 'nuevo'>; gasto?: GastoConFondos } | null>(null)
   const { abrir: abrirNuevo } = useRegistroGasto()
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
   // Filtros avanzados activos (los de período y la búsqueda se ven siempre o tienen su propio control).
   const nActivos = [filtros.ambito, filtros.categoria, filtros.subcategoria, filtros.medio, filtros.fondo, filtros.tipo].filter(Boolean).length + (filtros.estado !== 'active' ? 1 : 0)
   const [lote, setLote] = useState(() => params.get('lote') === '1')
@@ -133,15 +133,19 @@ export function GastosPage() {
   }
 
   const pendiente = mut.anular.isPending || mut.restaurar.isPending
-  const hoy = new Date()
+  const hoyZona = useHoy()
+  const estadoPeriodo = useEstadoPeriodo(filtros.desde, filtros.hasta, hoyZona)
 
   return (
-    <div className="mx-auto flex max-w-[1760px] flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted" aria-live="polite">{q.isPending ? 'Cargando…' : `${total} ${total === 1 ? 'movimiento' : 'movimientos'} con los filtros aplicados`}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted" aria-live="polite">{q.isPending ? 'Cargando…' : `${total} ${total === 1 ? 'movimiento' : 'movimientos'} con los filtros aplicados`}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex h-10 w-52 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri xl:w-64">
+            <Search className="size-4 shrink-0" aria-hidden="true" />
+            <span className="sr-only">Buscar</span>
+            <input id="buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar descripción…" aria-label="Buscar" className="sin-anillo min-w-0 flex-1 bg-transparent text-sm text-fg placeholder:text-muted" />
+          </label>
           <Button variant="secondary" onClick={() => setPlantillas(true)}><FileStack className="size-4" aria-hidden="true" /> Plantillas</Button>
           <Button variant="secondary" onClick={() => setLote(true)}><ListChecks className="size-4" aria-hidden="true" /> Registrar mensuales</Button>
           <Button variant="secondary" onClick={exportarFiltro} loading={exportando}><Download className="size-4" aria-hidden="true" /> Exportar CSV</Button>
@@ -149,37 +153,33 @@ export function GastosPage() {
         </div>
       </div>
 
-      <section aria-label="Filtros" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3 sm:p-4">
-        <div className="flex items-end gap-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <label htmlFor="buscar" className="text-sm font-medium max-sm:sr-only">Buscar</label>
-            <input id="buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Descripción…" className="min-w-0 rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" />
-          </div>
-          <Button variant="secondary" aria-expanded={filtrosAbiertos} aria-controls="filtros-avanzados" onClick={() => setFiltrosAbiertos((a) => !a)} className="shrink-0 sm:hidden">
-            <SlidersHorizontal className="size-4" aria-hidden="true" /> Filtros{nActivos > 0 && <span className="rounded-full bg-pri px-1.5 text-xs text-pri-fg" aria-label={`${nActivos} filtros activos`}>{nActivos}</span>}
-          </Button>
-        </div>
-        <div id="filtros-avanzados" className={cn('flex-col gap-3 sm:flex', filtrosAbiertos ? 'flex' : 'hidden')}>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex w-44 flex-col gap-1.5"><label htmlFor="f-desde" className="text-sm font-medium">Desde</label><DatePicker id="f-desde" value={filtros.desde} onChange={(d) => cambiar({ desde: d })} formato={formato} /></div>
-          <div className="flex w-44 flex-col gap-1.5"><label htmlFor="f-hasta" className="text-sm font-medium">Hasta</label><DatePicker id="f-hasta" value={filtros.hasta} onChange={(d) => cambiar({ hasta: d })} formato={formato} /></div>
-          <div className="flex gap-1.5">
-            <Button variant="secondary" onClick={() => cambiar({ desde: toIso(startOfMonth(hoy)), hasta: toIso(endOfMonth(hoy)) })}>Este mes</Button>
-            <Button variant="secondary" onClick={() => cambiar({ desde: toIso(startOfMonth(subMonths(hoy, 1))), hasta: toIso(endOfMonth(subMonths(hoy, 1))) })}>Mes anterior</Button>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          <Filtro etiqueta="Ámbito" id="f-ambito"><Combobox id="f-ambito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Todos" onChange={(v) => cambiar({ ambito: v ?? '', categoria: '', subcategoria: '' })} /></Filtro>
-          <Filtro etiqueta="Categoría" id="f-categoria"><Combobox id="f-categoria" value={filtros.categoria || null} clearable options={opciones(categoriasFiltro, filtros.categoria)} placeholder="Todas" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></Filtro>
-          <Filtro etiqueta="Subcategoría" id="f-sub"><Combobox id="f-sub" value={filtros.subcategoria || null} clearable disabled={!filtros.categoria} options={opciones(subsFiltro, filtros.subcategoria)} placeholder={filtros.categoria ? 'Todas' : 'Elige categoría'} onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></Filtro>
-          <Filtro etiqueta="Medio de pago" id="f-medio"><Combobox id="f-medio" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Todos" onChange={(v) => cambiar({ medio: v ?? '' })} /></Filtro>
-          <Filtro etiqueta="Fondo" id="f-fondo"><Combobox id="f-fondo" value={filtros.fondo || null} clearable searchable={false} options={(fondosQ.data?.fondos ?? []).map((f) => ({ value: f.id, label: f.name, icon: f.icon_key, color: f.color_token }))} placeholder="Todos" onChange={(v) => cambiar({ fondo: v ?? '' })} /></Filtro>
-          <Filtro etiqueta="Tipo" id="f-tipo"><Combobox id="f-tipo" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Todos" onChange={(v) => cambiar({ tipo: (v ?? '') as FiltrosGastos['tipo'] })} /></Filtro>
-          <Filtro etiqueta="Estado" id="f-estado"><Combobox id="f-estado" value={filtros.estado} searchable={false} options={ESTADOS} onChange={(v) => cambiar({ estado: (v ?? 'active') as FiltrosGastos['estado'] })} /></Filtro>
-        </div>
-        {hayFiltros && <div><Button variant="ghost" onClick={() => { setTexto(''); limpiar() }}><X className="size-4" aria-hidden="true" /> Limpiar filtros</Button></div>}
-        </div>
-      </section>
+      <BarraFiltros contador={nActivos + (filtros.medio ? 0 : 0)}
+        acciones={hayFiltros ? <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" onClick={() => { setTexto(''); limpiar() }} className="shrink-0 px-2.5"><X className="size-4" aria-hidden="true" /></Button> : undefined}>
+        <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={filtros.desde} hasta={filtros.hasta} formato={formato} hoy={hoyZona} estado={estadoPeriodo} onAplicar={(d, h) => cambiar({ desde: d, hasta: h })} /></CeldaFiltro>
+        <CeldaFiltro peso={1.2} min="9.5rem"><Combobox id="f-medio" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio de pago" onChange={(v) => cambiar({ medio: v ?? '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={0.8} min="6.5rem"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => cambiar({ ambito: v ?? '', categoria: '', subcategoria: '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable options={opciones(categoriasFiltro, filtros.categoria)} placeholder="Categoría" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-sub" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable disabled={!filtros.categoria} options={opciones(subsFiltro, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={0.7} min="6rem"><Combobox id="f-tipo" aria-label="Tipo" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => cambiar({ tipo: (v ?? '') as FiltrosGastos['tipo'] })} /></CeldaFiltro>
+        <CeldaFiltro peso={0.7} min="7.5rem"><Combobox id="f-estado" aria-label="Estado" value={filtros.estado} searchable={false} options={ESTADOS} onChange={(v) => cambiar({ estado: (v ?? 'active') as FiltrosGastos['estado'] })} /></CeldaFiltro>
+        <CeldaFiltro peso={0} min="2.5rem">
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <button type="button" aria-label={filtros.fondo ? 'Más filtros (1 activo)' : 'Más filtros'} title="Más filtros: fondo" className="relative grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface hover:bg-surface-2">
+                <SlidersHorizontal className="size-4" aria-hidden="true" />{filtros.fondo && <span aria-hidden="true" className="absolute -right-1 -top-1 size-3 rounded-full border-2 border-surface bg-pri" />}
+              </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content align="end" sideOffset={6} collisionPadding={12} aria-label="Filtros adicionales" className="anim-pop z-[80] w-[min(19rem,calc(100vw-1.5rem))] rounded-xl border border-line bg-surface p-4 shadow-pop">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="f-fondo" className="text-sm font-medium">Fondo</label>
+                  <Combobox id="f-fondo" value={filtros.fondo || null} clearable searchable={false} options={(fondosQ.data?.fondos ?? []).map((x) => ({ value: x.id, label: x.name, icon: x.icon_key, color: x.color_token }))} placeholder="Todos los fondos" onChange={(v) => cambiar({ fondo: v ?? '' })} />
+                </div>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
+        </CeldaFiltro>
+      </BarraFiltros>
 
       {seleccion.size > 0 && (
         <div role="region" aria-label="Selección" className="flex flex-wrap items-center gap-3 rounded-lg border border-pri bg-pri-soft px-4 py-3">
@@ -233,10 +233,6 @@ export function GastosPage() {
       />
     </div>
   )
-}
-
-function Filtro({ etiqueta, id, children }: { etiqueta: string; id: string; children: React.ReactNode }) {
-  return <div className="flex flex-col gap-1.5"><label htmlFor={id} className="text-sm font-medium">{etiqueta}</label>{children}</div>
 }
 
 function EfectoAnulacion({ tipo, gastos, fondoPorId }: { tipo: 'anular' | 'restaurar'; gastos: GastoConFondos[]; fondoPorId: Map<string, { name: string }> }) {

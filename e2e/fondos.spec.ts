@@ -1,7 +1,7 @@
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+import { elegir, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
 const dinero = (t: string | null) => Number((t ?? '').replace(/[^\d.-]/g, ''))
@@ -82,8 +82,8 @@ test.describe('Fondos presupuestales', () => {
     await expect(page.getByText('Ningún fondo coincide')).toBeVisible()
     await page.getByRole('button', { name: 'Ver todos' }).click()
     await expect(page.getByRole('searchbox', { name: 'Buscar fondo' })).toHaveValue('')
-    await page.getByRole('button', { name: 'Inactivos', exact: true }).click()
-    await expect(page.getByRole('button', { name: 'Inactivos', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await elegir(page, page.getByRole('combobox', { name: 'Estado', exact: true }), 'Inactivos')
+    await expect(page.getByRole('combobox', { name: 'Estado', exact: true })).toContainText('Inactivos')
   })
 
   test('el período cerrado muestra el histórico sin acciones de edición', async ({ page }) => {
@@ -158,7 +158,7 @@ test.describe('Fondos presupuestales', () => {
     await accion(page, nombre, /Desactivar/)
     await confirmarSiPide(page, 'Fondo desactivado.')
     await expect(fila(page, nombre)).toHaveCount(0) // sale de «Activos»
-    await page.getByRole('button', { name: 'Inactivos', exact: true }).click()
+    await elegir(page, page.getByRole('combobox', { name: 'Estado', exact: true }), 'Inactivos')
     await expect(fila(page, nombre)).toContainText('Inactivo')
   })
 
@@ -298,7 +298,7 @@ test('el diálogo de fondo tiene altura fija (al desplegar ámbitos no crece) y 
       const tick = () => {
         const d = document.querySelector('[role="dialog"]')
         if (d) { const r = d.getBoundingClientRect(); w.__centros.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 }) }
-        if (performance.now() - t0 < 900) requestAnimationFrame(tick)
+        if (performance.now() - t0 < 3000) requestAnimationFrame(tick)
       }
       requestAnimationFrame(tick)
     })

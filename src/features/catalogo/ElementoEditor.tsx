@@ -122,7 +122,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
   const descartar = () => { reset({ name: item?.name ?? '', icon_key: item?.icon_key ?? 'tag' }); setColor(guardado); setIconoManual(false); setOk(false) }
 
   const formulario = (
-    <form id={idForm} onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-3.5', modo === 'panel' && 'max-w-3xl rounded-xl border border-line bg-surface p-4')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
+    <form id={idForm} onSubmit={onSubmit} noValidate className={cn('flex min-w-0 flex-col gap-3.5', modo === 'panel' && 'rounded-xl border border-line bg-surface p-4')} aria-label={item ? `Editar ${cfg.singular}` : `Nuevo ${cfg.singular}`}>
       <Field label="Nombre" error={errors.name?.message}>
         {(p) => <Input {...p} {...regNombre} ref={(el) => { refRhf(el); refNombre.current = el }} autoFocus={modo === 'modal'} onChange={(e) => { setOk(false); void regNombre.onChange(e) }} />}
       </Field>

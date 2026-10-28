@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
-import { DatePicker } from '@/components/ui/DatePicker'
 import { FilaHint, Hint } from '@/components/ui/Hint'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
@@ -20,7 +19,9 @@ import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { Dona, GraficoAcumulado, GraficoDiario, type PuntoGrafico, type SegmentoDona } from './Graficos'
 import { PresupuestoConsolidado } from './PresupuestoConsolidado'
-import { SelectorPeriodo } from './SelectorPeriodo'
+import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
+import { FiltroFecha } from '@/components/ui/FiltroFecha'
+import { useEstadoPeriodo, useHoy } from '@/features/fondos/useEstadoPeriodo'
 import { useDashboardPanel } from './useDashboard'
 import { useFiltrosDashboard } from './useFiltrosDashboard'
 
@@ -67,6 +68,8 @@ export function DashboardPage() {
   const ant = useMemo(() => rangoAnterior(desde, hasta), [desde, hasta])
 
   const perfil = usePerfil()
+  const hoyZona = useHoy()
+  const estadoPeriodo = useEstadoPeriodo(desde, hasta, hoyZona)
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const panelQ = useDashboardPanel(filtros, ant, valido)
 
@@ -133,22 +136,21 @@ export function DashboardPage() {
   const subcategoriasOpc = catalogo.subcategorias.filter((s) => (filtros.categoria ? s.categoria_id === filtros.categoria : categoriasOpc.some((c) => c.id === s.categoria_id)))
 
   return (
-    <div className="mx-auto flex max-w-[1760px] flex-col gap-6">
+    <div className="flex w-full min-w-0 flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted">{etiquetaPeriodo} · <span aria-live="polite">{cruzados ? 'con filtros activos' : 'todos los ámbitos y medios de pago'}</span></p>
         {cruzados && valido && <Button variant="secondary" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>}
       </div>
 
-      <section aria-label="Filtros del dashboard" className="sticky top-2 z-30 grid grid-cols-2 items-center gap-2 rounded-2xl border border-line bg-surface p-2 shadow-sm sm:grid-cols-3 lg:grid-cols-4 xl:flex xl:flex-nowrap">
-        <div className="col-span-2 sm:col-span-1 xl:w-[12.75rem] xl:shrink-0"><SelectorPeriodo desde={desde} hasta={hasta} formato={formato} hoy={HOY} onAplicar={fijarPeriodo} /></div>
-        <div className="xl:w-[7rem] xl:shrink-0"><DatePicker id="f-dia" aria-label="Día" value={filtros.dia} placeholder="Día" min={desde} max={hasta} formato={formato} onChange={(v) => seleccionar('dia', v)} /></div>
-        <div className="xl:w-[7rem] xl:shrink-0"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => seleccionar('ambito', v ?? filtros.ambito)} /></div>
-        <div className="xl:w-[8rem] xl:shrink-0"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable searchable={false} options={opciones(categoriasOpc, filtros.categoria)} placeholder="Categoría" onChange={(v) => seleccionar('categoria', v ?? filtros.categoria)} /></div>
-        <div className="xl:w-[8.5rem] xl:shrink-0"><Combobox id="f-subcategoria" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable searchable={false} options={opciones(subcategoriasOpc, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => seleccionar('subcategoria', v ?? filtros.subcategoria)} /></div>
-        <div className="xl:w-[6.5rem] xl:shrink-0"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></div>
-        <div className="xl:w-[6rem] xl:shrink-0"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></div>
-        <Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" disabled={!cruzados} onClick={limpiar} className="px-2.5 xl:shrink-0"><X className="size-4" aria-hidden="true" /></Button>
-      </section>
+      <BarraFiltros etiqueta="Filtros del dashboard" className="sticky top-2 z-30" contador={[filtros.medio, filtros.ambito, filtros.categoria, filtros.subcategoria, filtros.tipo].filter(Boolean).length}
+        acciones={<Button variant="ghost" aria-label="Limpiar filtros" title="Limpiar filtros" disabled={!cruzados} onClick={limpiar} className="shrink-0 px-2.5"><X className="size-4" aria-hidden="true" /></Button>}>
+        <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={desde} hasta={hasta} formato={formato} hoy={hoyZona} estado={estadoPeriodo} onAplicar={fijarPeriodo} /></CeldaFiltro>
+        <CeldaFiltro peso={1.2} min="9.5rem"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio de pago" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></CeldaFiltro>
+        <CeldaFiltro peso={0.8} min="6.5rem"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => seleccionar('ambito', v ?? filtros.ambito)} /></CeldaFiltro>
+        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable searchable={false} options={opciones(categoriasOpc, filtros.categoria)} placeholder="Categoría" onChange={(v) => seleccionar('categoria', v ?? filtros.categoria)} /></CeldaFiltro>
+        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-subcategoria" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable searchable={false} options={opciones(subcategoriasOpc, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => seleccionar('subcategoria', v ?? filtros.subcategoria)} /></CeldaFiltro>
+        <CeldaFiltro peso={0.7} min="6rem"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></CeldaFiltro>
+      </BarraFiltros>
 
       {!valido ? (
         <ErrorState message="La fecha inicial es posterior a la final. Ajusta el rango." />
