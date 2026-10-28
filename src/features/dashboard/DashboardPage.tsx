@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
-import { FilaHint, Hint } from '@/components/ui/Hint'
+import { Hint } from '@/components/ui/Hint'
+import { TooltipGrafico, TTBarra, TTCabecera, TTMetrica, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { diasEnRango, esMesCompleto, rangoAnterior, serieDiaria, variacion } from '@/domain/dashboard'
@@ -275,12 +276,15 @@ export function DashboardPage() {
                         <Hint
                           side="top"
                           contenido={
-                            <div className="flex min-w-48 flex-col gap-0.5">
-                              <p className="mb-1 font-display font-bold">{item?.name}{topModo === 'subcategorias' && padreCat ? <span className="font-normal text-muted"> · {padreCat.name}</span> : null}</p>
-                              <FilaHint etiqueta="Importe" valor={formatSoles(t.total)} destacado />
-                              <FilaHint etiqueta="Del gasto mostrado" valor={`${totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'} %`} />
-                              <FilaHint etiqueta="Movimientos" valor={t.cantidad} />
-                            </div>
+                            <TooltipGrafico>
+                              <TTCabecera icono={<ItemIcon name={item?.icon_key} color={color} />} titulo={item?.name} subtitulo={topModo === 'subcategorias' ? padreCat?.name : ambNombre} />
+                              <TTPrincipal etiqueta="Importe" valor={formatSoles(t.total)} />
+                              <div className="flex flex-col gap-1">
+                                <TTMetrica etiqueta="Del gasto mostrado" valor={`${totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'} %`} />
+                                <TTBarra pct={totalTop > 0 ? (t.total / totalTop) * 100 : 0} color={color} />
+                                <TTMetrica etiqueta="Movimientos" valor={t.cantidad} />
+                              </div>
+                            </TooltipGrafico>
                           }
                         >
                           <button

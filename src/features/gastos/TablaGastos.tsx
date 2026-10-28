@@ -2,7 +2,8 @@ import { ArrowDown, ArrowUp, Ban, ChevronLeft, ChevronRight, Copy, Eye, Pencil, 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/Button'
 import { ChipK, TinteK } from '@/components/ui/ChipK'
-import { FilaHint, Hint } from '@/components/ui/Hint'
+import { Hint } from '@/components/ui/Hint'
+import { TooltipGrafico, TTCabecera, TTMetrica, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { cn } from '@/lib/cn'
 import { formatFecha, formatSoles } from '@/lib/format'
@@ -73,7 +74,7 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
       {resto.length > 0 && (
         <Hint
           side="top"
-          contenido={<div className="flex min-w-48 flex-col gap-0.5"><p className="mb-1 font-display font-bold">Fondos de este gasto</p>{a.map((x) => <FilaHint key={x.fund_id} etiqueta={fondoPorId.get(x.fund_id)?.name ?? 'Fondo'} valor={formatSoles(Number(x.amount))} />)}</div>}
+          contenido={<TooltipGrafico><TTCabecera titulo="Fondos de este gasto" /><div className="flex flex-col gap-1">{a.map((x) => <TTMetrica key={x.fund_id} etiqueta={fondoPorId.get(x.fund_id)?.name ?? 'Fondo'} valor={formatSoles(Number(x.amount))} />)}</div><TTPrincipal etiqueta="Total del gasto" valor={formatSoles(a.reduce((t, x) => t + Number(x.amount), 0))} /></TooltipGrafico>}
         >
           <button type="button" aria-label={`${resto.length} fondos más: ver detalle`} className="chip-k cursor-help">+{resto.length}</button>
         </Hint>

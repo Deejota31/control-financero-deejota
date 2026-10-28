@@ -3,6 +3,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Hint } from '@/components/ui/Hint'
+import { TooltipGrafico, TTCabecera, TTPie } from '@/components/ui/TooltipGrafico'
 import { geometriaBarra, type ResumenPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { formatSoles } from '@/lib/format'
@@ -66,10 +67,10 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
               <Hint
                 side="bottom"
                 contenido={
-                  <div className="flex max-w-64 flex-col gap-1">
-                    <p className="font-semibold">¿Cómo se calcula?</p>
-                    <p className="text-muted">Suma lo asignado a los fondos activos en los períodos que toca el rango. Disponible = asignado − gasto imputado a fondos. Los filtros de los gráficos no reparten el presupuesto: se muestran aparte.</p>
-                  </div>
+                  <TooltipGrafico>
+                    <TTCabecera titulo="¿Cómo se calcula?" />
+                    <TTPie><span className="text-[0.8125rem] text-fg">Suma lo asignado a los fondos activos en los períodos que toca el rango. Disponible = asignado − gasto imputado a fondos. Los filtros de los gráficos no reparten el presupuesto: se muestran aparte.</span></TTPie>
+                  </TooltipGrafico>
                 }
               >
                 <button type="button" aria-label="Cómo se calcula el presupuesto consolidado" className="grid size-6 place-items-center rounded-full text-white/80 hover:bg-white/15 hover:text-white">

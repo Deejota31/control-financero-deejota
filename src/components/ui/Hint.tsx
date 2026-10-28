@@ -1,6 +1,7 @@
 import * as Tooltip from '@radix-ui/react-tooltip'
-import type { ReactNode } from 'react'
+import { isValidElement, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { TooltipGrafico } from './TooltipGrafico'
 
 /** Contenedor global de tooltips (una sola vez, en la raíz de la aplicación). */
 export const HintProvider = ({ children }: { children: ReactNode }) => (
@@ -24,7 +25,8 @@ export function Hint({ contenido, children, side = 'top', align = 'center' }: { 
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content side={side} align={align} sideOffset={8} collisionPadding={12} className="anim-pop z-[90] max-w-xs">
-          <TarjetaFlotante>{contenido}</TarjetaFlotante>
+          {/* Las tarjetas de gráficos (TooltipGrafico) traen su propio contenedor: no se envuelven dos veces. */}
+          {isValidElement(contenido) && contenido.type === TooltipGrafico ? contenido : <TarjetaFlotante>{contenido}</TarjetaFlotante>}
         </Tooltip.Content>
       </Tooltip.Portal>
     </Tooltip.Root>

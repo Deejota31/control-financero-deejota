@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, type ReactNode } from 'react'
-import { FilaHint, Hint } from '@/components/ui/Hint'
+import { Hint } from '@/components/ui/Hint'
+import { TooltipGrafico, TTAlerta, TTBarra, TTCabecera, TTHistorial, TTMetrica, TTPie, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { perfil, ranking, type Dim, type FilaAnalisis, type FiltrosAnalisis } from '@/domain/analisis'
 import type { ClaveFiltro } from '@/domain/filtrosCruzados'
@@ -104,14 +105,13 @@ function Perfil({ p, r, dim, setDim, info, ctx, cargando }: { p: ReturnType<type
   const detalle = (i: number) => {
     const e = p!.ejes[i], dif = e.ref === null ? null : e.pct - e.ref
     return (
-      <div className="flex min-w-48 flex-col gap-0.5">
-        <p className="mb-1 flex items-center gap-1.5 font-display font-bold"><ItemIcon name={info(dim, e.id)?.icon_key} color={info(dim, e.id)?.color_css} />{nombre(e.id)}</p>
-        {ctx(dim, e.id) && <p className="-mt-1 mb-1 text-[11px] text-muted">{ctx(dim, e.id)}</p>}
-        <FilaHint etiqueta="Este período" valor={`${e.pct.toFixed(1)} %`} destacado />
-        <FilaHint etiqueta="Referencia histórica" valor={e.ref === null ? 'Sin referencia' : `${e.ref.toFixed(1)} %`} />
-        {dif !== null && <FilaHint etiqueta="Diferencia" valor={`${dif > 0 ? '+' : ''}${dif.toFixed(1)} pts`} />}
-        <p className="mt-1 text-[11px] text-muted">% del gasto del período ({formatSoles(r?.total ?? 0)}). Referencia: promedio de los meses anteriores.</p>
-      </div>
+      <TooltipGrafico>
+        <TTCabecera icono={<ItemIcon name={info(dim, e.id)?.icon_key} color={info(dim, e.id)?.color_css} />} titulo={nombre(e.id)} subtitulo={ctx(dim, e.id)} />
+        <TTPrincipal etiqueta="Este período" valor={`${e.pct.toFixed(1)} %`} />
+        <TTMetrica etiqueta="Referencia histórica" valor={e.ref === null ? 'Sin referencia' : `${e.ref.toFixed(1)} %`} />
+        {dif !== null && <TTAlerta><span>Diferencia</span><span className="num whitespace-nowrap font-semibold">{dif > 0 ? '+' : ''}{dif.toFixed(1)} pts</span></TTAlerta>}
+        <TTPie>% del gasto del período ({formatSoles(r?.total ?? 0)}); la referencia es el promedio de los meses anteriores.</TTPie>
+      </TooltipGrafico>
     )
   }
   const barras = (
@@ -179,19 +179,19 @@ function Ranking({ r, dim, info, ctx, filtros, seleccionar, cargando, error }: {
             return (
               <li key={it.id}>
                 <Hint side="top" contenido={
-                  <div className="flex min-w-56 flex-col gap-0.5">
-                    <p className="mb-1 flex items-center gap-1.5 font-display font-bold"><ItemIcon name={x?.icon_key} color={x?.color_css} />{x?.name ?? 'Sin nombre'}</p>
-                    {cx && <p className="-mt-1 mb-1 text-[11px] text-muted">{cx}</p>}
-                    <FilaHint etiqueta="Importe" valor={formatSoles(it.monto)} destacado />
-                    <FilaHint etiqueta="Participación" valor={`${it.pct.toFixed(1)} % de ${formatSoles(r.total)}`} />
-                    <FilaHint etiqueta="Movimientos" valor={String(it.cantidad)} />
-                    <FilaHint etiqueta="Referencia" valor={it.referencia === null ? 'Sin referencia' : formatSoles(it.referencia)} />
-                    {it.variacion !== null && <FilaHint etiqueta="Variación" valor={`${it.variacion > 0 ? '▲' : it.variacion < 0 ? '▼' : '='} ${Math.abs(Math.round(it.variacion * 100))} %`} />}
-                    <div className="mt-1 grid grid-cols-6 gap-1 border-t border-line pt-1.5 text-center text-[10px]">
-                      {r.meses.map((m, k) => <div key={m}><div className="text-muted">{mesCorto(m)}</div><div className="num font-semibold">{formatSolesCorto(it.serie[k])}</div></div>)}
+                  <TooltipGrafico ancho="ancho">
+                    <TTCabecera icono={<ItemIcon name={x?.icon_key} color={x?.color_css} />} titulo={x?.name ?? 'Sin nombre'} subtitulo={cx} />
+                    <TTPrincipal etiqueta="Importe" valor={formatSoles(it.monto)} />
+                    <div className="flex flex-col gap-1">
+                      <TTMetrica etiqueta="Participación" valor={`${it.pct.toFixed(1)} % de ${formatSoles(r.total)}`} />
+                      <TTBarra pct={it.pct} color={col} />
+                      <TTMetrica etiqueta="Movimientos" valor={String(it.cantidad)} />
+                      <TTMetrica etiqueta="Referencia" valor={it.referencia === null ? 'Sin referencia' : formatSoles(it.referencia)} />
                     </div>
-                    <p className="mt-1 text-[11px] text-muted">{sel ? 'Clic para quitar el filtro' : 'Clic para filtrar todo el panel'}</p>
-                  </div>}>
+                    {it.variacion !== null && <TTAlerta><span>Variación vs referencia</span><span className="num whitespace-nowrap font-semibold">{it.variacion > 0 ? '▲' : it.variacion < 0 ? '▼' : '='} {Math.abs(Math.round(it.variacion * 100))} %</span></TTAlerta>}
+                    <TTHistorial titulo="Últimos 6 meses" meses={r.meses.map((m, k) => ({ etiqueta: mesCorto(m), valor: formatSolesCorto(it.serie[k]), actual: k === r.meses.length - 1 }))} />
+                    <TTPie>{sel ? 'Clic para quitar el filtro' : 'Clic para filtrar todo el panel'}</TTPie>
+                  </TooltipGrafico>}>
                   <button type="button" aria-pressed={sel} onClick={() => seleccionar(dim, it.id)}
                     className={cn('grid w-full grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-surface-2', sel && 'bg-pri-soft ring-1 ring-pri')}>
                     <span className="num text-[11px] font-semibold text-muted">{i + 1}</span>

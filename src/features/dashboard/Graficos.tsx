@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Area, Bar, BarChart, CartesianGrid, ComposedChart, Line, Pie, PieChart, Rectangle, ReferenceLine, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from 'recharts'
-import { TarjetaFlotante, FilaHint } from '@/components/ui/Hint'
+import { TooltipGrafico, TTAlerta, TTBarra, TTCabecera, TTMetrica, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import type { PuntoDiario } from '@/domain/dashboard'
 import { cn } from '@/lib/cn'
-import { formatFecha, formatMes, formatSoles, formatSolesCorto } from '@/lib/format'
+import { formatFecha, formatFechaLarga, formatMes, formatSoles, formatSolesCorto } from '@/lib/format'
 
 const EJE = { fill: 'var(--muted)', fontSize: 12 }
 
@@ -19,27 +19,47 @@ interface TooltipProps {
   serie: PuntoGrafico[]
 }
 
-/** Tooltip de los gráficos temporales (acumulado y diario): gasto del día, su peso en el mes, acumulado y ritmo ideal. */
-function TooltipDia({ active, payload, formato, mostrarIdeal, serie }: TooltipProps) {
+/**
+ * Tooltip de los gráficos temporales. Acumulado (variante A, evolución): fecha → acumulado y ritmo ideal → datos del día → diferencia.
+ * Diario (A compacto): fecha → gasto del día como protagonista → movimientos, peso en el mes y acumulado.
+ */
+function TooltipDia({ active, payload, formato, mostrarIdeal, serie, variante }: TooltipProps & { variante: 'acumulado' | 'diario' }) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
   const mes = p.fecha.slice(0, 7)
   const totalMes = serie.filter((x) => x.fecha.startsWith(mes)).reduce((t, x) => t + x.gasto, 0)
   const nombreMes = formatMes(p.fecha).split(' ')[0]
+  const pct = totalMes > 0 ? (p.gasto / totalMes) * 100 : null
   const dif = mostrarIdeal && p.acumulado !== null && p.ideal !== null ? p.acumulado - p.ideal : null
+  const fechaLarga = formatFechaLarga(p.fecha)
+  const delMes = pct !== null && <TTMetrica etiqueta={`% de ${nombreMes}`} valor={`${pct.toFixed(1)} % de ${formatSoles(totalMes)}`} />
+
+  if (variante === 'diario') {
+    return (
+      <TooltipGrafico>
+        <TTCabecera titulo={formatFecha(p.fecha, formato)} subtitulo={<span className="first-letter:uppercase">{fechaLarga.split(' ')[0]}</span>} />
+        <TTPrincipal etiqueta="Gasto del día" valor={formatSoles(p.gasto)} />
+        <div className="flex flex-col gap-1">
+          <TTMetrica etiqueta="Movimientos" valor={p.cantidad} />
+          {delMes}
+          {pct !== null && <TTBarra pct={pct} />}
+          {p.acumulado !== null && <TTMetrica etiqueta="Acumulado" valor={formatSoles(p.acumulado)} />}
+        </div>
+      </TooltipGrafico>
+    )
+  }
   return (
-    <TarjetaFlotante className="min-w-52">
-      <p className="mb-1.5 font-display font-bold">{formatFecha(p.fecha, formato)}</p>
-      <div className="flex flex-col gap-0.5">
-        <FilaHint etiqueta="Gasto del día" valor={formatSoles(p.gasto)} destacado />
-        <FilaHint etiqueta="Movimientos" valor={p.cantidad} />
-        {totalMes > 0 && <FilaHint etiqueta={`% de ${nombreMes}`} valor={`${((p.gasto / totalMes) * 100).toFixed(1)} % de ${formatSoles(totalMes)}`} />}
-        {p.acumulado !== null && <FilaHint etiqueta="Acumulado" valor={formatSoles(p.acumulado)} />}
-        {mostrarIdeal && p.ideal !== null && <FilaHint etiqueta="Ritmo ideal" valor={formatSoles(p.ideal)} />}
-        {dif !== null && <FilaHint etiqueta={dif > 0 ? 'Por encima del ideal' : 'Por debajo del ideal'} valor={<span className={dif > 0 ? 'text-bad' : 'text-ok'}>{formatSoles(Math.abs(dif))}</span>} />}
-        {p.acumulado === null && p.proyeccion !== null && <FilaHint etiqueta="Proyección (estimación)" valor={formatSoles(p.proyeccion)} />}
+    <TooltipGrafico>
+      <TTCabecera titulo={formatFecha(p.fecha, formato)} subtitulo={<span className="first-letter:uppercase">{fechaLarga.split(' ')[0]}</span>} />
+      {p.acumulado !== null ? <TTPrincipal etiqueta="Acumulado" valor={formatSoles(p.acumulado)} /> : p.proyeccion !== null && <TTPrincipal etiqueta="Proyección (estimación)" valor={formatSoles(p.proyeccion)} />}
+      <div className="flex flex-col gap-1">
+        {mostrarIdeal && p.ideal !== null && <TTMetrica etiqueta="Ritmo ideal" valor={formatSoles(p.ideal)} />}
+        <TTMetrica etiqueta="Gasto del día" valor={formatSoles(p.gasto)} />
+        <TTMetrica etiqueta="Movimientos" valor={p.cantidad} />
+        {delMes}
       </div>
-    </TarjetaFlotante>
+      {dif !== null && <TTAlerta tono={dif > 0 ? 'bad' : 'ok'}><span>{dif > 0 ? 'Por encima del ideal' : 'Por debajo del ideal'}</span><span className="num whitespace-nowrap font-semibold">{formatSoles(Math.abs(dif))}</span></TTAlerta>}
+    </TooltipGrafico>
   )
 }
 
@@ -68,7 +88,7 @@ export function GraficoAcumulado({ serie, formato, dia, onDia, mostrarIdeal, res
           <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} />
-          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} serie={serie} />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
+          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} serie={serie} variante="acumulado" />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
           <Area type="monotone" dataKey="acumulado" stroke="var(--c1)" strokeWidth={2.5} fill="var(--c1)" fillOpacity={0.12} connectNulls={false} dot={false} activeDot={{ r: 6, stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} name="Gasto acumulado" />
           {mostrarIdeal && <Line type="linear" dataKey="ideal" stroke="var(--muted)" strokeWidth={2} strokeDasharray="1 5" strokeLinecap="round" dot={false} activeDot={false} isAnimationActive={false} name="Ritmo ideal" />}
           <Line type="linear" dataKey="proyeccion" stroke="var(--c2)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Proyección de cierre" />
@@ -87,7 +107,7 @@ export function GraficoDiario({ serie, formato, dia, onDia }: Omit<GraficoTempor
           <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} tickCount={3} />
-          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={false} serie={serie} />} cursor={{ fill: 'var(--surface-2)' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
+          <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={false} serie={serie} variante="diario" />} cursor={{ fill: 'var(--surface-2)' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
           <Bar
             dataKey="gasto"
             name="Gasto diario"
@@ -167,16 +187,16 @@ export function Dona({
         <span className="num text-base font-semibold">{formatSolesCorto(seleccionado ? (datos.find((d) => d.id === seleccionado)?.valor ?? 0) : suma)}</span>
       </div>
       {seg && (
-        <div role="status" className={cn('anim-pop pointer-events-none absolute z-20 w-56 left-0 top-full mt-2 sm:left-full sm:top-2 sm:ml-3 sm:mt-0')}>
-          <TarjetaFlotante>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="size-3 rounded-sm" style={{ background: seg.fill }} aria-hidden="true" />
-              <span className="font-display font-bold">{seg.nombre}</span>
+        <div role="status" className={cn('anim-pop pointer-events-none absolute left-0 top-full z-20 mt-2 sm:left-full sm:top-2 sm:ml-3 sm:mt-0')}>
+          <TooltipGrafico>
+            <TTCabecera color={seg.fill} titulo={seg.nombre} />
+            <TTPrincipal etiqueta="Importe" valor={formatSoles(seg.valor)} />
+            <div className="flex flex-col gap-1">
+              <TTMetrica etiqueta="Del total" valor={`${suma > 0 ? ((seg.valor / suma) * 100).toFixed(1) : '0.0'} %`} />
+              <TTBarra pct={suma > 0 ? (seg.valor / suma) * 100 : 0} color={seg.fill} />
+              <TTMetrica etiqueta="Movimientos" valor={seg.cantidad} />
             </div>
-            <FilaHint etiqueta="Importe" valor={formatSoles(seg.valor)} destacado />
-            <FilaHint etiqueta="Del total" valor={`${suma > 0 ? ((seg.valor / suma) * 100).toFixed(1) : '0.0'} %`} />
-            <FilaHint etiqueta="Movimientos" valor={seg.cantidad} />
-          </TarjetaFlotante>
+          </TooltipGrafico>
         </div>
       )}
     </div>

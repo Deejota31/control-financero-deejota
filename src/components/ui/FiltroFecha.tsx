@@ -73,8 +73,8 @@ export function FiltroFecha({ modo, desde, hasta, formato, hoy, onAplicar, maxim
         <button type="button" aria-label={mesNatural ? 'Ir al mes anterior' : 'Ir al período anterior'} onClick={() => mover(-1)} className="grid h-full w-9 shrink-0 place-items-center rounded-l-lg text-muted hover:bg-surface-2 hover:text-fg"><ChevronLeft className="size-4" aria-hidden="true" /></button>
         <Popover.Root open={abierto} onOpenChange={abrir}>
           <Popover.Trigger asChild>
-            <button type="button" aria-label={`Período: ${etiqueta}${estado ? ` · ${TEXTO_ESTADO[estado]}` : ''}`} className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 hover:bg-surface-2">
-              <span className="num max-w-full truncate text-sm font-semibold leading-tight">{etiqueta}</span>
+            <button type="button" className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 hover:bg-surface-2">
+              <span className="num max-w-full truncate text-sm font-semibold leading-tight"><span className="sr-only">Período: </span>{etiqueta}</span>
               {estado ? <span className={cn('rounded-full px-2 text-[10.5px] font-semibold leading-4', COLOR_ESTADO[estado], FONDO_ESTADO[estado])}>{TEXTO_ESTADO[estado]}</span> : <span className="text-[10.5px] leading-4 text-muted">Rango personalizado</span>}
             </button>
           </Popover.Trigger>
