@@ -17,6 +17,7 @@ import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, toIso } from '@/lib/format'
 import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { finDeMes, mesDeFecha, usePeriodo } from '@/features/fondos/useFondos'
+import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { useEstadoLote, usePlantillas } from '@/features/gastos/usePlantillas'
 import { usePerfil } from '@/features/perfil/usePerfil'
@@ -201,6 +202,8 @@ export function DashboardPage() {
           </section>
 
           <PresupuestoConsolidado r={resumen} etiquetaPeriodo={etiquetaPeriodo} />
+
+          <AnalisisDashboard catalogo={catalogo} filtros={filtros} serie={panel?.serie ?? []} hoy={HOY} formato={formato} seleccionar={seleccionar} />
 
           <Tarjeta titulo="Gasto acumulado" filtrada={hayFiltrosSerie} descripcion={`${etiquetaPeriodo} · día a día${hayFiltrosSerie ? ' · solo el gasto que cumple los filtros' : ''} · selecciona un día para filtrar`}>
             <div className="flex flex-wrap gap-2">

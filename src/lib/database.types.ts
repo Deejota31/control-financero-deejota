@@ -644,6 +644,9 @@ isOneToOne: false
 "current_household_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"dashboard_analisis":
+{ Args: { "p_desde": string,"p_hasta": string }; Returns: Json
+                           },
 "dashboard_panel":
 { Args: { "p_ambito"?: string,"p_categoria"?: string,"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: string,"p_tipo"?: string }; Returns: Json
                            },
