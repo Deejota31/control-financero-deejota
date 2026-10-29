@@ -1,7 +1,7 @@
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, vigilarConsola } from './helpers'
 
 const dinero = (t: string | null) => Number((t ?? '').replace(/[^\d.-]/g, ''))
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
@@ -107,6 +107,29 @@ test.describe('Dashboard', () => {
     expect(await valorKpi(page, 'Gasto del período')).toBeCloseTo(sqlTotal(), 2)
   })
 
+  test('Top 5 categorías: una barra por nombre con la suma de todos los ámbitos', async ({ page }) => {
+    await iniciarSesion(page)
+    const filas = page.getByRole('region', { name: /^Top 5/ }).getByRole('button', { name: /mov\./ })
+    await expect(filas.first()).toBeVisible()
+    const esperado = sqlLocal(`select c.name || '|' || sum(e.amount) || '|' || count(*) from public.expenses e join public.categorias c on c.id = e.categoria_id where e.household_id = ${HID} and e.status = 'active' and e.expense_date between '${INI}' and '${FIN}' group by lower(trim(c.name)), c.name order by sum(e.amount) desc, c.name limit 5`)
+    const filasSql = esperado.split('\n').map((l) => l.split('|'))
+    const n = await filas.count()
+    expect(n).toBe(filasSql.length)
+    const nombres: string[] = []
+    for (let i = 0; i < n; i++) {
+      const texto = (await filas.nth(i).innerText()).replace(/\s+/g, ' ')
+      nombres.push(texto)
+      const [nombre, total, cant] = filasSql[i]
+      expect(texto, `barra ${i + 1}`).toContain(nombre)
+      const importe = Number(texto.match(/S\/\s*([\d.,]+)/)![1].replace(/,/g, ''))
+      expect(importe).toBeCloseTo(Number(total), 2)
+      expect(texto).toContain(`${cant} mov.`)
+    }
+    // ninguna categoría aparece dos veces
+    const soloNombres = nombres.map((x) => x.split(' ')[0])
+    expect(new Set(soloNombres).size).toBe(soloNombres.length)
+  })
+
   test('seleccionar una categoría del Top 5 filtra la dona y los KPIs sin reducir el propio Top 5', async ({ page }) => {
     await iniciarSesion(page)
     const filas = page.getByRole('region', { name: /^Top 5/ }).getByRole('button', { name: /mov\./ })
@@ -116,7 +139,8 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('combobox', { name: 'Categoría', exact: true })).not.toHaveText('Categoría')
     await expect(page).toHaveURL(/categoria=/)
     const cat = new URL(page.url()).searchParams.get('categoria')!
-    const esperado = sqlTotal(`and categoria_id = '${cat}'`)
+    // La barra es el grupo por nombre: puede llevar varios IDs (la misma categoría en distintos ámbitos).
+    const esperado = sqlTotal(`and categoria_id in (${cat.split(',').map((i) => `'${i}'`).join(',')})`)
     await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(esperado, 2)
     // la dona muestra solo lo de esa categoría y suma lo mismo que el KPI
     await expect.poll(() => sumaDona(page)).toBeCloseTo(esperado, 1)
@@ -268,10 +292,7 @@ test.describe('Dashboard', () => {
     await page.getByRole('button', { name: 'Nuevo gasto' }).click()
     const d = page.getByRole('dialog')
     await d.getByLabel('Importe', { exact: true }).fill('10')
-    for (const [nombre, opcion] of [['Ámbito', 'Personal'], ['Categoría', 'Ocio'], ['Medio de pago', 'Yape']] as const) {
-      await d.getByRole('combobox', { name: nombre, exact: true }).click()
-      await page.getByRole('option', { name: opcion, exact: true }).click()
-    }
+    for (const [nombre, opcion] of [['Ámbito', 'Personal'], ['Categoría', 'Ocio'], ['Medio de pago', 'Yape']] as const) await elegirEnGasto(d, nombre, opcion)
     await d.getByLabel('Descripción', { exact: true }).fill('E2E dashboard')
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(page.getByText('Gasto guardado.')).toBeVisible()

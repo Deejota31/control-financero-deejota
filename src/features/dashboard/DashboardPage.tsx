@@ -14,7 +14,7 @@ import { resumirPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, toIso } from '@/lib/format'
-import { agruparPorNombre, idsDe, valorDeGrupo } from '@/domain/idsFiltro'
+import { agruparPorNombre, consolidarPorNombre, idsDe, unirIds, valorDeGrupo } from '@/domain/idsFiltro'
 import { opciones, opcionesAgrupadas, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
@@ -124,7 +124,9 @@ export function DashboardPage() {
     return { id: a.id, nombre: amb?.name ?? 'Ámbito', valor: a.total, cantidad: a.cantidad, fill: colorVar(amb?.color_css) }
   })
   const listaTop = topModo === 'categorias' ? panel?.por_categoria : panel?.por_subcategoria
-  const top = useMemo(() => (listaTop ?? []).slice(0, 5).map((t) => ({ ...t, total: Number(t.total), cantidad: Number(t.cantidad) })), [listaTop])
+  // Una barra por nombre: lo que se llama igual en distintos ámbitos se suma (solo presentación; los registros no cambian).
+  const catalogoTop: { id: string; name: string; icon_key: string }[] = topModo === 'categorias' ? catalogo.categorias : catalogo.subcategorias
+  const top = useMemo(() => consolidarPorNombre(listaTop ?? [], catalogoTop).slice(0, 5), [listaTop, catalogoTop])
   const totalTop = useMemo(() => (listaTop ?? []).reduce((s, t) => s + Number(t.total), 0), [listaTop])
 
   const irAGastos = () => navigate(`/gastos?${paramsGastos(filtros)}`)
@@ -267,22 +269,23 @@ export function DashboardPage() {
               {top.length === 0 ? <p className="text-sm text-muted">No hay gasto {topModo === 'subcategorias' ? 'con subcategoría ' : ''}con estos filtros.</p> : (
                 <ul className="flex flex-col gap-1.5">
                   {top.map((t) => {
-                    const cat = topModo === 'categorias' ? catalogo.categorias.find((c) => c.id === t.id) : null
-                    const sub = topModo === 'subcategorias' ? catalogo.subcategorias.find((s) => s.id === t.id) : null
-                    const item = cat ?? sub
-                    const padreCat = cat ?? catalogo.categorias.find((c) => c.id === sub?.categoria_id)
+                    const item = t.primero
+                    const padreCat = topModo === 'categorias' ? (item as typeof catalogo.categorias[number] | undefined) : catalogo.categorias.find((c) => c.id === (item as typeof catalogo.subcategorias[number] | undefined)?.categoria_id)
                     const color = padreCat?.color_css ?? '#3A3FA6'
-                    const sel = idsDe(topModo === 'categorias' ? filtros.categoria : filtros.subcategoria).includes(t.id)
-                    const grupoValor = (topModo === 'categorias' ? gruposCat : gruposSub).find((g) => g.ids.includes(t.id))?.valor ?? t.id
+                    const elegidos = idsDe(topModo === 'categorias' ? filtros.categoria : filtros.subcategoria)
+                    const sel = t.ids.some((id) => elegidos.includes(id))
+                    const grupoValor = (topModo === 'categorias' ? gruposCat : gruposSub).find((g) => g.ids.some((id) => t.ids.includes(id)))?.valor ?? unirIds(t.ids)
                     const hayEleccion = topModo === 'categorias' ? Boolean(filtros.categoria) : Boolean(filtros.subcategoria)
-                    const ambNombre = catalogo.ambitos.find((a) => a.id === padreCat?.ambito_id)?.name
+                    // Una categoría consolidada no pertenece a un solo ámbito: sin subtítulo. Una subcategoría lo conserva solo si todas sus filas cuelgan de la misma categoría.
+                    const padres = new Set(topModo === 'subcategorias' ? t.ids.map((id) => catalogo.subcategorias.find((s) => s.id === id)?.categoria_id) : [])
+                    const subtitulo = topModo === 'subcategorias' && padres.size === 1 ? padreCat?.name : undefined
                     return (
-                      <li key={t.id}>
+                      <li key={unirIds(t.ids)}>
                         <Hint
                           side="top"
                           contenido={
                             <TooltipGrafico>
-                              <TTCabecera icono={<ItemIcon name={item?.icon_key} color={color} />} titulo={item?.name} subtitulo={topModo === 'subcategorias' ? padreCat?.name : ambNombre} />
+                              <TTCabecera icono={<ItemIcon name={item?.icon_key} color={color} />} titulo={t.nombre} subtitulo={subtitulo} />
                               <TTPrincipal etiqueta="Importe" valor={formatSoles(t.total)} />
                               <div className="flex flex-col gap-1">
                                 <TTMetrica etiqueta="Del gasto mostrado" valor={`${totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'} %`} />
@@ -299,7 +302,7 @@ export function DashboardPage() {
                             className={cn('flex w-full items-center gap-2 rounded-lg border border-transparent p-1.5 text-left sm:gap-3 transition-colors hover:bg-surface-2', sel && 'border-pri bg-pri-soft', hayEleccion && !sel && 'opacity-60')}
                           >
                             <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={item?.icon_key} color={color} /></span>
-                            <span className="w-[4.5rem] shrink-0 sm:w-32"><span className="block truncate font-medium">{item?.name}</span><span className="block truncate text-xs text-muted">{topModo === 'categorias' ? ambNombre : padreCat?.name}</span></span>
+                            <span className="w-[4.5rem] shrink-0 sm:w-32"><span className="block truncate font-medium">{t.nombre}</span>{subtitulo && <span className="block truncate text-xs text-muted">{subtitulo}</span>}</span>
                             <span className="h-3 min-w-6 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full" style={{ width: `${(t.total / top[0].total) * 100}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${colorVar(color)} 55%, transparent), ${colorVar(color)})` }} /></span>
                             <span className="w-[4.75rem] shrink-0 text-right sm:w-28"><span className="num block font-medium">{formatSoles(t.total)}</span><span className="num block text-xs text-muted">{totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'}% · {t.cantidad} mov.</span></span>
                           </button>

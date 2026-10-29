@@ -32,6 +32,43 @@ export function agruparPorNombre<T extends { id: string; name: string; is_active
   return [...grupos.values()]
 }
 
+export interface FilaAgrupada {
+  id: string
+  total: number | string
+  cantidad: number | string
+}
+
+export interface TopConsolidado<T> {
+  nombre: string
+  ids: string[]
+  total: number
+  cantidad: number
+  /** Primer elemento del catálogo del grupo (icono y color); undefined si el ID ya no existe. */
+  primero: T | undefined
+}
+
+/**
+ * Consolida un reparto por ID (Top 5) por nombre: las categorías (o subcategorías) con el mismo nombre en distintos ámbitos suman importe y
+ * movimientos y se muestran una sola vez, de mayor a menor. Es solo presentación: los registros y el total filtrado no cambian, así que los
+ * porcentajes siguen calculándose sobre todo el gasto del período filtrado. Un ID que ya no está en el catálogo no se mezcla con otros.
+ */
+export function consolidarPorNombre<T extends { id: string; name: string }>(filas: FilaAgrupada[], catalogo: T[]): TopConsolidado<T>[] {
+  const porId = new Map(catalogo.map((c) => [c.id, c]))
+  const grupos = new Map<string, { nombre: string; ids: string[]; centimos: number; cantidad: number; primero: T | undefined }>()
+  for (const f of filas) {
+    const item = porId.get(f.id)
+    const clave = item ? normalizar(item.name) : `id:${f.id}`
+    const g = grupos.get(clave) ?? { nombre: item?.name.trim() ?? 'Sin clasificar', ids: [], centimos: 0, cantidad: 0, primero: item }
+    g.ids.push(f.id)
+    g.centimos += Math.round(Number(f.total) * 100)
+    g.cantidad += Number(f.cantidad)
+    grupos.set(clave, g)
+  }
+  return [...grupos.values()]
+    .map((g) => ({ nombre: g.nombre, ids: g.ids, total: g.centimos / 100, cantidad: g.cantidad, primero: g.primero }))
+    .sort((a, b) => b.total - a.total)
+}
+
 /** Valor del selector para la elección actual: el del grupo que contiene sus IDs (así «Alimentación» se ve elegida aunque se haya acotado). */
 export function valorDeGrupo<T>(grupos: GrupoNombre<T>[], actual: string | null | undefined): string | null {
   const ids = idsDe(actual)
