@@ -1,6 +1,6 @@
 import { type Locator, type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password } from './helpers'
 
 const TAMANOS = [
   { w: 320, h: 640 }, { w: 375, h: 812 }, { w: 430, h: 932 }, { w: 640, h: 360 }, { w: 1920, h: 1080 }, { w: 360, h: 800 }, { w: 390, h: 844 }, { w: 768, h: 1024 }, { w: 1024, h: 768 }, { w: 1366, h: 768 }, { w: 1440, h: 900 }, { w: 844, h: 390 },
@@ -47,10 +47,16 @@ test.describe('Modales: acciones visibles y campos contenidos en todos los tama�
       await expect(d).toBeVisible()
       let r = await medir(page, d, ['Cancelar', 'Guardar gasto'])
       expect(r.fallos, `Nuevo gasto ${t.w}×${t.h}`).toEqual([])
-      await d.getByRole('button', { name: /Información adicional/ }).click()
+      // Cascada completa (ámbito, categoría, subcategoría y medio de pago elegidos): es la altura máxima del formulario.
+      await elegirEnGasto(d, 'Ámbito', 'Personal')
+      await elegirEnGasto(d, 'Categoría', 'Ocio')
+      await d.getByRole('radiogroup', { name: 'Subcategoría (opcional)' }).getByRole('radio').first().click()
+      await elegirEnGasto(d, 'Medio de pago', 'Yape')
       r = await medir(page, d, ['Cancelar', 'Guardar gasto'])
-      expect(r.fallos, `Nuevo gasto (más opciones) ${t.w}×${t.h}`).toEqual([])
+      expect(r.fallos, `Nuevo gasto (cascada completa) ${t.w}×${t.h}`).toEqual([])
       await d.getByRole('button', { name: 'Cancelar' }).click()
+      const descartar = page.getByRole('button', { name: 'Descartar cambios' })
+      if (await descartar.isVisible({ timeout: 800 }).catch(() => false)) await descartar.click()
 
       await page.goto('/fondos')
       await page.getByRole('button', { name: 'Nuevo fondo' }).first().click()
