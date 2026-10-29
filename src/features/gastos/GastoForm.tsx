@@ -6,14 +6,11 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
-import { ChipK } from '@/components/ui/ChipK'
-import { Combobox } from '@/components/ui/Combobox'
-import { ItemIcon } from '@/components/ui/ItemIcon'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
 import { MoneyInput } from '@/components/ui/MoneyInput'
-import { Seccion } from '@/components/ui/Seccion'
+import { SelectorChips } from '@/components/ui/SelectorChips'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
@@ -21,7 +18,7 @@ import { errorImporte, formatFecha, formatMes, formatSoles, parseImporte, toIso 
 import { supabase } from '@/lib/supabase'
 import type { Gasto } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
-import { opciones, useCatalogo } from '@/features/catalogo/useCatalogo'
+import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { borrarArchivo, registrarLimpieza } from './comprobantes'
 import { useGastoMutaciones, usePrevisualizacion, type PayloadGasto } from './useGastos'
@@ -58,13 +55,18 @@ const MOTIVOS: Record<string, string> = {
   rules: 'Ningún fondo admite a la vez esta clasificación y este medio de pago. Ajusta las reglas en Fondos o cambia uno de los dos.',
 }
 
-/** Agrupa campos relacionados bajo un título: la jerarquía del formulario es por tareas, no una lista de controles. */
-function GrupoForm({ titulo, children }: { titulo: string; children: ReactNode }) {
+/** Etiqueta + selector de chips: el grupo se nombra a sí mismo (aria-label) y el mensaje de error lo describe. */
+function CampoChips({ etiqueta, contexto, error, children }: { etiqueta: string; contexto?: string; error?: string; children: (descritoPor: string | undefined) => ReactNode }) {
+  const msg = useId()
   return (
-    <section aria-label={titulo} className="flex min-w-0 flex-col gap-3 rounded-xl border border-line p-3 sm:p-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">{titulo}</h3>
-      {children}
-    </section>
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-medium">{etiqueta}</span>
+        {contexto && <span className="truncate text-xs text-muted">de {contexto}</span>}
+      </div>
+      {children(error ? msg : undefined)}
+      {error && <p id={msg} className="text-sm text-bad">{error}</p>}
+    </div>
   )
 }
 
@@ -103,7 +105,6 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
 
   const ambitoSel = catalogo.ambitos.find((x) => x.id === v.ambito_id)
   const categoriaSel = catalogo.categorias.find((x) => x.id === v.categoria_id)
-  const subSel = catalogo.subcategorias.find((x) => x.id === v.subcategoria_id)
   const medioSel = catalogo.medios.find((x) => x.id === v.payment_method_id)
   const categorias = useMemo(() => catalogo.categorias.filter((c) => c.ambito_id === v.ambito_id), [catalogo.categorias, v.ambito_id])
   const subcategorias = useMemo(() => catalogo.subcategorias.filter((s) => s.categoria_id === v.categoria_id), [catalogo.subcategorias, v.categoria_id])
@@ -213,117 +214,119 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
       <form id={formId} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex min-w-0 flex-col gap-4">
           {errorEnvio && <Alert tone="error">{errorEnvio}</Alert>}
-          <GrupoForm titulo="Datos principales">
-            <Field label="Descripción" error={errors.description?.message} hint="Qué compraste o pagaste. Se propone desde la subcategoría; puedes editarla.">
+
+          {/* Cascada: cada paso aparece al elegir el anterior, con el icono, el color y el orden del Catálogo. */}
+          <div className="flex min-w-0 flex-col gap-3">
+            <CampoChips etiqueta="Ámbito" error={errors.ambito_id?.message}>
+              {(id) => (
+                <Controller control={control} name="ambito_id" render={({ field }) => (
+                  <SelectorChips etiqueta="Ámbito" items={catalogo.ambitos} value={field.value} invalido={Boolean(errors.ambito_id)} descritoPor={id}
+                    onChange={(x) => { field.onChange(x); setValue('categoria_id', ''); setValue('subcategoria_id', '') }} />
+                )} />
+              )}
+            </CampoChips>
+
+            {v.ambito_id ? (
+              <div className="paso-cascada">
+                <CampoChips etiqueta="Categoría" contexto={ambitoSel?.name} error={errors.categoria_id?.message}>
+                  {(id) => (
+                    <Controller control={control} name="categoria_id" render={({ field }) => (
+                      <SelectorChips etiqueta="Categoría" items={categorias} value={field.value} invalido={Boolean(errors.categoria_id)} descritoPor={id}
+                        onChange={(x) => { field.onChange(x); setValue('subcategoria_id', '') }} />
+                    )} />
+                  )}
+                </CampoChips>
+              </div>
+            ) : <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-muted">Elige un ámbito y aparecen sus categorías.</p>}
+
+            {v.categoria_id && (
+              <div className="paso-cascada">
+                {subcategorias.length === 0 ? (
+                  <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-muted">Esta categoría no tiene subcategorías.</p>
+                ) : (
+                  <CampoChips etiqueta="Subcategoría (opcional)" contexto={categoriaSel?.name}>
+                    {() => (
+                      <Controller control={control} name="subcategoria_id" render={({ field }) => (
+                        <SelectorChips etiqueta="Subcategoría (opcional)" items={subcategorias} value={field.value} limpiable
+                          onChange={(x) => {
+                            field.onChange(x)
+                            const sub = catalogo.subcategorias.find((s) => s.id === x)
+                            if (sub && !descripcionTocada) setValue('description', sub.name, { shouldValidate: true })
+                          }} />
+                      )} />
+                    )}
+                  </CampoChips>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Field label="Descripción" error={errors.description?.message} hint="Qué compraste o pagaste. Se propone desde la subcategoría; puedes editarla.">
             {(p) => <Input {...p} {...register('description', { onChange: () => setTocada(true) })} />}
           </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Importe" error={errors.amount?.message}>
-              {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput grande id={p.id} aria-describedby={p["aria-describedby"]} invalid={p["aria-invalid"]} value={field.value} onChange={field.onChange} />} />}
-            </Field>
-              <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
-              {(p) => <Controller control={control} name="expense_date" render={({ field }) => <DatePicker id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} formato={formato} />} />}
-            </Field>
-            </div>
-            <Field label="Medio de pago" error={errors.payment_method_id?.message}>
-              {(p) => (
-                <Controller control={control} name="payment_method_id" render={({ field }) => (
-                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} searchable={false}
-                    options={opciones(catalogo.medios, field.value)} placeholder="Elegir medio" onChange={(x) => field.onChange(x ?? '')} />
-                )} />
-              )}
-            </Field>
-          </GrupoForm>
 
-          <GrupoForm titulo="Clasificación">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Ámbito" error={errors.ambito_id?.message}>
-              {(p) => (
-                <Controller control={control} name="ambito_id" render={({ field }) => (
-                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} searchable={false}
-                    options={opciones(catalogo.ambitos, field.value)} placeholder="Elegir ámbito"
-                    onChange={(x) => { field.onChange(x ?? ''); setValue('categoria_id', ''); setValue('subcategoria_id', '') }} />
-                )} />
-              )}
-            </Field>
-              <Field label="Categoría" error={errors.categoria_id?.message} hint={!v.ambito_id ? 'Primero elige un ámbito.' : undefined}>
-              {(p) => (
-                <Controller control={control} name="categoria_id" render={({ field }) => (
-                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} disabled={!v.ambito_id}
-                    options={opciones(categorias, field.value)} placeholder="Elegir categoría" searchPlaceholder="Buscar categoría…"
-                    onChange={(x) => { field.onChange(x ?? ''); setValue('subcategoria_id', '') }} />
-                )} />
-              )}
-            </Field>
-            </div>
-            <Field label="Subcategoría (opcional)" hint={v.categoria_id && subcategorias.length === 0 ? 'Esta categoría no tiene subcategorías.' : !v.categoria_id ? 'Primero elige una categoría.' : undefined}>
-              {(p) => (
-                <Controller control={control} name="subcategoria_id" render={({ field }) => (
-                  <Combobox id={p.id} aria-describedby={p['aria-describedby']} value={field.value} clearable disabled={!v.categoria_id || subcategorias.length === 0}
-                    options={opciones(subcategorias, field.value)} placeholder="Sin subcategoría" searchPlaceholder="Buscar subcategoría…"
-                    onChange={(x) => {
-                      field.onChange(x ?? '')
-                      const sub = catalogo.subcategorias.find((s) => s.id === x)
-                      if (sub && !descripcionTocada) setValue('description', sub.name, { shouldValidate: true })
-                    }} />
-                )} />
-              )}
-            </Field>
-            {(ambitoSel || categoriaSel) && (
-              <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted" aria-label="Clasificación elegida">
-                {ambitoSel && <ChipK color={ambitoSel.color_css}><ItemIcon name={ambitoSel.icon_key} className="size-3" /> {ambitoSel.name}</ChipK>}
-                {categoriaSel && <ChipK color={categoriaSel.color_css}><ItemIcon name={categoriaSel.icon_key} className="size-3" /> {categoriaSel.name}</ChipK>}
-                {subSel && <ChipK color={subSel.color_css}><ItemIcon name={subSel.icon_key} className="size-3" /> {subSel.name}</ChipK>}
-              </p>
-            )}
-          </GrupoForm>
+          <Field label="Notas (opcional)" error={errors.notes?.message}>
+            {(p) => <textarea {...p} rows={2} {...register('notes')} className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" placeholder="Detalles que no caben en el concepto" />}
+          </Field>
 
-          <Seccion titulo="Información adicional" inicial={modo !== 'nuevo' && Boolean(gasto?.notes || gasto?.receipt_path || gasto?.is_recurring || gasto?.expense_type === 'fixed')} resumen={[v.expense_type === 'fixed' ? 'Fijo' : 'Variable', v.is_recurring ? 'recurrente' : null, v.notes ? 'con nota' : null, archivo || recibo ? 'con comprobante' : null].filter(Boolean).join(' · ')}>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <div className="flex flex-col gap-1.5">
-                <span id="tipo-label" className="text-sm font-medium">Tipo</span>
-                <Controller control={control} name="expense_type" render={({ field }) => (
-                  <div role="radiogroup" aria-labelledby="tipo-label" className="inline-flex rounded-md bg-surface-2 p-0.5 text-sm font-semibold">
-                    {([['variable', 'Variable'], ['fixed', 'Fijo']] as const).map(([val, label]) => (
-                      <button key={val} type="button" role="radio" aria-checked={field.value === val} onClick={() => field.onChange(val)}
-                        className={cn('rounded px-3 py-1.5', field.value === val ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{label}</button>
-                    ))}
-                  </div>
-                )} />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Comprobante (opcional)</span>
+            {recibo && !archivo ? (
+              <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
+                <Paperclip className="size-4 text-muted" aria-hidden="true" />
+                <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
+                <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
               </div>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('is_recurring')} /> Es un gasto recurrente</label>
-            </div>
-
-            <Field label="Notas (opcional)" error={errors.notes?.message}>
-              {(p) => <textarea {...p} rows={2} {...register('notes')} className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" placeholder="Detalles que no caben en el concepto" />}
-            </Field>
-
-            <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">Comprobante (opcional)</span>
-              {recibo && !archivo ? (
-                <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
-                  <Paperclip className="size-4 text-muted" aria-hidden="true" />
-                  <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
-                  <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
-                </div>
-              ) : (
-                <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
-                  className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
-              )}
-              <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
-              {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
-            </div>
-          </Seccion>
+            ) : (
+              <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+                className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
+            )}
+            <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
+            {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
+          </div>
         </div>
 
-        <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-0 lg:self-start">
-          <div>
-            <h3 className="font-display text-base font-bold">Cobertura estimada por fondos</h3>
-            <p className="text-xs text-muted">Estimación del motor con los datos de hoy. La imputación definitiva se calcula al guardar.</p>
-          </div>
-          <PanelPrevio payload={payloadPrevio} actualizando={previoActualizando} error={previo.isError} reporte={payloadPrevio === payloadDebounced ? previo.data : undefined} />
-        </aside>
+        <div className="flex min-w-0 flex-col gap-4">
+          <Field label="Importe" error={errors.amount?.message}>
+            {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput grande id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} />} />}
+          </Field>
 
+          <div className="grid gap-4 min-[420px]:grid-cols-2">
+            <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
+              {(p) => <Controller control={control} name="expense_date" render={({ field }) => <DatePicker id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} formato={formato} />} />}
+            </Field>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span id="tipo-label" className="text-sm font-medium">Tipo de gasto</span>
+              <Controller control={control} name="expense_type" render={({ field }) => (
+                <div role="radiogroup" aria-labelledby="tipo-label" className="inline-flex self-start rounded-md bg-surface-2 p-0.5 text-sm font-semibold">
+                  {([['variable', 'Variable'], ['fixed', 'Fijo']] as const).map(([val, label]) => (
+                    <button key={val} type="button" role="radio" aria-checked={field.value === val} onClick={() => field.onChange(val)}
+                      className={cn('rounded px-3 py-1.5', field.value === val ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{label}</button>
+                  ))}
+                </div>
+              )} />
+            </div>
+          </div>
+
+          <CampoChips etiqueta="Medio de pago" error={errors.payment_method_id?.message}>
+            {(id) => (
+              <Controller control={control} name="payment_method_id" render={({ field }) => (
+                <SelectorChips etiqueta="Medio de pago" variante="ficha" items={catalogo.medios} value={field.value} invalido={Boolean(errors.payment_method_id)} descritoPor={id}
+                  onChange={(x) => field.onChange(x)} />
+              )} />
+            )}
+          </CampoChips>
+
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('is_recurring')} /> Es un gasto recurrente</label>
+
+          <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-3 border-t border-line pt-4 lg:sticky lg:top-0">
+            <div>
+              <h3 className="font-display text-base font-bold">Cobertura estimada por fondos</h3>
+              <p className="text-xs text-muted">Estimación del motor con los datos de hoy. La imputación definitiva se calcula al guardar.</p>
+            </div>
+            <PanelPrevio payload={payloadPrevio} actualizando={previoActualizando} error={previo.isError} reporte={payloadPrevio === payloadDebounced ? previo.data : undefined} />
+          </aside>
+        </div>
       </form>
     </Modal>
   )

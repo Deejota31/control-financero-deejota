@@ -1,7 +1,7 @@
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { elegir, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+import { elegirEnGasto, elegir, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
 const dinero = (t: string | null) => Number((t ?? '').replace(/[^\d.-]/g, ''))
@@ -228,8 +228,7 @@ test.describe('Fondos presupuestales', () => {
     const g = page.getByRole('dialog')
     await g.getByLabel('Importe', { exact: true }).fill('45.50')
     for (const [n, o] of [['Ámbito', 'Trabajo'], ['Categoría', 'Alimentación'], ['Medio de pago', 'Yape']] as const) {
-      await g.getByRole('combobox', { name: n, exact: true }).click()
-      await page.getByRole('option', { name: o, exact: true }).click()
+      await elegirEnGasto(g, n, o)
     }
     await g.getByLabel('Descripción', { exact: true }).fill('Gasto del fondo a eliminar')
     await g.getByRole('button', { name: 'Guardar gasto' }).click()

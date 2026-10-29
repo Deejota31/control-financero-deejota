@@ -88,12 +88,11 @@ test.describe('Revisión visual y de accesibilidad', () => {
     await page.keyboard.press('Enter')
     const dialogo = page.getByRole('dialog', { name: 'Nuevo gasto' })
     await expect(dialogo).toBeVisible()
-    // Selector por teclado: abrir, filtrar, elegir con Enter
-    await dialogo.getByRole('combobox', { name: 'Ámbito', exact: true }).focus()
+    // Chips por teclado: enfocar una opción y elegirla con Enter
+    const hogar = dialogo.getByRole('radiogroup', { name: 'Ámbito', exact: true }).getByRole('radio', { name: 'Hogar', exact: true })
+    await hogar.focus()
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowDown')
-    await page.keyboard.press('Enter')
-    await expect(dialogo.getByRole('combobox', { name: 'Ámbito', exact: true })).toContainText('Hogar')
+    await expect(hogar).toHaveAttribute('aria-checked', 'true')
     // El foco queda dentro del diálogo; con cambios sin guardar Escape pide confirmar y descartar lo cierra
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Descartar cambios' }).click()

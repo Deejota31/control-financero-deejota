@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, vigilarConsola } from './helpers'
 
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
 
@@ -17,8 +17,7 @@ async function nuevoGasto(page: Page, descripcion: string) {
   const d = page.getByRole('dialog')
   await d.getByLabel('Importe', { exact: true }).fill('7')
   for (const [nombre, opcion] of [['Ámbito', 'Personal'], ['Categoría', 'Ocio'], ['Medio de pago', 'Yape']] as const) {
-    await d.getByRole('combobox', { name: nombre, exact: true }).click()
-    await page.getByRole('option', { name: opcion, exact: true }).click()
+    await elegirEnGasto(d, nombre, opcion)
   }
   await d.getByLabel('Descripción', { exact: true }).fill(descripcion)
   await d.getByRole('button', { name: 'Guardar gasto' }).click()

@@ -97,9 +97,9 @@ test.describe('Teclado y foco', () => {
   test('los selectores se operan solo con teclado: abrir, buscar, navegar y elegir', async ({ page }) => {
     await iniciarSesion(page)
     await page.goto('/gastos')
-    await page.getByRole('button', { name: 'Nuevo gasto' }).click()
-    const dialogo = page.getByRole('dialog', { name: 'Nuevo gasto' })
-    const ambito = dialogo.getByRole('combobox', { name: 'Ámbito', exact: true })
+    // Los selectores desplegables que quedan (filtros de Gastos) se operan solo con teclado.
+    const dialogo = page
+    const ambito = page.getByRole('combobox', { name: 'Ámbito', exact: true })
     await ambito.focus()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('listbox')).toBeVisible()

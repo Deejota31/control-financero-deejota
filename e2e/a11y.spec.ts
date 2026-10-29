@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password } from './helpers'
 
 /**
  * Auditoría automatizada con axe-core (WCAG 2.0/2.1 A y AA + buenas prácticas) en las pantallas principales
@@ -81,16 +81,10 @@ test.describe('Accesibilidad (axe)', () => {
       const d = page.getByRole('dialog')
       await d.getByLabel('Importe', { exact: true }).fill('50')
       for (const [n, o] of [['Ámbito', 'Hogar'], ['Categoría', 'Servicios'], ['Medio de pago', 'Yape']] as const) {
-        await d.getByRole('combobox', { name: n, exact: true }).click()
-        await page.getByRole('option', { name: o, exact: true }).click()
+        await elegirEnGasto(d, n, o)
       }
       await expect(d.getByText('Excedente al General')).toBeVisible()
       await auditar(page, `formulario de gasto (${tema})`)
-      // Selector abierto
-      await d.getByRole('combobox', { name: 'Ámbito', exact: true }).click()
-      await expect(page.getByRole('listbox')).toBeVisible()
-      await auditar(page, `selector abierto (${tema})`)
-      await page.keyboard.press('Escape')
       await d.getByRole('button', { name: 'Cancelar' }).click()
       if (await page.getByRole('button', { name: 'Descartar cambios' }).isVisible({ timeout: 800 }).catch(() => false)) await page.getByRole('button', { name: 'Descartar cambios' }).click()
 

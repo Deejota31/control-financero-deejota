@@ -1,6 +1,6 @@
 import { type Locator, type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
 async function elegir(page: Page, ambito: Locator, opcion: string) {
   await ambito.click()
@@ -10,10 +10,10 @@ async function elegir(page: Page, ambito: Locator, opcion: string) {
 async function llenarGasto(page: Page, d: { importe: string; ambito: string; categoria: string; sub?: string; medio: string; descripcion?: string }) {
   const dialogo = page.getByRole('dialog')
   await dialogo.getByLabel('Importe', { exact: true }).fill(d.importe)
-  await elegir(page, dialogo.getByRole('combobox', { exact: true, name: 'Ámbito' }), d.ambito)
-  await elegir(page, dialogo.getByRole('combobox', { exact: true, name: 'Categoría' }), d.categoria)
-  if (d.sub) await elegir(page, dialogo.getByRole('combobox', { exact: true, name: 'Subcategoría (opcional)' }), d.sub)
-  await elegir(page, dialogo.getByRole('combobox', { exact: true, name: 'Medio de pago' }), d.medio)
+  await elegirEnGasto(dialogo, 'Ámbito', d.ambito)
+  await elegirEnGasto(dialogo, 'Categoría', d.categoria)
+  if (d.sub) await elegirEnGasto(dialogo, 'Subcategoría (opcional)', d.sub)
+  await elegirEnGasto(dialogo, 'Medio de pago', d.medio)
   if (d.descripcion) await dialogo.getByLabel('Descripción', { exact: true }).fill(d.descripcion)
 }
 
@@ -128,7 +128,7 @@ test.describe('Gastos', () => {
     await expect(dialogo.getByText(/ningún fondo admite a la vez/i)).toBeVisible()
     await expect(dialogo.getByRole('button', { name: 'Guardar gasto' })).toBeDisabled()
     // Cambiar a un medio compatible habilita el guardado
-    await elegir(page, dialogo.getByRole('combobox', { exact: true, name: 'Medio de pago' }), 'Yape')
+    await elegirEnGasto(dialogo, 'Medio de pago', 'Yape')
     await expect(dialogo.getByRole('button', { name: 'Guardar gasto' })).toBeEnabled()
     await dialogo.getByRole('button', { name: 'Cancelar' }).click()
   })

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures'
-import { elegir, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
 const RUTAS = ['/', '/gastos', '/fondos', '/catalogo', '/salud', '/configuracion']
 
@@ -38,9 +38,9 @@ test.describe('Navegación y registro global de gastos', () => {
     const d = page.getByRole('dialog', { name: 'Nuevo gasto' })
     const desc = `E2E global ${sufijo()}`
     await d.getByLabel('Importe', { exact: true }).fill('12,50')
-    await elegir(page, d.getByRole('combobox', { exact: true, name: 'Ámbito' }), 'Personal')
-    await elegir(page, d.getByRole('combobox', { exact: true, name: 'Categoría' }), 'Alimentación')
-    await elegir(page, d.getByRole('combobox', { exact: true, name: 'Medio de pago' }), 'Yape')
+    await elegirEnGasto(d, 'Ámbito', 'Personal')
+    await elegirEnGasto(d, 'Categoría', 'Alimentación')
+    await elegirEnGasto(d, 'Medio de pago', 'Yape')
     await d.getByLabel('Descripción', { exact: true }).fill(desc)
     // Doble clic rápido: un solo gasto
     await d.getByRole('button', { name: 'Guardar gasto' }).dblclick()

@@ -23,6 +23,11 @@ export function vigilarConsola(page: Page): string[] {
   return errores
 }
 
+/** Elige una opción de los chips del formulario de gasto (ámbito, categoría, subcategoría o medio de pago). */
+export async function elegirEnGasto(dialogo: Locator, grupo: string, opcion: string) {
+  await dialogo.getByRole('radiogroup', { name: grupo, exact: true }).getByRole('radio', { name: opcion, exact: true }).click()
+}
+
 /** Abre un selector (combobox) y elige la opción exacta. */
 export async function elegir(page: Page, selector: Locator, opcion: string) {
   await selector.click()

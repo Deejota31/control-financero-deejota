@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, sufijo } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, sufijo } from './helpers'
 
 const dinero = (t: string | null) => Number((t ?? '').replace(/[^\d.-]/g, ''))
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
@@ -56,19 +56,16 @@ test.describe('Integración entre módulos', () => {
     await page.goto('/gastos')
     await page.getByRole('button', { name: 'Nuevo gasto' }).click()
     const d = page.getByRole('dialog', { name: 'Nuevo gasto' })
-    await d.getByRole('combobox', { name: 'Medio de pago', exact: true }).click()
-    const opcionMedio = page.getByRole('option', { name: medio, exact: true })
+    const opcionMedio = d.getByRole('radiogroup', { name: 'Medio de pago', exact: true }).getByRole('radio', { name: medio, exact: true })
     await expect(opcionMedio).toBeVisible()
     await expect(opcionMedio.locator('svg.lucide-plane')).toBeVisible()
     await opcionMedio.click()
-    await expect(d.getByRole('combobox', { name: 'Medio de pago', exact: true }).locator('svg.lucide-plane')).toBeVisible()
+    await expect(opcionMedio).toHaveAttribute('aria-checked', 'true')
 
-    await d.getByRole('combobox', { name: 'Ámbito', exact: true }).click()
-    await page.getByRole('option', { name: ambito, exact: true }).click()
-    await d.getByRole('combobox', { name: 'Categoría', exact: true }).click()
-    await expect(page.getByRole('option', { name: 'E2E Categoría', exact: true })).toBeVisible()
-    await expect(page.getByRole('option', { name: 'Alimentación' })).toHaveCount(0) // las de otros ámbitos no aparecen
-    await page.keyboard.press('Escape')
+    await elegirEnGasto(d, 'Ámbito', ambito)
+    const categorias = d.getByRole('radiogroup', { name: 'Categoría', exact: true })
+    await expect(categorias.getByRole('radio', { name: 'E2E Categoría', exact: true })).toBeVisible()
+    await expect(categorias.getByRole('radio', { name: 'Alimentación' })).toHaveCount(0) // las de otros ámbitos no aparecen
     await d.getByRole('button', { name: 'Cancelar' }).click()
 
     // Desactivar el medio lo oculta de los formularios nuevos
@@ -78,8 +75,9 @@ test.describe('Integración entre módulos', () => {
     await expect(page.getByRole('listitem').filter({ hasText: medio }).getByText('Inactivo')).toBeVisible()
     await page.goto('/gastos')
     await page.getByRole('button', { name: 'Nuevo gasto' }).click()
-    await page.getByRole('dialog', { name: 'Nuevo gasto' }).getByRole('combobox', { name: 'Medio de pago', exact: true }).click()
-    await expect(page.getByRole('option', { name: medio, exact: true })).toHaveCount(0)
+    const dlg = page.getByRole('dialog', { name: 'Nuevo gasto' })
+    await expect(dlg.getByRole('radiogroup', { name: 'Medio de pago', exact: true })).toBeVisible()
+    await expect(dlg.getByRole('radiogroup', { name: 'Medio de pago', exact: true }).getByRole('radio', { name: medio, exact: true })).toHaveCount(0)
   })
 
   test('los gráficos del Dashboard corresponden al período y a los filtros que llevan a Gastos', async ({ page }) => {

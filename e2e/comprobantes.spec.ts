@@ -1,7 +1,7 @@
 import { type Page, type Route } from '@playwright/test'
 import { PDF, existeComprobante, rest } from './api'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, sufijo } from './helpers'
+import { elegirEnGasto, email, iniciarSesion, password, sufijo } from './helpers'
 
 const RPC = (nombre: string) => `**/rest/v1/rpc/${nombre}`
 const rechazo = (route: Route) =>
@@ -13,8 +13,7 @@ async function abrirNuevoGasto(page: Page, descripcion: string) {
   const d = page.getByRole('dialog', { name: 'Nuevo gasto' })
   await d.getByLabel('Importe', { exact: true }).fill('12.50')
   for (const [n, o] of [['Ámbito', 'Personal'], ['Categoría', 'Ocio'], ['Medio de pago', 'Yape']] as const) {
-    await d.getByRole('combobox', { name: n, exact: true }).click()
-    await page.getByRole('option', { name: o, exact: true }).click()
+    await elegirEnGasto(d, n, o)
   }
   await d.getByLabel('Descripción', { exact: true }).fill(descripcion)
   return d

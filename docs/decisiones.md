@@ -56,3 +56,7 @@
 | Vista previa por período de cambios en fondos | `preview_fund_change` ejecuta la operación real dentro de un bloque que siempre se revierte y devuelve asignado/consumo por período abierto y fondo. |
 | Análisis del Dashboard en una fila | Calendario, perfil y ranking (`dashboard_analisis`): los filtros cruzados se aplican en el cliente para que cada gráfico excluya su propia dimensión. El gráfico de flujo se retiró a petición. |
 | Gastos imputados | `DetalleFondo`: el reparto sale de las imputaciones guardadas; el motivo solo se explica cuando hay información real (sin reconstruir reglas históricas). |
+| Filtros por nombre con varios IDs | Categoría y subcategoría muestran una opción por nombre (`domain/idsFiltro.ts`); elegirla guarda todos los IDs homónimos separados por coma y filtra todos (RPC `dashboard_panel` con `uuid[]`, migración 20261031000004; Gastos con `in`). No se fusionan registros del catálogo. |
+| Selector de período con estado | `FiltroFecha` muestra Período abierto/cerrado/futuro bajo el mes (`domain/periodo.ts`, comparación año×12+mes en la zona del perfil). Es solo calendario: no cambia permisos de edición. |
+| Tooltips de gráficos | Familia `TooltipGrafico` con variantes evolución, distribución, comparación e histórico; `Hint` no los envuelve de nuevo. |
+| Formulario de gasto en cascada | `SelectorChips`: ámbito → categoría → subcategoría y medio de pago con icono, color y orden del Catálogo; descripción, notas y comprobante visibles; la cobertura por fondos sigue en la columna derecha. |
