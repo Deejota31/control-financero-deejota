@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { FiltrosDashboard } from '@/domain/filtrosCruzados'
+import { idsDe } from '@/domain/idsFiltro'
 import type { FondoPanel } from '@/domain/presupuesto'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
@@ -51,8 +52,8 @@ export function useDashboardPanel(f: FiltrosDashboard, prev: { desde: string; ha
           p_prev_desde: prev.desde,
           p_prev_hasta: prev.hasta,
           p_ambito: f.ambito || undefined,
-          p_categoria: f.categoria || undefined,
-          p_subcategoria: f.subcategoria || undefined,
+          p_categoria: idsDe(f.categoria).length ? idsDe(f.categoria) : undefined,
+          p_subcategoria: idsDe(f.subcategoria).length ? idsDe(f.subcategoria) : undefined,
           p_medio: f.medio || undefined,
           p_tipo: f.tipo || undefined,
           p_dia: f.dia || undefined,

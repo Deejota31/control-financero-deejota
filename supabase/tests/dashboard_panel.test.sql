@@ -54,7 +54,7 @@ select is((select sum((e ->> 'total')::numeric) from r1, jsonb_array_elements(j 
 select is((select (j ->> 'gasto_rango')::numeric from r1), 200::numeric, 'ámbito Hogar: el gasto del período no depende del filtro');
 
 -- Filtro categoría: el Top de categorías mantiene todas (para poder alternar la selección)
-create temp table r2 on commit drop as select public.dashboard_panel((select d1 from p), (select d2 from p), (select p1 from p), (select p2 from p), null, th.i('cat:Personal:Ocio')) as j;
+create temp table r2 on commit drop as select public.dashboard_panel((select d1 from p), (select d2 from p), (select p1 from p), (select p2 from p), null, array[th.i('cat:Personal:Ocio')]) as j;
 select is((select (j ->> 'total')::numeric from r2), 50::numeric, 'categoría Ocio: total 50');
 select is((select sum((e ->> 'total')::numeric) from r2, jsonb_array_elements(j -> 'por_categoria') e), 200::numeric, 'categoría Ocio: el Top conserva todas las categorías');
 
@@ -70,7 +70,7 @@ select is((select count(*)::int from r4, jsonb_array_elements(j -> 'serie') e), 
 select is((select jsonb_array_length(j -> 'recientes') from r4), 2, 'día 1: dos movimientos recientes');
 
 -- Combinación sin resultados
-create temp table r5 on commit drop as select public.dashboard_panel((select d1 from p), (select d2 from p), (select p1 from p), (select p2 from p), th.i('amb:Hogar'), th.i('cat:Personal:Ocio')) as j;
+create temp table r5 on commit drop as select public.dashboard_panel((select d1 from p), (select d2 from p), (select p1 from p), (select p2 from p), th.i('amb:Hogar'), array[th.i('cat:Personal:Ocio')]) as j;
 select is((select (j ->> 'total')::numeric from r5), 0::numeric, 'ámbito Hogar + categoría de Personal: sin resultados');
 select is((select j -> 'mayor' from r5), 'null'::jsonb, 'sin resultados: no hay mayor gasto');
 

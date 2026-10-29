@@ -10,7 +10,8 @@ import { aCsv, descargar } from '@/lib/csv'
 import { mensajeDeError } from '@/lib/errors'
 import { formatSoles } from '@/lib/format'
 import { useDebounced } from '@/lib/useDebounced'
-import { opciones, opcionesDistinguidas, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
+import { agruparPorNombre, idsDe, valorDeGrupo } from '@/domain/idsFiltro'
+import { opciones, opcionesAgrupadas, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
 import { useFondos } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
@@ -82,7 +83,10 @@ export function GastosPage() {
   const selTotal = selArr.reduce((s, g) => s + Number(g.amount), 0)
 
   const categoriasFiltro = useMemo(() => (filtros.ambito ? catalogo.categorias.filter((c) => c.ambito_id === filtros.ambito) : catalogo.categorias), [catalogo.categorias, filtros.ambito])
-  const subsFiltro = useMemo(() => catalogo.subcategorias.filter((s) => s.categoria_id === filtros.categoria), [catalogo.subcategorias, filtros.categoria])
+  const subsFiltro = useMemo(() => { const cats = idsDe(filtros.categoria); return catalogo.subcategorias.filter((s) => cats.includes(s.categoria_id)) }, [catalogo.subcategorias, filtros.categoria])
+  // Una opción por nombre: elegir «Alimentación» filtra todas las clasificaciones con ese nombre (ver domain/idsFiltro).
+  const gruposCat = useMemo(() => agruparPorNombre(categoriasFiltro, filtros.categoria), [categoriasFiltro, filtros.categoria])
+  const gruposSub = useMemo(() => agruparPorNombre(subsFiltro, filtros.subcategoria), [subsFiltro, filtros.subcategoria])
 
   function alternar(g: GastoConFondos) {
     setSeleccion((m) => { const n = new Map(m); if (n.has(g.id)) n.delete(g.id); else n.set(g.id, g); return n })
@@ -157,8 +161,8 @@ export function GastosPage() {
         <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={filtros.desde} hasta={filtros.hasta} formato={formato} hoy={hoyZona} onAplicar={(d, h) => cambiar({ desde: d, hasta: h })} /></CeldaFiltro>
         <CeldaFiltro peso={1.2} min="9.5rem"><Combobox id="f-medio" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio de pago" onChange={(v) => cambiar({ medio: v ?? '' })} /></CeldaFiltro>
         <CeldaFiltro peso={0.8} min="6.5rem"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => cambiar({ ambito: v ?? '', categoria: '', subcategoria: '' })} /></CeldaFiltro>
-        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable options={opcionesDistinguidas(categoriasFiltro, filtros.categoria, (c) => catalogo.ambitos.find((a) => a.id === c.ambito_id)?.name)} placeholder="Categoría" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></CeldaFiltro>
-        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-sub" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable disabled={!filtros.categoria} options={opcionesDistinguidas(subsFiltro, filtros.subcategoria, (x) => { const c = catalogo.categorias.find((k) => k.id === x.categoria_id); return c ? `${c.name} · ${catalogo.ambitos.find((a) => a.id === c.ambito_id)?.name ?? ''}` : undefined })} placeholder="Subcategoría" onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={valorDeGrupo(gruposCat, filtros.categoria)} clearable options={opcionesAgrupadas(categoriasFiltro, filtros.categoria)} placeholder="Categoría" onChange={(v) => cambiar({ categoria: v ?? '', subcategoria: '' })} /></CeldaFiltro>
+        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-sub" aria-label="Subcategoría" value={valorDeGrupo(gruposSub, filtros.subcategoria)} clearable disabled={!filtros.categoria} options={opcionesAgrupadas(subsFiltro, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => cambiar({ subcategoria: v ?? '' })} /></CeldaFiltro>
         <CeldaFiltro peso={0.7} min="6rem"><Combobox id="f-tipo" aria-label="Tipo" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => cambiar({ tipo: (v ?? '') as FiltrosGastos['tipo'] })} /></CeldaFiltro>
         <CeldaFiltro peso={0.7} min="7.5rem"><Combobox id="f-estado" aria-label="Estado" value={filtros.estado} searchable={false} options={ESTADOS} onChange={(v) => cambiar({ estado: (v ?? 'active') as FiltrosGastos['estado'] })} /></CeldaFiltro>
         <CeldaFiltro peso={0} min="2.5rem">

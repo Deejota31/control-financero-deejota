@@ -648,7 +648,7 @@ isOneToOne: false
 { Args: { "p_desde": string,"p_hasta": string }; Returns: Json
                            },
 "dashboard_panel":
-{ Args: { "p_ambito"?: string,"p_categoria"?: string,"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: string,"p_tipo"?: string }; Returns: Json
+{ Args: { "p_ambito"?: string,"p_categoria"?: string[],"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: string[],"p_tipo"?: string }; Returns: Json
                            },
 "delete_fund":
 { Args: { "p_destino"?: string,"p_dry_run"?: boolean,"p_fund": string }; Returns: Json

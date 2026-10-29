@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Ambito, Categoria, MedioPago, Subcategoria } from '@/lib/tipos'
 import type { ComboOption } from '@/components/ui/Combobox'
 import { colorEfectivo, hexPropio } from '@/domain/color'
+import { agruparPorNombre } from '@/domain/idsFiltro'
 
 export type CatalogoKind = 'ambitos' | 'categorias' | 'subcategorias' | 'medios_pago'
 
@@ -60,18 +61,19 @@ export function opciones(
 }
 
 /**
- * Como `opciones`, pero distingue las entidades que comparten nombre. Varias categorías se llaman igual en ámbitos distintos (y varias
- * subcategorías bajo categorías distintas): son registros diferentes con su propio ID, así que no se fusionan ni se ocultan; cuando un nombre
- * se repite en la lista se le añade su contexto («Alimentación · Personal»). Con un solo elemento por nombre no cambia nada.
+ * Opciones agrupadas por nombre (una sola «Alimentación» aunque exista en varios ámbitos): el valor de cada opción son todos los IDs del
+ * grupo unidos por coma (ver domain/idsFiltro), así elegirla filtra todas las clasificaciones con ese nombre. Icono y color: los del primero.
  */
-export function opcionesDistinguidas<T extends { id: string; name: string; icon_key: string; color_token?: string | null; color_css?: string; is_active: boolean }>(
+export function opcionesAgrupadas<T extends { id: string; name: string; icon_key: string; color_token?: string | null; color_css?: string; is_active: boolean }>(
   items: T[],
-  actual: string | null | undefined,
-  contexto: (item: T) => string | undefined,
+  actual?: string | null,
 ): ComboOption[] {
-  const veces = new Map<string, number>()
-  for (const i of items) veces.set(i.name, (veces.get(i.name) ?? 0) + 1)
-  return opciones(items.map((i) => ((veces.get(i.name) ?? 0) > 1 && contexto(i) ? { ...i, name: `${i.name} · ${contexto(i)}` } : i)), actual)
+  return agruparPorNombre(items, actual).map((g) => ({
+    value: g.valor,
+    label: g.ids.every((id) => items.find((x) => x.id === id)?.is_active === false) ? `${g.nombre} (inactivo)` : g.nombre,
+    icon: g.primero.icon_key,
+    color: g.primero.color_css ?? g.primero.color_token,
+  }))
 }
 
 export interface CatalogoValores {

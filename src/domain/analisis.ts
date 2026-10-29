@@ -2,6 +2,8 @@
  * Cálculos de los gráficos de análisis del Dashboard. Son funciones puras: reciben filas agregadas (RPC `dashboard_analisis`) y los mismos
  * filtros cruzados del panel, así ranking y perfil comparten reglas y números con los KPIs.
  */
+import { idsDe } from './idsFiltro'
+
 export type Dim = 'ambito' | 'categoria' | 'subcategoria' | 'medio'
 
 export interface FilaAnalisis {
@@ -36,8 +38,9 @@ export function propios(dim: Dim): (keyof FiltrosAnalisis)[] {
 /** Aplica los filtros cruzados; `excluir` deja fuera los de la propia dimensión del gráfico. El día solo afecta a filas con fecha. */
 export function filtrar(filas: FilaAnalisis[], f: FiltrosAnalisis, excluir: (keyof FiltrosAnalisis)[] = []): FilaAnalisis[] {
   const usa = (k: keyof FiltrosAnalisis) => !excluir.includes(k) && Boolean(f[k])
+  const cats = idsDe(f.categoria), subs = idsDe(f.subcategoria)
   return filas.filter((r) =>
-    (!usa('ambito') || r.ambito_id === f.ambito) && (!usa('categoria') || r.categoria_id === f.categoria) && (!usa('subcategoria') || r.subcategoria_id === f.subcategoria) &&
+    (!usa('ambito') || r.ambito_id === f.ambito) && (!usa('categoria') || cats.includes(r.categoria_id)) && (!usa('subcategoria') || (r.subcategoria_id !== null && subs.includes(r.subcategoria_id))) &&
     (!usa('medio') || r.medio_id === f.medio) && (!usa('tipo') || r.tipo === f.tipo) && (!usa('dia') || !r.fecha || r.fecha === f.dia))
 }
 

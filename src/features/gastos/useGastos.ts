@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { endOfMonth, startOfMonth } from 'date-fns'
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
+import { idsDe } from '@/domain/idsFiltro'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
@@ -97,8 +98,8 @@ function construir(f: FiltrosGastos, rango?: [number, number]) {
   if (f.estado !== 'all') q = q.eq('status', f.estado)
   if (f.q.trim()) q = q.ilike('description', `%${escaparLike(f.q.trim())}%`)
   if (f.ambito) q = q.eq('ambito_id', f.ambito)
-  if (f.categoria) q = q.eq('categoria_id', f.categoria)
-  if (f.subcategoria) q = q.eq('subcategoria_id', f.subcategoria)
+  if (f.categoria) q = q.in('categoria_id', idsDe(f.categoria))
+  if (f.subcategoria) q = q.in('subcategoria_id', idsDe(f.subcategoria))
   if (f.medio) q = q.eq('payment_method_id', f.medio)
   if (f.tipo) q = q.eq('expense_type', f.tipo)
   if (f.fondo) q = q.eq('filtro.fund_id' as 'status', f.fondo)

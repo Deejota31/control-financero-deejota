@@ -14,7 +14,8 @@ import { resumirPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, toIso } from '@/lib/format'
-import { opciones, opcionesDistinguidas, useCatalogo } from '@/features/catalogo/useCatalogo'
+import { agruparPorNombre, idsDe, valorDeGrupo } from '@/domain/idsFiltro'
+import { opciones, opcionesAgrupadas, useCatalogo } from '@/features/catalogo/useCatalogo'
 import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { usePerfil } from '@/features/perfil/usePerfil'
@@ -132,9 +133,12 @@ export function DashboardPage() {
   const resumenGrafico = `Gasto acumulado de ${etiquetaPeriodo}${cruzados ? ' con filtros' : ''}: ${formatSoles(total)}${proyeccion !== null ? `, proyección de cierre ${formatSoles(proyeccion)} (estimación)` : ''}`
   const delDiaTexto = filtros.dia ? formatFechaLarga(filtros.dia) : ''
 
-  const nombreAmbito = new Map(catalogo.ambitos.map((a) => [a.id, a.name]))
   const categoriasOpc = catalogo.categorias.filter((c) => !filtros.ambito || c.ambito_id === filtros.ambito)
-  const subcategoriasOpc = catalogo.subcategorias.filter((s) => (filtros.categoria ? s.categoria_id === filtros.categoria : categoriasOpc.some((c) => c.id === s.categoria_id)))
+  const catsElegidas = idsDe(filtros.categoria)
+  const subcategoriasOpc = catalogo.subcategorias.filter((s) => (catsElegidas.length ? catsElegidas.includes(s.categoria_id) : categoriasOpc.some((c) => c.id === s.categoria_id)))
+  // Una opción por nombre: elegir «Alimentación» filtra todas las clasificaciones con ese nombre (ver domain/idsFiltro).
+  const gruposCat = agruparPorNombre(categoriasOpc, filtros.categoria)
+  const gruposSub = agruparPorNombre(subcategoriasOpc, filtros.subcategoria)
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6">
@@ -148,8 +152,8 @@ export function DashboardPage() {
         <CeldaFiltro peso={1.4} min="16rem" completa><FiltroFecha modo="rango" desde={desde} hasta={hasta} formato={formato} hoy={hoyZona} onAplicar={fijarPeriodo} /></CeldaFiltro>
         <CeldaFiltro peso={1.2} min="9.5rem"><Combobox id="f-medio-d" aria-label="Medio de pago" value={filtros.medio || null} clearable searchable={false} options={opciones(catalogo.medios, filtros.medio)} placeholder="Medio de pago" onChange={(v) => seleccionar('medio', v ?? filtros.medio)} /></CeldaFiltro>
         <CeldaFiltro peso={0.8} min="6.5rem"><Combobox id="f-ambito" aria-label="Ámbito" value={filtros.ambito || null} clearable searchable={false} options={opciones(catalogo.ambitos, filtros.ambito)} placeholder="Ámbito" onChange={(v) => seleccionar('ambito', v ?? filtros.ambito)} /></CeldaFiltro>
-        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={filtros.categoria || null} clearable searchable={false} options={opcionesDistinguidas(categoriasOpc, filtros.categoria, (c) => nombreAmbito.get(c.ambito_id))} placeholder="Categoría" onChange={(v) => seleccionar('categoria', v ?? filtros.categoria)} /></CeldaFiltro>
-        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-subcategoria" aria-label="Subcategoría" value={filtros.subcategoria || null} clearable searchable={false} options={opcionesDistinguidas(subcategoriasOpc, filtros.subcategoria, (x) => { const c = catalogo.categorias.find((k) => k.id === x.categoria_id); return c ? `${c.name} · ${nombreAmbito.get(c.ambito_id) ?? ''}` : undefined })} placeholder="Subcategoría" onChange={(v) => seleccionar('subcategoria', v ?? filtros.subcategoria)} /></CeldaFiltro>
+        <CeldaFiltro peso={1} min="8rem"><Combobox id="f-categoria" aria-label="Categoría" value={valorDeGrupo(gruposCat, filtros.categoria)} clearable searchable={false} options={opcionesAgrupadas(categoriasOpc, filtros.categoria)} placeholder="Categoría" onChange={(v) => seleccionar('categoria', v ?? filtros.categoria)} /></CeldaFiltro>
+        <CeldaFiltro peso={1.05} min="8.5rem"><Combobox id="f-subcategoria" aria-label="Subcategoría" value={valorDeGrupo(gruposSub, filtros.subcategoria)} clearable searchable={false} options={opcionesAgrupadas(subcategoriasOpc, filtros.subcategoria)} placeholder="Subcategoría" onChange={(v) => seleccionar('subcategoria', v ?? filtros.subcategoria)} /></CeldaFiltro>
         <CeldaFiltro peso={0.7} min="6rem"><Combobox id="f-tipo-d" aria-label="Tipo de gasto" value={filtros.tipo || null} clearable searchable={false} options={TIPOS} placeholder="Tipo" onChange={(v) => seleccionar('tipo', v ?? filtros.tipo)} /></CeldaFiltro>
       </BarraFiltros>
 
@@ -268,7 +272,8 @@ export function DashboardPage() {
                     const item = cat ?? sub
                     const padreCat = cat ?? catalogo.categorias.find((c) => c.id === sub?.categoria_id)
                     const color = padreCat?.color_css ?? '#3A3FA6'
-                    const sel = topModo === 'categorias' ? filtros.categoria === t.id : filtros.subcategoria === t.id
+                    const sel = idsDe(topModo === 'categorias' ? filtros.categoria : filtros.subcategoria).includes(t.id)
+                    const grupoValor = (topModo === 'categorias' ? gruposCat : gruposSub).find((g) => g.ids.includes(t.id))?.valor ?? t.id
                     const hayEleccion = topModo === 'categorias' ? Boolean(filtros.categoria) : Boolean(filtros.subcategoria)
                     const ambNombre = catalogo.ambitos.find((a) => a.id === padreCat?.ambito_id)?.name
                     return (
@@ -290,7 +295,7 @@ export function DashboardPage() {
                           <button
                             type="button"
                             aria-pressed={sel}
-                            onClick={() => seleccionar(topModo === 'categorias' ? 'categoria' : 'subcategoria', t.id)}
+                            onClick={() => seleccionar(topModo === 'categorias' ? 'categoria' : 'subcategoria', grupoValor)}
                             className={cn('flex w-full items-center gap-2 rounded-lg border border-transparent p-1.5 text-left sm:gap-3 transition-colors hover:bg-surface-2', sel && 'border-pri bg-pri-soft', hayEleccion && !sel && 'opacity-60')}
                           >
                             <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={item?.icon_key} color={color} /></span>

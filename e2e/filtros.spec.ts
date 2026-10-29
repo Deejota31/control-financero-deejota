@@ -13,7 +13,7 @@ test.describe('Filtros: sin opciones repetidas', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
   for (const [ruta, nombres] of [['/', ['Categoría', 'Subcategoría']], ['/gastos', ['Categoría']]] as const) {
-    test(`${ruta === '/' ? 'Dashboard' : 'Gastos'}: cada entidad aparece una sola vez y las homónimas se distinguen por su ámbito`, async ({ page }) => {
+    test(`${ruta === '/' ? 'Dashboard' : 'Gastos'}: cada nombre aparece una sola vez (las homónimas se agrupan en una opción)`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 })
       await iniciarSesion(page)
       await page.goto(ruta)
@@ -25,7 +25,7 @@ test.describe('Filtros: sin opciones repetidas', () => {
     })
   }
 
-  test('con un ámbito elegido, las categorías vuelven a mostrar su nombre simple y los filtros dependientes siguen funcionando', async ({ page }) => {
+  test('con un ámbito elegido, las categorías siguen sin repetirse y los filtros dependientes siguen funcionando', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
     await page.getByRole('combobox', { name: 'Ámbito', exact: true }).click()

@@ -2,6 +2,9 @@
  * Estado único de filtros del Dashboard y reglas de selección cruzada (dona, barras, acumulado, Top 5).
  * Es una función pura: la interfaz la usa dentro de un hook ligado a la URL.
  */
+import { idsDe, unirIds } from './idsFiltro'
+
+/** `categoria` y `subcategoria` pueden llevar varios IDs unidos por coma (todas las clasificaciones con el mismo nombre; ver idsFiltro). */
 export interface FiltrosDashboard {
   desde: string
   hasta: string
@@ -50,19 +53,28 @@ export function aplicarSeleccion(actual: FiltrosDashboard, clave: ClaveFiltro, v
 
   siguiente[clave] = valor
   if (clave === 'ambito') {
-    if (siguiente.categoria && rel.ambitoDeCategoria.get(siguiente.categoria) !== valor) {
+    // La categoría elegida (varias si es un grupo por nombre) se acota a las de este ámbito; si ninguna le pertenece, se limpia.
+    const cats = idsDe(siguiente.categoria).filter((c) => rel.ambitoDeCategoria.get(c) === valor)
+    if (idsDe(siguiente.categoria).length && cats.length === 0) {
       siguiente.categoria = ''
       siguiente.subcategoria = ''
+    } else if (cats.length) {
+      siguiente.categoria = unirIds(cats)
+      const subs = idsDe(siguiente.subcategoria).filter((s) => cats.includes(rel.categoriaDeSubcategoria.get(s) ?? ''))
+      siguiente.subcategoria = unirIds(subs)
     }
   } else if (clave === 'categoria') {
-    if (siguiente.subcategoria && rel.categoriaDeSubcategoria.get(siguiente.subcategoria) !== valor) siguiente.subcategoria = ''
-    const amb = rel.ambitoDeCategoria.get(valor)
-    if (amb && siguiente.ambito && siguiente.ambito !== amb) siguiente.ambito = ''
+    const cats = idsDe(valor)
+    const subs = idsDe(siguiente.subcategoria).filter((s) => cats.includes(rel.categoriaDeSubcategoria.get(s) ?? ''))
+    siguiente.subcategoria = unirIds(subs)
+    const ambitos = new Set(cats.map((c) => rel.ambitoDeCategoria.get(c)))
+    if (siguiente.ambito && !ambitos.has(siguiente.ambito)) siguiente.ambito = ''
   } else if (clave === 'subcategoria') {
-    const cat = rel.categoriaDeSubcategoria.get(valor)
-    if (cat) {
-      siguiente.categoria = cat
-      const amb = rel.ambitoDeCategoria.get(cat)
+    const cats = [...new Set(idsDe(valor).map((s) => rel.categoriaDeSubcategoria.get(s)).filter((c): c is string => Boolean(c)))]
+    // Con una sola categoría posible se fija también; con varias (p. ej. «Otros») se deja la categoría tal como está.
+    if (cats.length === 1) {
+      siguiente.categoria = cats[0]
+      const amb = rel.ambitoDeCategoria.get(cats[0])
       if (amb && siguiente.ambito && siguiente.ambito !== amb) siguiente.ambito = ''
     }
   }
