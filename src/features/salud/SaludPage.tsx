@@ -209,7 +209,7 @@ export function SaludPage() {
                     {[5, 10, 15, 20].map((p) => <button key={p} type="button" role="radio" aria-checked={pctAhorro === p} onClick={() => setPctAhorro(p)} className={cn('rounded px-3 py-1', pctAhorro === p ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{p}%</button>)}
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Ahorro posible por categoría">
                   <table className="w-full min-w-[480px] text-left text-sm">
                     <thead><tr className="text-xs uppercase tracking-wide text-muted"><th className="py-2">Categoría</th><th className="py-2 text-right">Promedio mensual</th><th className="py-2 text-right">% de lo variable</th><th className="py-2 text-right">Ahorro posible al {pctAhorro}%</th></tr></thead>
                     <tbody>
@@ -252,7 +252,7 @@ export function SaludPage() {
 
 function TablaTendencia({ titulo, filas }: { titulo: string; filas: { id: string; nombre: string; icono?: string; color?: string | null; actual: number; promedio: number; diferencia: number; pct: number | null }[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`${titulo} que suben`}>
       <h3 className="mb-1 text-sm font-semibold">{titulo} que suben</h3>
       <table className="w-full min-w-[480px] text-left text-sm">
         <thead><tr className="text-xs uppercase tracking-wide text-muted"><th className="py-2">{titulo.slice(0, -1)}</th><th className="py-2 text-right">Este mes</th><th className="py-2 text-right">Promedio anterior</th><th className="py-2 text-right">Diferencia</th></tr></thead>
