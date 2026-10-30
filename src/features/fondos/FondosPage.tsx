@@ -15,6 +15,7 @@ import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { DetalleFondo } from './DetalleFondo'
 import { CopiarFondos } from './CopiarFondos'
 import { usePlanificacionUI } from '@/features/planificacion/contexto'
+import { resumirCobertura } from '@/domain/cobertura'
 import { resumirFondo, round2, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
@@ -157,8 +158,16 @@ export function FondosPage() {
   }
 
   const porId = new Map((fondosQ.data?.fondos ?? []).map((f) => [f.id, f]))
+  // La cobertura sale de las reglas reales de cada fondo y de los nombres del catálogo (nada fijo).
+  const nombresCobertura = {
+    ambito: new Map((catalogo?.ambitos ?? []).map((x) => [x.id, x.name])),
+    categoria: new Map((catalogo?.categorias ?? []).map((x) => [x.id, x.name])),
+    subcategoria: new Map((catalogo?.subcategorias ?? []).map((x) => [x.id, x.name])),
+    medio: new Map((catalogo?.medios ?? []).map((x) => [x.id, x.name])),
+  }
   const filasTabla: FilaFondo[] = (cerrado ? tarjetasCerradas : [...(datos?.activos ?? []), ...(datos?.inactivos ?? [])]).map((t) => ({
     id: t.id, nombre: t.nombre, esGeneral: t.esGeneral, icon: t.icon, color: t.color, activo: t.activo, resumen: t.resumen, editable: !cerrado && Boolean(t.fondo),
+    cobertura: t.fondo ? resumirCobertura(t.esGeneral, (fondosQ.data?.alcance ?? []).filter((r) => r.fund_id === t.id), (fondosQ.data?.medios ?? []).filter((r) => r.fund_id === t.id), nombresCobertura) : null,
   }))
   const visibles = filasTabla.filter((f) => (cerrado || filtro === 'todos' || (filtro === 'activos') === f.activo) && f.nombre.toLowerCase().includes(q.trim().toLowerCase()))
   const posicion = new Map((datos?.activos ?? []).filter((x) => !x.esGeneral).map((x, i) => [x.id, i + 1]))
