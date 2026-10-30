@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/supabase', () => ({ supabase: {} }))
 
-import { debeInvitar, mananaDe } from './usePlanificacion'
+import { debeInvitar, estadosVisuales, mananaDe } from './usePlanificacion'
 
 const base = { recordatorios: true, fondos: 0, plan: null, hoy: '2026-11-01' }
 
@@ -18,6 +18,29 @@ describe('debeInvitar', () => {
     expect(debeInvitar({ ...base, plan, hoy: '2026-11-02' })).toBe(true)
   })
   it('un mes que ya tiene fondos y ningún proceso empezado se considera preparado', () => expect(debeInvitar({ ...base, fondos: 4 })).toBe(false))
+})
+
+describe('estadosVisuales', () => {
+  const plan = (status: 'pending' | 'in_progress' | 'completed', funds_stage: 'pending' | 'done' | 'skipped', expenses_stage: 'pending' | 'done' | 'skipped') => ({ status, funds_stage, expenses_stage })
+  it('al iniciar: Fondos en progreso, Gastos pendiente, Resumen por finalizar', () => {
+    expect(estadosVisuales(null)).toEqual({ fondos: 'in_progress', gastos: 'pending', resumen: 'por_finalizar' })
+    expect(estadosVisuales(plan('pending', 'pending', 'pending'))).toEqual({ fondos: 'in_progress', gastos: 'pending', resumen: 'por_finalizar' })
+  })
+  it('tras confirmar fondos: Fondos completada, Gastos en progreso', () => {
+    expect(estadosVisuales(plan('in_progress', 'done', 'pending'))).toEqual({ fondos: 'done', gastos: 'in_progress', resumen: 'por_finalizar' })
+  })
+  it('tras confirmar gastos el resumen sigue por finalizar', () => {
+    expect(estadosVisuales(plan('in_progress', 'done', 'done'))).toEqual({ fondos: 'done', gastos: 'done', resumen: 'por_finalizar' })
+  })
+  it('al finalizar: el resumen queda finalizado', () => {
+    expect(estadosVisuales(plan('completed', 'done', 'done')).resumen).toBe('finalizada')
+  })
+  it('una etapa omitida no se marca como completada y la siguiente pendiente pasa a progreso', () => {
+    expect(estadosVisuales(plan('in_progress', 'skipped', 'pending'))).toEqual({ fondos: 'skipped', gastos: 'in_progress', resumen: 'por_finalizar' })
+  })
+  it('si se reabre una etapa completada, vuelve a progreso y las siguientes a pendiente', () => {
+    expect(estadosVisuales(plan('in_progress', 'pending', 'done'))).toEqual({ fondos: 'in_progress', gastos: 'done', resumen: 'por_finalizar' })
+  })
 })
 
 describe('mananaDe', () => {

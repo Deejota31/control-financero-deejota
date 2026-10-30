@@ -22,6 +22,9 @@ export interface PlanFila {
 /** Cifras reales del mes (solo sus fondos y sus gastos) y el estado de su planificación. */
 export interface ResumenPlan {
   period_id: string | null
+  /** Fondos configurados en el mes (activos e inactivos). */
+  funds_total: number
+  /** Fondos activos del mes. */
   funds_count: number
   budget_total: number
   expenses_total: number
@@ -56,6 +59,25 @@ export function useGuardarPlan() {
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ['planificacion'] }),
   })
+}
+
+/** Estado que se muestra en cada tarjeta del asistente. */
+export type EstadoVisual = 'pending' | 'in_progress' | 'done' | 'skipped' | 'por_finalizar' | 'finalizada'
+
+export const ETIQUETA_VISUAL: Record<EstadoVisual, string> = {
+  pending: 'Pendiente', in_progress: 'En progreso', done: 'Completada', skipped: 'Omitida', por_finalizar: 'Por finalizar', finalizada: 'Finalizada',
+}
+
+/**
+ * Estado visual de las tres tarjetas a partir de lo realmente guardado: una etapa solo está «Completada» u «Omitida» si se confirmó o se omitió
+ * (visitarla no basta). La primera etapa aún pendiente es la que se está trabajando («En progreso»); las siguientes quedan «Pendiente». El resumen
+ * está «Por finalizar» hasta que se pulsa «Finalizar planificación».
+ */
+export function estadosVisuales(plan: Pick<PlanFila, 'status' | 'funds_stage' | 'expenses_stage'> | null): { fondos: EstadoVisual; gastos: EstadoVisual; resumen: EstadoVisual } {
+  const etapas: EtapaPlan[] = [plan?.funds_stage ?? 'pending', plan?.expenses_stage ?? 'pending']
+  const primeraPendiente = etapas.indexOf('pending')
+  const visual = (e: EtapaPlan, i: number): EstadoVisual => (e === 'done' ? 'done' : e === 'skipped' ? 'skipped' : i === primeraPendiente ? 'in_progress' : 'pending')
+  return { fondos: visual(etapas[0], 0), gastos: visual(etapas[1], 1), resumen: plan?.status === 'completed' ? 'finalizada' : 'por_finalizar' }
 }
 
 /**

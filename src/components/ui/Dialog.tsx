@@ -21,14 +21,20 @@ interface ModalProps {
   children: ReactNode
 }
 
-/** Devuelve el foco al control de origen; si ya no existe (la lista se redibujó), al contenido principal. */
+/** Hay otro diálogo abierto (p. ej. el asistente bajo un formulario secundario): el foco es suyo y no se debe mover a la página. */
+const hayDialogoAbierto = () => Boolean(document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'))
+
+/**
+ * Devuelve el foco al control de origen; si ya no existe (la lista se redibujó), al contenido principal. Con otro diálogo aún abierto nunca se
+ * enfoca la página: sacar el foco de un diálogo modal lo cerraría (foco fuera) y rompería los diálogos anidados.
+ */
 function devolverFoco(origen: HTMLElement | null) {
   if (origen?.isConnected) origen.focus()
-  else document.getElementById('contenido')?.focus()
+  else if (!hayDialogoAbierto()) document.getElementById('contenido')?.focus()
   // Si la acción retira el control de origen (p. ej. una fila anulada), el foco no debe quedar perdido en <body>.
   setTimeout(() => {
     const a = document.activeElement
-    if (!a || a === document.body || !a.isConnected) document.getElementById('contenido')?.focus()
+    if ((!a || a === document.body || !a.isConnected) && !hayDialogoAbierto()) document.getElementById('contenido')?.focus()
   }, 500)
 }
 

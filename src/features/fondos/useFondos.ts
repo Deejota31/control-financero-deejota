@@ -157,7 +157,7 @@ export interface FondoPayload {
 export function useFondoMutaciones() {
   const qc = useQueryClient()
   const refrescar = () => {
-    for (const k of ['fondos', 'gastos', 'periodo', 'dashboard']) qc.invalidateQueries({ queryKey: [k] })
+    for (const k of ['fondos', 'gastos', 'periodo', 'dashboard', 'planificacion']) qc.invalidateQueries({ queryKey: [k] })
   }
 
   /** Estado por período antes/después del cambio (la operación se ejecuta y se revierte en el servidor; no guarda nada). */

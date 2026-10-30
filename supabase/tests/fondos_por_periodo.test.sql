@@ -142,6 +142,11 @@ select is((public.save_period_plan(th.mes(1), '{"expenses_stage": "skipped", "st
 select isnt((select completed_at from public.period_plans where period_id = th.pid('m1')), null, 'se registra la fecha de finalización');
 select is((select expenses_stage::text from public.period_plans where period_id = th.pid('m1')), 'skipped', 'la etapa omitida queda identificada');
 select is((public.planning_summary(th.mes(1)) ->> 'funds_count')::int, 3, 'el resumen cuenta solo los fondos activos del mes');
+select is((public.planning_summary(th.mes(1)) ->> 'funds_total')::int, 3, 'el resumen distingue fondos configurados de fondos activos');
+select is((public.save_period_plan(th.mes(1), '{"funds_stage": "pending"}') ->> 'status'), 'in_progress', 'editar una etapa de un plan finalizado lo reabre');
+select is((select completed_at from public.period_plans where period_id = th.pid('m1')), null, 'al reabrirlo se quita la fecha de finalización');
+select throws_ok($$select public.save_period_plan(th.mes(1), '{"status": "completed"}')$$, 'GD014', null, 'no se vuelve a finalizar con la etapa de fondos pendiente');
+select is((public.save_period_plan(th.mes(1), '{"funds_stage": "done", "status": "completed"}') ->> 'status'), 'completed', 'se vuelve a finalizar de forma explícita');
 select is((public.planning_summary(th.mes(1)) -> 'plan' ->> 'status'), 'completed', 'el resumen incluye el estado del plan');
 select is((public.planning_summary(th.mes(0)) -> 'plan') = 'null'::jsonb, true, 'un mes sin plan no tiene estado de plan');
 select is((select count(*)::int from public.period_plans), 1, 'consultar meses no crea planes vacíos');

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronRight, Search } from 'lucide-react'
-import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { Alert } from '@/components/ui/Alert'
@@ -126,7 +126,7 @@ export function FondoForm({
   const [medios, setMedios] = useState<Record<string, Regla>>(inicialMedios)
   const [errorReglas, setErrorReglas] = useState<string | null>(null)
 
-  const { register, handleSubmit, control, formState: { errors, isDirty } } = useForm<Values>({
+  const { register, handleSubmit, control, setFocus, formState: { errors, isDirty } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: fondo ? (clon ? `${fondo.name} (copia)` : fondo.name) : '',
@@ -139,6 +139,10 @@ export function FondoForm({
       period_amount: inicial.presupuestoPeriodo !== undefined && !clon ? inicial.presupuestoPeriodo.toFixed(2) : '',
     },
   })
+  useEffect(() => {
+    const id = window.setTimeout(() => setFocus('name'), 0)
+    return () => window.clearTimeout(id)
+  }, [setFocus])
   const esGeneral = useWatch({ control, name: 'is_general' })
   const color = useWatch({ control, name: 'color_token' })
   const nombreFondo = useWatch({ control, name: 'name' })
@@ -239,7 +243,7 @@ export function FondoForm({
       }>
       <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-3">
-          <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} autoFocus {...register('name')} />}</Field>
+          <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} {...register('name')} />}</Field>
           {editando && periodoAbierto ? (
             <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes: los demás meses no cambian.">
               {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
