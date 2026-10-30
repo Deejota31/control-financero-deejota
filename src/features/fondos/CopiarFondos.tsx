@@ -10,7 +10,9 @@ import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Skeleton } from '@/components/ui/States'
 import { mensajeDeError } from '@/lib/errors'
 import { errorImporte, formatMes, formatSoles, parseMontoNoNegativo } from '@/lib/format'
-import { sumarMeses, useCopiarFondos, useFondos, usePeriodo, usePresupuestosPeriodo, type ResultadoCopia } from './useFondos'
+import { sumarMeses } from '@/domain/periodo'
+import { usePeriodo } from '@/features/periodos/usePeriodo'
+import { useCopiarFondos, useFondos, usePresupuestosPeriodo, type ResultadoCopia } from './useFondos'
 
 export const MOTIVOS_OMISION: Record<ResultadoCopia['skipped'][number]['reason'], string> = {
   already_copied: 'ya se había copiado',

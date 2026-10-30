@@ -139,7 +139,7 @@ test.describe('Gastos: tabla y detalle', () => {
     await page.getByRole('link', { name: 'Gastos' }).first().click()
     const fila = page.getByRole('row').nth(1)
     const botones = fila.getByRole('button')
-    await expect(botones).toHaveCount(4)
+    await expect(botones).toHaveCount(5)
     for (const b of await botones.all()) {
       expect(await b.getAttribute('aria-label')).toBeTruthy()
       expect(await b.getAttribute('title')).toBeTruthy()

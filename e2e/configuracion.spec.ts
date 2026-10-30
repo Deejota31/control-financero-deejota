@@ -174,22 +174,23 @@ test.describe('Configuración', () => {
     const completa = modal.getByLabel('Actividad', { exact: true })
     // solo eventos de usuario: caben en una página
     await expect(completa.getByRole('listitem')).toHaveCount(Number(sqlLocal(`select count(*) from public.audit_logs where household_id = ${HID} and user_id is not null`)))
-    await expect(modal.getByText(/página 1 de 1/)).toBeVisible()
+    await expect(modal.getByRole('navigation', { name: 'Paginación de la actividad' }).getByRole('button', { name: /^Página [0-9]+$/ })).toHaveCount(1) // una sola página
 
     // filtros: acción
     await modal.getByRole('combobox', { name: 'Acción' }).click()
     await page.getByRole('option', { name: 'Anuló', exact: true }).click()
-    await expect(modal.getByText(/página 1 de 1/)).toBeVisible()
+    await expect(modal.getByRole('navigation', { name: 'Paginación de la actividad' }).getByRole('button', { name: /^Página [0-9]+$/ })).toHaveCount(1) // una sola página
     await expect(completa.getByRole('listitem')).toHaveCount(1)
     await modal.getByRole('button', { name: 'Limpiar filtros' }).click()
 
     // los eventos de sistema solo aparecen si se piden
     await modal.getByLabel('Incluir eventos de sistema').check()
-    await expect(modal.getByText(`${Number(filasAntes).toLocaleString('es-PE')} eventos`)).toBeVisible()
+    const pag = modal.getByRole('navigation', { name: 'Paginación de la actividad' })
+    await expect(pag).toContainText(`de ${Number(filasAntes)}`)
     await expect(completa.getByRole('listitem')).toHaveCount(15) // primera página
-    await modal.getByRole('button', { name: 'Siguiente' }).click()
-    await expect(modal.getByText(/página 2 de/)).toBeVisible()
-    await modal.getByRole('button', { name: 'Anterior' }).click()
+    await pag.getByRole('button', { name: 'Página siguiente' }).click()
+    await expect(pag.getByRole('button', { name: 'Página 2', exact: true })).toHaveAttribute('aria-current', 'page')
+    await pag.getByRole('button', { name: 'Página anterior' }).click()
     await modal.getByRole('combobox', { name: 'Entidad' }).click()
     await page.getByRole('option', { name: 'Fondo', exact: true }).click()
     await expect(completa.getByText('Sistema', { exact: true }).first()).toBeVisible()

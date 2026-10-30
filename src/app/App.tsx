@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { Toaster } from 'sonner'
@@ -11,6 +10,7 @@ import { PublicOnly, RequireAuth } from '@/features/auth/RouteGuards'
 import { SessionExpiredPage } from '@/features/auth/SessionExpiredPage'
 import { ThemeProvider, useTema } from '@/features/tema/ThemeProvider'
 import { AppLayout } from './AppLayout'
+import { ConsultasPorUsuario } from './ConsultasPorUsuario'
 
 // Cada módulo se carga al visitarlo: el primer paquete (acceso + estructura) queda ligero y los gráficos/catálogos pesados no bloquean el inicio.
 const CatalogoPage = lazy(() => import('@/features/catalogo/CatalogoPage').then((m) => ({ default: m.CatalogoPage })))
@@ -20,10 +20,6 @@ const GastosPage = lazy(() => import('@/features/gastos/GastosPage').then((m) =>
 const ConfiguracionPage = lazy(() => import('@/features/perfil/ConfiguracionPage').then((m) => ({ default: m.ConfiguracionPage })))
 const SaludPage = lazy(() => import('@/features/salud/SaludPage').then((m) => ({ default: m.SaludPage })))
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
-})
-
 function Notificaciones() {
   const { tema } = useTema()
   return <Toaster position="top-right" closeButton theme={tema === 'oscuro' ? 'dark' : 'light'} />
@@ -32,9 +28,9 @@ function Notificaciones() {
 export function App() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <ConsultasPorUsuario>
             <HintProvider>
             <Routes>
               <Route element={<PublicOnly />}>
@@ -59,9 +55,9 @@ export function App() {
             </Routes>
             <Notificaciones />
             </HintProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
+          </ConsultasPorUsuario>
+        </AuthProvider>
+      </BrowserRouter>
     </ThemeProvider>
   )
 }

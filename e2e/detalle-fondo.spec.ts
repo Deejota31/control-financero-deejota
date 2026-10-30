@@ -1,6 +1,6 @@
 import { type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { email, iniciarSesion, password, vigilarConsola } from './helpers'
+import { elegir, email, iniciarSesion, password, vigilarConsola } from './helpers'
 
 const abrirDetalle = async (page: Page, fondo: string) => {
   await page.goto('/fondos')
@@ -33,20 +33,20 @@ test.describe('Gastos imputados a un fondo', () => {
 
     // Excedentes destacados con texto (no solo color)
     await expect(d.getByText(/Excedente de /).first()).toBeVisible()
-    await d.getByLabel('Tipo de imputación').selectOption('excedente')
+    await elegir(page, d.getByRole('combobox', { name: 'Tipo de imputación' }), 'Excedentes')
     const filasExc = await d.getByRole('listitem').count()
     expect(filasExc).toBeGreaterThan(0)
-    await expect(d.getByText(/Mostrando \d+ de \d+ gastos/)).toBeVisible()
+    await expect(d.getByRole('navigation', { name: 'Paginación' })).toContainText(/\d+–\d+ de \d+/)
 
     // Buscar sin resultados: mensaje claro y el resumen no cambia
     await d.getByLabel('Buscar por concepto').fill('zzz-no-existe')
     await expect(d.getByText('Ningún gasto coincide')).toBeVisible()
     expect((await resumen.innerText()).replace(/\s+/g, ' ')).toBe(texto)
     await d.getByRole('button', { name: 'Quitar búsqueda y filtros' }).click()
-    await expect(d.getByLabel('Tipo de imputación')).toHaveValue('todos')
+    await expect(d.getByRole('combobox', { name: 'Tipo de imputación' })).toContainText('Todas')
 
     // Fila expandible con el reparto real del gasto y retorno sin perder filtros
-    await d.getByLabel('Tipo de imputación').selectOption('excedente')
+    await elegir(page, d.getByRole('combobox', { name: 'Tipo de imputación' }), 'Excedentes')
     const abrir = d.locator('button[aria-controls]').first()
     await abrir.click()
     const detalle = d.getByRole('region', { name: /^Detalle de / })
@@ -55,7 +55,7 @@ test.describe('Gastos imputados a un fondo', () => {
     await expect(detalle).toContainText('Fondo General')
     await abrir.click()
     await expect(detalle).toHaveCount(0)
-    await expect(d.getByLabel('Tipo de imputación')).toHaveValue('excedente')
+    await expect(d.getByRole('combobox', { name: 'Tipo de imputación' })).toContainText('Excedentes')
     // El cuerpo es lo único que se desplaza y el cierre sigue accesible
     await expect(d.getByRole('button', { name: 'Cerrar' })).toBeInViewport()
     await d.getByRole('button', { name: 'Cerrar' }).click()
@@ -70,7 +70,7 @@ test.describe('Gastos imputados a un fondo', () => {
     const compartido = d.getByText(/Compartido con /).first()
     if (await compartido.count()) {
       await expect(compartido).toContainText('General')
-      await expect(d.getByText(/Este fondo · total S\//).first()).toBeVisible()
+      await expect(d.getByText(/total S\//).first()).toBeVisible()
     }
     // Ninguna fila se sale del contenedor
     const rebasa = await d.evaluate((raiz) => {

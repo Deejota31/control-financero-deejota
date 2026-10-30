@@ -1,6 +1,6 @@
 import { type Locator, type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
+import { accionPlantilla, elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
 async function elegir(page: Page, ambito: Locator, opcion: string) {
   await ambito.click()
@@ -171,9 +171,11 @@ test.describe('Gastos', () => {
     await iniciarSesion(page)
     await page.goto('/gastos?desde=2020-01-01')
     await expect(page.getByRole('table')).toBeVisible()
-    await expect(page.getByText(/Página 1 de [2-9]/)).toBeVisible()
-    await page.getByRole('button', { name: 'Siguiente', exact: true }).click()
-    await expect(page.getByText(/Página 2 de/)).toBeVisible()
+    const pag = page.getByRole('navigation', { name: 'Paginación' })
+    await expect(pag.getByRole('button', { name: 'Página 1' })).toHaveAttribute('aria-current', 'page')
+    await expect(pag.getByRole('button', { name: 'Página 2' })).toBeVisible() // hay más de una página
+    await pag.getByRole('button', { name: 'Página siguiente' }).click()
+    await expect(pag.getByRole('button', { name: 'Página 2' })).toHaveAttribute('aria-current', 'page')
     await expect(page).toHaveURL(/pagina=2/)
 
     // ordenar por importe ascendente
@@ -181,7 +183,7 @@ test.describe('Gastos', () => {
     await expect(page).toHaveURL(/orden=monto/) // el segundo clic debe ver ya el estado nuevo
     await page.getByRole('button', { name: /^Importe/ }).click()
     await expect(page).toHaveURL(/dir=asc/)
-    await expect(page.getByText(/Página 1 de/)).toBeVisible()
+    await expect(pag.getByRole('button', { name: 'Página 1' })).toHaveAttribute('aria-current', 'page') // cambiar el orden vuelve a la primera página
 
     await page.waitForLoadState('networkidle') // la tabla ya muestra el orden nuevo, no los datos previos
     // selección múltiple y exportación de la selección
@@ -202,13 +204,13 @@ test.describe('Gastos', () => {
     await page.getByRole('button', { name: 'Plantillas' }).click()
     await page.getByRole('button', { name: 'Nueva plantilla' }).click()
     const form = page.getByRole('dialog').last()
-    await form.getByLabel('Nombre', { exact: true }).fill(nombre)
-    await form.getByLabel('Descripción del gasto').fill(`Gasto ${nombre}`)
+    await elegirEnGasto(form, 'Ámbito', 'Hogar')
+    await elegirEnGasto(form, 'Categoría', 'Servicios')
+    await form.getByLabel('Descripción', { exact: true }).fill(`Gasto ${nombre}`)
+    await form.getByLabel('Nombre de plantilla').fill(nombre)
     await form.getByLabel('Importe sugerido').fill('12.34')
-    await elegir(page, form.getByRole('combobox', { exact: true, name: 'Ámbito' }), 'Hogar')
-    await elegir(page, form.getByRole('combobox', { exact: true, name: 'Categoría' }), 'Servicios')
-    await elegir(page, form.getByRole('combobox', { exact: true, name: 'Medio de pago (opcional)' }), 'Transferencia')
-    await form.getByRole('button', { name: 'Guardar' }).click()
+    await elegirEnGasto(form, 'Medio de pago', 'Transferencia')
+    await form.getByRole('button', { name: 'Guardar plantilla' }).click()
     await expect(page.getByText('Plantilla guardada.')).toBeVisible()
     await page.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).first().click()
 
@@ -243,7 +245,7 @@ test.describe('Gastos', () => {
     await page.getByRole('alertdialog').getByRole('button', { name: 'Anular' }).click()
     await expect(page.getByText('1 gasto anulado.')).toBeVisible()
     await page.getByRole('button', { name: 'Plantillas' }).click()
-    await page.getByRole('button', { name: `Eliminar ${nombre}` }).click()
+    await accionPlantilla(page, nombre, 'Eliminar')
     await page.getByRole('alertdialog').getByRole('button', { name: 'Eliminar' }).click()
     await expect(page.getByText('Plantilla eliminada.')).toBeVisible()
   })

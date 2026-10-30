@@ -4,6 +4,8 @@ import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { idsDe } from '@/domain/idsFiltro'
 import { leerTodo } from '@/lib/leerTodo'
+import { DOMINIOS, invalidar } from '@/lib/consultas'
+import { reporteGasto, leerRpc } from '@/lib/contratos'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
 import { toIso } from '@/lib/format'
@@ -23,6 +25,8 @@ export interface FiltrosGastos {
   tipo: '' | 'fixed' | 'variable'
   estado: 'active' | 'annulled' | 'all'
   pagina: number
+  /** Registros por página (10, 20, 50 o 100). */
+  tamano: number
   orden: 'fecha' | 'monto' | 'descripcion'
   dir: 'asc' | 'desc'
 }
@@ -32,7 +36,7 @@ const FIN_MES = toIso(endOfMonth(new Date()))
 
 export const FILTROS_BASE: FiltrosGastos = {
   desde: INICIO_MES, hasta: FIN_MES, q: '', ambito: '', categoria: '', subcategoria: '', medio: '', fondo: '',
-  tipo: '', estado: 'active', pagina: 1, orden: 'fecha', dir: 'desc',
+  tipo: '', estado: 'active', pagina: 1, tamano: TAMANO_PAGINA, orden: 'fecha', dir: 'desc',
 }
 
 const CLAVES = Object.keys(FILTROS_BASE) as (keyof FiltrosGastos)[]
@@ -43,6 +47,7 @@ function leer(params: URLSearchParams): FiltrosGastos {
     const v = params.get(k)
     if (v === null) continue
     if (k === 'pagina') f.pagina = Math.max(1, parseInt(v, 10) || 1)
+    else if (k === 'tamano') f.tamano = [10, 20, 50, 100].includes(parseInt(v, 10)) ? parseInt(v, 10) : TAMANO_PAGINA
     else if (k === 'tipo') f.tipo = v === 'fixed' || v === 'variable' ? v : ''
     else if (k === 'estado') f.estado = v === 'annulled' || v === 'all' ? v : 'active'
     else if (k === 'orden') f.orden = v === 'monto' || v === 'descripcion' ? v : 'fecha'
@@ -79,7 +84,7 @@ export function useFiltrosGastos() {
     for (const k of CLAVES) out.delete(k)
     return out
   }, { replace: true }), [setParams])
-  const hayFiltros = CLAVES.some((k) => !['pagina', 'orden', 'dir'].includes(k) && filtros[k] !== FILTROS_BASE[k])
+  const hayFiltros = CLAVES.some((k) => !['pagina', 'tamano', 'orden', 'dir'].includes(k) && filtros[k] !== FILTROS_BASE[k])
   return { filtros, cambiar, limpiar, hayFiltros }
 }
 
@@ -119,8 +124,8 @@ export function useGastosPagina(f: FiltrosGastos) {
     queryKey: ['gastos', 'pagina', f],
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
-      const desde = (f.pagina - 1) * TAMANO_PAGINA
-      const { data, error, count } = await construir(f, [desde, desde + TAMANO_PAGINA - 1]).abortSignal(signal)
+      const desde = (f.pagina - 1) * f.tamano
+      const { data, error, count } = await construir(f, [desde, desde + f.tamano - 1]).abortSignal(signal)
       if (error) throw error
       return { filas: (data ?? []) as unknown as GastoConFondos[], total: count ?? 0 }
     },
@@ -185,7 +190,7 @@ export function usePrevisualizacion(payload: PayloadGasto | null) {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.rpc('preview_expense', { p: payload as unknown as Json }).abortSignal(signal)
       if (error) throw error
-      return data as unknown as ReporteGasto
+      return leerRpc(reporteGasto, data, 'preview_expense')
     },
   })
 }
@@ -193,13 +198,13 @@ export function usePrevisualizacion(payload: PayloadGasto | null) {
 export function useGastoMutaciones() {
   const qc = useQueryClient()
   const refrescar = () => {
-    for (const k of ['gastos', 'fondos', 'dashboard', 'salud']) qc.invalidateQueries({ queryKey: [k] })
+    void invalidar(qc, DOMINIOS.gastos)
   }
   const crear = useMutation({
     mutationFn: async (v: { payload: PayloadGasto; clave: string }) => {
       const { data, error } = await supabase.rpc('create_expense', { p: v.payload as unknown as Json, p_key: v.clave })
       if (error) throw error
-      return data as unknown as ReporteGasto
+      return leerRpc(reporteGasto, data, 'create_expense')
     },
     onSettled: refrescar,
   })
@@ -207,7 +212,7 @@ export function useGastoMutaciones() {
     mutationFn: async (v: { id: string; payload: PayloadGasto }) => {
       const { data, error } = await supabase.rpc('update_expense', { p_id: v.id, p: v.payload as unknown as Json })
       if (error) throw error
-      return data as unknown as ReporteGasto
+      return leerRpc(reporteGasto, data, 'update_expense')
     },
     onSettled: refrescar,
   })

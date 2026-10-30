@@ -20,4 +20,7 @@ capturas/
 respaldos/
 
 # Salidas de la revisión de calidad (logs y JSON); la matriz va en docs/qa
-qa/
+/qa/
+
+# Borradores de consultas del Studio local
+supabase/snippets/

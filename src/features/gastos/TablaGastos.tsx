@@ -1,13 +1,15 @@
-import { ArrowDown, ArrowUp, Ban, ChevronLeft, ChevronRight, Copy, Eye, Pencil, Repeat, Undo2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Ban, BookmarkPlus, Copy, Eye, Pencil, Repeat, Undo2 } from 'lucide-react'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Button } from '@/components/ui/Button'
 import { ChipK, TinteK } from '@/components/ui/ChipK'
+import { FilaAcciones, GrupoAcciones, type AccionFila } from '@/components/ui/AccionesFila'
 import { Hint } from '@/components/ui/Hint'
 import { TooltipGrafico, TTCabecera, TTMetrica, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { cn } from '@/lib/cn'
 import { formatFecha, formatSoles } from '@/lib/format'
-import { TAMANO_PAGINA, type FiltrosGastos, type GastoConFondos } from './useGastos'
+import { Paginacion } from '@/components/ui/Paginacion'
+import { TAMANOS_PAGINA } from '@/domain/paginacion'
+import { type FiltrosGastos, type GastoConFondos } from './useGastos'
 
 export interface ElementoNombre { name: string; icon_key: string; color_css?: string; color_token?: string | null }
 export interface NombresCatalogo {
@@ -36,6 +38,7 @@ interface Props {
   onDetalle: (g: GastoConFondos) => void
   onEditar: (g: GastoConFondos) => void
   onClonar: (g: GastoConFondos) => void
+  onPlantilla: (g: GastoConFondos) => void
   onConfirmar: (tipo: 'anular' | 'restaurar', g: GastoConFondos) => void
 }
 
@@ -83,6 +86,20 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
   )
 }
 
+/** Todas las acciones de un gasto, con las reglas del producto: un gasto anulado no se edita y se restaura en lugar de anularse. */
+function accionesDe(g: GastoConFondos, p: Props): AccionFila[] {
+  const anulado = g.status === 'annulled'
+  return [
+    { clave: 'detalle', etiqueta: 'Ver detalle', nombreAccesible: `Ver detalle de ${g.description}`, icono: Eye, onSelect: () => p.onDetalle(g) },
+    { clave: 'editar', etiqueta: 'Editar', nombreAccesible: `Editar ${g.description}`, icono: Pencil, deshabilitada: anulado, motivo: 'Anulado: restáuralo para editarlo', onSelect: () => p.onEditar(g) },
+    { clave: 'clonar', etiqueta: 'Clonar', nombreAccesible: `Clonar ${g.description}`, icono: Copy, onSelect: () => p.onClonar(g) },
+    { clave: 'plantilla', etiqueta: 'Guardar como plantilla', nombreAccesible: `Guardar como plantilla ${g.description}`, icono: BookmarkPlus, onSelect: () => p.onPlantilla(g) },
+    anulado
+      ? { clave: 'restaurar', etiqueta: 'Restaurar', nombreAccesible: `Restaurar ${g.description}`, icono: Undo2, tono: 'ok', onSelect: () => p.onConfirmar('restaurar', g) }
+      : { clave: 'anular', etiqueta: 'Anular', nombreAccesible: `Anular ${g.description}`, icono: Ban, tono: 'peligro', onSelect: () => p.onConfirmar('anular', g) },
+  ]
+}
+
 /** Ancho del contenedor desde el que cabe la tabla completa; por debajo se usan tarjetas (un solo DOM a la vez, sin controles duplicados). */
 const ANCHO_TABLA = 950 // suma de los anchos de columna de la tabla compacta (ver colgroup)
 
@@ -110,9 +127,9 @@ export function TablaGastos(p: Props) {
         <table className="w-full min-w-[950px] table-fixed border-collapse text-left text-sm">
           {/* Anchos explícitos (suman 950 px; con más espacio se reparte en proporción). El ámbito solo tiene columna propia desde 1150 px. */}
           <colgroup>
-            <col style={{ width: 40 }} /><col style={{ width: 88 }} /><col style={{ width: 140 }} /><col style={{ width: 170 }} />
+            <col style={{ width: 40 }} /><col style={{ width: 80 }} /><col style={{ width: 132 }} /><col style={{ width: 160 }} />
             <col className="hidden @min-[1150px]:table-column" style={{ width: 110 }} />
-            <col style={{ width: 118 }} /><col style={{ width: 160 }} /><col style={{ width: 84 }} /><col style={{ width: 150 }} />
+            <col style={{ width: 118 }} /><col style={{ width: 160 }} /><col style={{ width: 84 }} /><col style={{ width: 176 }} />
           </colgroup>
           <thead>
             <tr className="border-b border-line bg-surface-2/70 text-muted">
@@ -159,11 +176,12 @@ export function TablaGastos(p: Props) {
                   <td className="px-2"><ChipK color={med?.color_css}><ItemIcon name={med?.icon_key} className="size-3" /> {med?.name}</ChipK></td>
                   <td className="px-2">{anulado ? <ChipK color="muted">Anulado</ChipK> : <ChipsFondos g={g} fondoPorId={fondoPorId} />}</td>
                   <td className={cn('num whitespace-nowrap px-2 text-right text-[15px] font-semibold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</td>
-                  <td className="px-2">
-                    <div className="flex justify-end gap-0.5">
+                  <td className="px-1">
+                    <div className="flex justify-end gap-0">
                       <Accion label={`Ver detalle de ${g.description}`} onClick={() => p.onDetalle(g)}><Eye className="size-4" aria-hidden="true" /></Accion>
                       <Accion label={`Editar ${g.description}`} disabled={anulado} onClick={() => p.onEditar(g)}><Pencil className="size-4" aria-hidden="true" /></Accion>
                       <Accion label={`Clonar ${g.description}`} onClick={() => p.onClonar(g)}><Copy className="size-4" aria-hidden="true" /></Accion>
+<Accion label={`Guardar como plantilla ${g.description}`} onClick={() => p.onPlantilla(g)}><BookmarkPlus className="size-4" aria-hidden="true" /></Accion>
                       {anulado
                         ? <Accion label={`Restaurar ${g.description}`} tono="ok" onClick={() => p.onConfirmar('restaurar', g)}><Undo2 className="size-4" aria-hidden="true" /></Accion>
                         : <Accion label={`Anular ${g.description}`} tono="bad" onClick={() => p.onConfirmar('anular', g)}><Ban className="size-4" aria-hidden="true" /></Accion>}
@@ -195,51 +213,47 @@ export function TablaGastos(p: Props) {
             })}
           </div>
         </div>
+        <GrupoAcciones clave={JSON.stringify(filtros)}>
         <ul className="flex flex-col">
           {filas.map((g) => {
             const amb = nom.ambito.get(g.ambito_id), cat = nom.categoria.get(g.categoria_id), sub = g.subcategoria_id ? nom.sub.get(g.subcategoria_id) : null, med = nom.medio.get(g.payment_method_id)
             const anulado = g.status === 'annulled'
             const marcada = seleccion.has(g.id)
             return (
-              <li key={g.id} className={cn('flex min-w-0 flex-col gap-2 border-b border-line px-3 py-3 last:border-0', marcada && 'bg-pri-soft/60 shadow-[inset_3px_0_0_var(--pri)]', anulado && 'text-muted')}>
-                <div className="flex min-w-0 items-start gap-2">
-                  <label className="grid size-9 shrink-0 cursor-pointer place-items-center">
-                    <input type="checkbox" className="size-4 accent-[var(--pri)]" aria-label={`Seleccionar ${g.description}`} checked={marcada} onChange={() => p.onAlternar(g)} />
-                  </label>
-                  <div className="min-w-0 flex-1">
-                    <p className={cn('break-words font-semibold', anulado && 'line-through')}>{g.description}</p>
-                    <p className="num text-xs text-muted">{formatFecha(g.expense_date, formato)} · {g.expense_type === 'fixed' ? 'Fijo' : 'Variable'}{g.is_recurring ? ' · Recurrente' : ''}{anulado ? ' · Anulado' : ''}</p>
-                  </div>
-                  <p className={cn('num shrink-0 text-base font-bold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5 pl-11">
-                  <ChipK color={cat?.color_css}><ItemIcon name={cat?.icon_key} className="size-3" /> {cat?.name}{sub ? ` › ${sub.name}` : ''}</ChipK>
-                  <ChipK color={amb?.color_css}>{amb?.name}</ChipK>
-                  <ChipK color={med?.color_css}>{med?.name}</ChipK>
-                  {!anulado && <ChipsFondos g={g} fondoPorId={fondoPorId} />}
-                </div>
-                <div className="flex flex-wrap justify-end gap-1 pl-11">
-                  <Accion label={`Ver detalle de ${g.description}`} onClick={() => p.onDetalle(g)}><Eye className="size-4" aria-hidden="true" /></Accion>
-                  <Accion label={`Editar ${g.description}`} disabled={anulado} onClick={() => p.onEditar(g)}><Pencil className="size-4" aria-hidden="true" /></Accion>
-                  <Accion label={`Clonar ${g.description}`} onClick={() => p.onClonar(g)}><Copy className="size-4" aria-hidden="true" /></Accion>
-                  {anulado
-                    ? <Accion label={`Restaurar ${g.description}`} tono="ok" onClick={() => p.onConfirmar('restaurar', g)}><Undo2 className="size-4" aria-hidden="true" /></Accion>
-                    : <Accion label={`Anular ${g.description}`} tono="bad" onClick={() => p.onConfirmar('anular', g)}><Ban className="size-4" aria-hidden="true" /></Accion>}
-                </div>
-              </li>
+              <FilaAcciones key={g.id} as="li" id={g.id} nombre={g.description} acciones={accionesDe(g, p)} activo className="border-b border-line last:border-0"
+                tarjetaClassName={cn('flex min-w-0 flex-col gap-2 px-3 py-3', marcada && 'bg-pri-soft/60 shadow-[inset_3px_0_0_var(--pri)]', anulado && 'text-muted')}>
+                {(botonAcciones) => (
+                  <>
+                    <div className="flex min-w-0 items-start gap-2">
+                      <label className="grid size-11 shrink-0 cursor-pointer place-items-center">
+                        <input type="checkbox" className="size-4 accent-[var(--pri)]" aria-label={`Seleccionar ${g.description}`} checked={marcada} onChange={() => p.onAlternar(g)} />
+                      </label>
+                      <div className="min-w-0 flex-1 pt-2">
+                        <p className={cn('break-words font-semibold', anulado && 'line-through')}>{g.description}</p>
+                        <p className="num text-xs text-muted">{formatFecha(g.expense_date, formato)} · {g.expense_type === 'fixed' ? 'Fijo' : 'Variable'}{g.is_recurring ? ' · Recurrente' : ''}</p>
+                      </div>
+                      <p className={cn('num shrink-0 pt-2 text-base font-bold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 pl-[3.25rem]">
+                      <ChipK color={cat?.color_css}><ItemIcon name={cat?.icon_key} className="size-3" /> {cat?.name}{sub ? ` › ${sub.name}` : ''}</ChipK>
+                      <ChipK color={amb?.color_css}>{amb?.name}</ChipK>
+                      <ChipK color={med?.color_css}>{med?.name}</ChipK>
+                      {anulado ? <ChipK color="muted">Anulado</ChipK> : <ChipsFondos g={g} fondoPorId={fondoPorId} />}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pl-[3.25rem]">{botonAcciones}</div>
+                  </>
+                )}
+              </FilaAcciones>
             )
           })}
         </ul>
+        </GrupoAcciones>
       </div>
       )}
-      <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface-2/40 px-4 py-3 text-sm">
-        <span className="text-muted">Mostrando <b className="num text-fg">{(filtros.pagina - 1) * TAMANO_PAGINA + 1}–{Math.min(p.total, filtros.pagina * TAMANO_PAGINA)}</b> de <b className="num text-fg">{p.total}</b></span>
-        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
-          <Button variant="secondary" className="px-2.5 sm:px-4" disabled={filtros.pagina <= 1} onClick={() => p.onCambiar({ pagina: filtros.pagina - 1 })}><ChevronLeft className="size-4" aria-hidden="true" /> Anterior</Button>
-          <span className="num text-center text-xs text-muted sm:text-sm">Página {filtros.pagina} de {p.paginas}</span>
-          <Button variant="secondary" className="px-2.5 sm:px-4" disabled={filtros.pagina >= p.paginas} onClick={() => p.onCambiar({ pagina: filtros.pagina + 1 })}>Siguiente <ChevronRight className="size-4" aria-hidden="true" /></Button>
-        </div>
-      </nav>
+      <div className="border-t border-line bg-surface-2/40 px-3 py-2">
+        <Paginacion pagina={filtros.pagina} total={p.total} tamano={filtros.tamano} onPagina={(n) => p.onCambiar({ pagina: n })}
+          opcionesTamano={TAMANOS_PAGINA} onTamano={(n) => p.onCambiar({ tamano: n })} cargando={p.recargando} />
+      </div>
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { claves } from '@/lib/consultas'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/features/auth/AuthProvider'
 import type { PerfilValues } from './perfil'
@@ -6,7 +7,7 @@ import type { PerfilValues } from './perfil'
 export function usePerfil() {
   const { user } = useAuth()
   return useQuery({
-    queryKey: ['perfil', user?.id],
+    queryKey: claves.perfil(user?.id),
     enabled: Boolean(user),
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('*').eq('user_id', user!.id).single()
@@ -26,6 +27,6 @@ export function useActualizarPerfil() {
       if (error) throw error
       return data
     },
-    onSuccess: (data) => qc.setQueryData(['perfil', user?.id], data),
+    onSuccess: (data) => qc.setQueryData(claves.perfil(user?.id), data),
   })
 }

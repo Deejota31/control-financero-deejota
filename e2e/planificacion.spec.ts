@@ -274,11 +274,14 @@ test.describe('Fondos independientes por mes y planificación mensual', () => {
     await page.keyboard.press('Escape')
     await expect(a).toBeVisible() // la planificación sigue abierta
     const antes = Number(sqlLocal(`select count(*) from public.expenses where household_id = ${HID} and status = 'active' and expense_date >= '${SIG}'`))
-    await a.getByRole('button', { name: 'Registrar gastos del mes' }).click()
-    const lote = page.getByRole('dialog', { name: 'Registrar gastos mensuales' })
-    await expect(lote).toBeVisible()
+    // La etapa es un gestor: sin nada seleccionado no se puede registrar, y seleccionar/editar no crea nada hasta confirmar la revisión.
+    await expect(a.getByRole('button', { name: /Revisar y registrar/ })).toBeDisabled()
+    await a.getByLabel('Seleccionar Internet', { exact: true }).check()
+    await a.getByRole('button', { name: /Revisar y registrar 1 gasto/ }).click()
+    const rev = page.getByRole('dialog', { name: 'Confirmar registro de gastos' })
+    await expect(rev).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(lote).toBeHidden()
+    await expect(rev).toBeHidden()
     await expect(a).toBeVisible()
     expect(Number(sqlLocal(`select count(*) from public.expenses where household_id = ${HID} and status = 'active' and expense_date >= '${SIG}'`))).toBe(antes) // abrir no registra nada
     await expect(estadoTarjeta(page, 'Gastos')).toContainText('En progreso')
@@ -306,7 +309,7 @@ test.describe('Fondos independientes por mes y planificación mensual', () => {
     await expect(estadoTarjeta(page, 'Fondos')).toContainText('Completada')
     await expect(estadoTarjeta(page, 'Gastos')).toContainText('Omitida')
     await expect(estadoTarjeta(page, 'Resumen')).toContainText('Finalizada')
-    await expect(asistente(page).getByText('Finalizada el')).toBeVisible()
+    await expect(asistente(page).getByText(/Finalizada el/).first()).toBeVisible()
     expect(nFondos(SIG)).toBe(1)
     expect(monto(SIG, 'Final')).toBe(250)
   })

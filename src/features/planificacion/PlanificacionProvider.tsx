@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { fromIso } from '@/lib/format'
-import { mesDeFecha } from '@/features/fondos/useFondos'
+import { mesDeFecha } from '@/domain/periodo'
 import { useHoy } from '@/features/fondos/useHoy'
 import { AsistentePlanificacion } from './AsistentePlanificacion'
 import { PlanificacionCtx } from './contexto'

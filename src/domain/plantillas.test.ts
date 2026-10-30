@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fechaEfectiva } from './plantillas'
+import { fechaEfectiva, nombreCopia } from './plantillas'
 
 describe('fechaEfectiva', () => {
   it('usa el día pedido cuando el mes lo tiene', () => {
@@ -14,5 +14,18 @@ describe('fechaEfectiva', () => {
   })
   it('sin día se propone el 1', () => {
     expect(fechaEfectiva(null, '2026-10-01')).toEqual({ iso: '2026-10-01', ajustada: false })
+  })
+})
+
+describe('nombreCopia', () => {
+  it('agrega «(copia)» al nombre', () => expect(nombreCopia('Internet hogar', [])).toBe('Internet hogar (copia)'))
+  it('numera las copias sucesivas sin repetir nombres', () => {
+    expect(nombreCopia('Internet', ['Internet', 'Internet (copia)'])).toBe('Internet (copia 2)')
+    expect(nombreCopia('Internet', ['internet (COPIA)', 'Internet (copia 2)'])).toBe('Internet (copia 3)')
+  })
+  it('respeta el largo máximo', () => {
+    const r = nombreCopia('x'.repeat(80), [])
+    expect(r.length).toBeLessThanOrEqual(80)
+    expect(r.endsWith(' (copia)')).toBe(true)
   })
 })

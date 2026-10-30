@@ -155,14 +155,14 @@ isOneToOne: false
                   ]
                 },"expense_templates": {
                   Row: {
-                    "ambito_id": string,"categoria_id": string,"created_at": string,"day_of_month": number | null,"default_amount": number | null,"default_fund_id": string | null,"description": string,"expense_type": string,"household_id": string,"id": string,"is_active": boolean,"is_amount_variable": boolean,"name": string,"payment_method_id": string | null,"recurrence": string,"sort_order": number,"subcategoria_id": string | null,"updated_at": string
+                    "ambito_id": string,"categoria_id": string,"created_at": string,"day_of_month": number | null,"default_amount": number | null,"default_fund_id": string | null,"description": string,"expense_type": string,"household_id": string,"id": string,"is_active": boolean,"is_amount_variable": boolean,"name": string,"notes": string | null,"payment_method_id": string | null,"recurrence": string,"sort_order": number,"subcategoria_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ambito_id": string,"categoria_id": string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description": string,"expense_type"?: string,"household_id": string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name": string,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
+                    "ambito_id": string,"categoria_id": string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description": string,"expense_type"?: string,"household_id": string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name": string,"notes"?: string | null,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "ambito_id"?: string,"categoria_id"?: string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description"?: string,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name"?: string,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
+                    "ambito_id"?: string,"categoria_id"?: string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description"?: string,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name"?: string,"notes"?: string | null,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -367,16 +367,112 @@ isOneToOne: false
       referencedColumns: ["id","household_id"]
     }
                   ]
-                },"funds": {
+                },"fund_template_payment_rules": {
                   Row: {
-                    "color_token": string | null,"copied_from": string | null,"created_at": string,"default_amount": number,"description": string | null,"household_id": string,"icon_key": string | null,"id": string,"is_active": boolean,"is_general": boolean,"name": string,"period_id": string,"priority": number,"updated_at": string
+                    "created_at": string,"effect": string,"household_id": string,"id": string,"payment_method_id": string,"template_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id": string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name": string,"period_id": string,"priority"?: number,"updated_at"?: string
+                    "created_at"?: string,"effect": string,"household_id": string,"id"?: string,"payment_method_id": string,"template_id": string
                   }
                   Update: {
-                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id"?: string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name"?: string,"period_id"?: string,"priority"?: number,"updated_at"?: string
+                    "created_at"?: string,"effect"?: string,"household_id"?: string,"id"?: string,"payment_method_id"?: string,"template_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "fund_template_payment_rules_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "fund_template_payment_rules_payment_method_id_household_id_fkey"
+      columns: ["payment_method_id","household_id"]
+isOneToOne: false
+      referencedRelation: "medios_pago"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "fund_template_payment_rules_template_id_household_id_fkey"
+      columns: ["template_id","household_id"]
+isOneToOne: false
+      referencedRelation: "fund_templates"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"fund_template_scope_rules": {
+                  Row: {
+                    "ambito_id": string | null,"categoria_id": string | null,"created_at": string,"effect": string,"household_id": string,"id": string,"subcategoria_id": string | null,"template_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ambito_id"?: string | null,"categoria_id"?: string | null,"created_at"?: string,"effect": string,"household_id": string,"id"?: string,"subcategoria_id"?: string | null,"template_id": string
+                  }
+                  Update: {
+                    "ambito_id"?: string | null,"categoria_id"?: string | null,"created_at"?: string,"effect"?: string,"household_id"?: string,"id"?: string,"subcategoria_id"?: string | null,"template_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "fund_template_scope_rules_ambito_id_household_id_fkey"
+      columns: ["ambito_id","household_id"]
+isOneToOne: false
+      referencedRelation: "ambitos"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "fund_template_scope_rules_categoria_id_household_id_fkey"
+      columns: ["categoria_id","household_id"]
+isOneToOne: false
+      referencedRelation: "categorias"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "fund_template_scope_rules_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "fund_template_scope_rules_subcategoria_id_household_id_fkey"
+      columns: ["subcategoria_id","household_id"]
+isOneToOne: false
+      referencedRelation: "subcategorias"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "fund_template_scope_rules_template_id_household_id_fkey"
+      columns: ["template_id","household_id"]
+isOneToOne: false
+      referencedRelation: "fund_templates"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"fund_templates": {
+                  Row: {
+                    "color_token": string | null,"created_at": string,"description": string | null,"group_name": string | null,"household_id": string,"icon_key": string | null,"id": string,"is_active": boolean,"is_general": boolean,"name": string,"priority": number,"sort_order": number,"suggested_amount": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "color_token"?: string | null,"created_at"?: string,"description"?: string | null,"group_name"?: string | null,"household_id": string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name": string,"priority"?: number,"sort_order"?: number,"suggested_amount"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "color_token"?: string | null,"created_at"?: string,"description"?: string | null,"group_name"?: string | null,"household_id"?: string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name"?: string,"priority"?: number,"sort_order"?: number,"suggested_amount"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "fund_templates_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"funds": {
+                  Row: {
+                    "color_token": string | null,"copied_from": string | null,"created_at": string,"default_amount": number,"description": string | null,"household_id": string,"icon_key": string | null,"id": string,"is_active": boolean,"is_general": boolean,"name": string,"period_id": string,"priority": number,"template_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id": string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name": string,"period_id": string,"priority"?: number,"template_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id"?: string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name"?: string,"period_id"?: string,"priority"?: number,"template_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -396,6 +492,12 @@ isOneToOne: false
       columns: ["period_id","household_id"]
 isOneToOne: false
       referencedRelation: "budget_periods"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "funds_template_fk"
+      columns: ["template_id","household_id"]
+isOneToOne: false
+      referencedRelation: "fund_templates"
       referencedColumns: ["id","household_id"]
     }
                   ]
@@ -679,11 +781,17 @@ isOneToOne: false
 "annul_expenses":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
+"apply_fund_templates":
+{ Args: { "p_items": Json,"p_period": string }; Returns: Json
+                           },
 "apply_template_batch":
 { Args: { "p_items": Json,"p_key": string,"p_period_date": string }; Returns: Json
                            },
 "bootstrap_catalog":
 { Args: { "hid": string }; Returns: undefined
+                           },
+"catalog_name":
+{ Args: { "p_id": string,"p_kind": string }; Returns: string
                            },
 "close_period":
 { Args: { "p_period": string }; Returns: undefined
@@ -696,6 +804,9 @@ isOneToOne: false
                            },
 "count_changed":
 { Args: { "p_after": Json,"p_before": Json }; Returns: number
+                           },
+"create_catalog_item":
+{ Args: { "p_kind": string,"p_siblings"?: (string)[],"p_values": Json }; Returns: string
                            },
 "create_expense":
 { Args: { "p": Json,"p_key": string }; Returns: Json
@@ -790,11 +901,17 @@ isOneToOne: false
 "reorder_funds":
 { Args: { "p_dry_run"?: boolean,"p_ids": (string)[] }; Returns: Json
                            },
+"reorder_templates":
+{ Args: { "p_ids": (string)[],"p_kind": string }; Returns: undefined
+                           },
 "restore_expenses":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
 "save_fund":
 { Args: { "p": Json,"p_dry_run"?: boolean }; Returns: Json
+                           },
+"save_fund_template":
+{ Args: { "p": Json }; Returns: string
                            },
 "save_period_plan":
 { Args: { "p_month": string,"p_patch": Json }; Returns: Json

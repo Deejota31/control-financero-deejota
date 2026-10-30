@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { usePerfil } from '@/features/perfil/usePerfil'
+import type { Json } from '@/lib/database.types'
+import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 import type { Ambito, Categoria, MedioPago, Subcategoria } from '@/lib/tipos'
 import type { ComboOption } from '@/components/ui/Combobox'
@@ -9,19 +10,18 @@ import { agruparPorNombre } from '@/domain/idsFiltro'
 
 export type CatalogoKind = 'ambitos' | 'categorias' | 'subcategorias' | 'medios_pago'
 
-async function leer<T extends CatalogoKind>(kind: T) {
-  const { data, error } = await supabase.from(kind).select('*').order('sort_order').order('name')
-  if (error) throw error
-  return data
+/** Catálogo completo (nombres e iconos de todos los gastos): se lee entero y en orden determinista, sin depender del límite por respuesta. */
+function leer<T extends CatalogoKind>(kind: T, signal?: AbortSignal) {
+  return leerTodo((d, h) => supabase.from(kind).select('*', { count: 'exact' }).order('sort_order').order('name').order('id').range(d, h).abortSignal(signal as AbortSignal))
 }
 
 export function useCatalogo() {
   const results = useQueries({
     queries: [
-      { queryKey: ['catalogo', 'ambitos'], queryFn: () => leer('ambitos') },
-      { queryKey: ['catalogo', 'categorias'], queryFn: () => leer('categorias') },
-      { queryKey: ['catalogo', 'subcategorias'], queryFn: () => leer('subcategorias') },
-      { queryKey: ['catalogo', 'medios_pago'], queryFn: () => leer('medios_pago') },
+      { queryKey: ['catalogo', 'ambitos'], queryFn: ({ signal }) => leer('ambitos', signal) },
+      { queryKey: ['catalogo', 'categorias'], queryFn: ({ signal }) => leer('categorias', signal) },
+      { queryKey: ['catalogo', 'subcategorias'], queryFn: ({ signal }) => leer('subcategorias', signal) },
+      { queryKey: ['catalogo', 'medios_pago'], queryFn: ({ signal }) => leer('medios_pago', signal) },
     ],
   })
   const [a, c, s, m] = results
@@ -43,6 +43,7 @@ export function useCatalogo() {
         refetch,
       }
     },
+    // `results` es un arreglo nuevo en cada render; el resultado depende solo de los datos y estados listados.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [a.data, c.data, s.data, m.data, a.status, c.status, s.status, m.status],
   )
@@ -86,11 +87,9 @@ export interface CatalogoValores {
   categoria_id?: string
 }
 
-const esOtros = (n: string) => /^otros?$/i.test(n.trim())
 
 export function useCatalogoMutaciones(kind: CatalogoKind) {
   const qc = useQueryClient()
-  const perfil = usePerfil()
   const invalidar = () => qc.invalidateQueries({ queryKey: ['catalogo'] })
   const tabla = () => supabase.from(kind as 'ambitos')
 
@@ -101,18 +100,9 @@ export function useCatalogoMutaciones(kind: CatalogoKind) {
         if (error) throw error
         return
       }
-      const hid = perfil.data?.household_id
-      if (!hid) throw new Error('Perfil sin hogar')
-      const orden = v.hermanos.length + 1
-      const { data, error } = await tabla().insert({ ...v.values, household_id: hid, sort_order: orden } as never).select('id').single()
+      // Alta y colocación de «Otros» al final: una sola RPC transaccional (todo o nada); el hogar sale de la sesión, no del cliente.
+      const { error } = await supabase.rpc('create_catalog_item', { p_kind: kind, p_values: v.values as unknown as Json, p_siblings: v.hermanos.map((h) => h.id) })
       if (error) throw error
-      // "Otros" siempre al final, salvo que el usuario lo cambie después a propósito.
-      const otros = v.hermanos.filter((h) => esOtros(h.name)).map((h) => h.id)
-      if (otros.length && !esOtros(v.values.name)) {
-        const resto = v.hermanos.filter((h) => !esOtros(h.name)).map((h) => h.id)
-        const { error: e2 } = await supabase.rpc('reorder_catalog', { p_kind: kind, p_ids: [...resto, data.id, ...otros] })
-        if (e2) throw e2
-      }
     },
     onSettled: invalidar,
   })

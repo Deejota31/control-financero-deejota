@@ -2,6 +2,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { FiltrosDashboard } from '@/domain/filtrosCruzados'
 import { idsDe } from '@/domain/idsFiltro'
 import type { FondoPanel } from '@/domain/presupuesto'
+import { claves } from '@/lib/consultas'
+import { useAuth } from '@/features/auth/AuthProvider'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 
@@ -84,8 +86,10 @@ export function usePresupuestoRango(desde: string, hasta: string) {
 }
 
 export function useHogar() {
+  const { user } = useAuth()
   return useQuery({
-    queryKey: ['hogar'],
+    queryKey: claves.hogar(user?.id),
+    enabled: Boolean(user),
     queryFn: async () => {
       const { data, error } = await supabase.from('households').select('id, name, is_demo').limit(1).single()
       if (error) throw error

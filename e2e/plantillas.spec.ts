@@ -1,6 +1,6 @@
 import { type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
-import { elegir, email, iniciarSesion, password, sufijo } from './helpers'
+import { accionPlantilla, elegir, elegirEnGasto, email, filaPlantilla, iniciarSesion, password, sufijo } from './helpers'
 
 async function abrirPlantillas(page: Page) {
   await page.goto('/gastos')
@@ -9,22 +9,23 @@ async function abrirPlantillas(page: Page) {
 
 async function crear(page: Page, d: { nombre: string; importe?: string; dia?: string; variable?: boolean }) {
   await page.getByRole('button', { name: 'Nueva plantilla' }).first().click()
-  const f = page.getByRole('dialog', { name: 'Nueva plantilla' })
-  await f.getByLabel('Nombre', { exact: true }).fill(d.nombre)
-  await f.getByLabel('Descripción del gasto').fill(`Gasto ${d.nombre}`)
+  const f = page.getByRole('dialog', { name: 'Nueva plantilla de gasto' })
+  // Mismo formulario que «Nuevo gasto»: chips para ámbito, categoría y medio de pago.
+  await elegirEnGasto(f, 'Ámbito', 'Hogar')
+  await elegirEnGasto(f, 'Categoría', 'Servicios')
+  await f.getByLabel('Descripción', { exact: true }).fill(`Gasto ${d.nombre}`)
+  await f.getByLabel('Nombre de plantilla').fill(d.nombre)
   if (d.importe) await f.getByLabel('Importe sugerido').fill(d.importe)
-  if (d.dia) await f.getByLabel('Día del mes (opcional)').fill(d.dia)
-  if (d.variable) await f.getByLabel(/El importe cambia cada mes/).check()
-  await elegir(page, f.getByRole('combobox', { exact: true, name: 'Ámbito' }), 'Hogar')
-  await elegir(page, f.getByRole('combobox', { exact: true, name: 'Categoría' }), 'Servicios')
-  await elegir(page, f.getByRole('combobox', { exact: true, name: 'Medio de pago (opcional)' }), 'Transferencia')
+  if (d.dia) await f.getByLabel('Día sugerido').fill(d.dia)
+  if (d.variable) await f.getByLabel('¿El importe varía?').check()
+  await elegirEnGasto(f, 'Medio de pago', 'Transferencia')
   return f
 }
 
 async function eliminar(page: Page, nombre: string) {
   await page.keyboard.press('Escape').catch(() => undefined)
   await abrirPlantillas(page)
-  await page.getByRole('button', { name: `Eliminar ${nombre}` }).click()
+  await accionPlantilla(page, nombre, 'Eliminar')
   await page.getByRole('alertdialog').getByRole('button', { name: 'Eliminar' }).click()
   await expect(page.getByText('Plantilla eliminada.')).toBeVisible()
 }
@@ -37,30 +38,32 @@ test.describe('Plantillas mensuales', () => {
     await abrirPlantillas(page)
     const nombre = `Var ${sufijo()}`
     const f = await crear(page, { nombre, dia: '32' })
-    await f.getByRole('button', { name: 'Guardar' }).click()
+    await f.getByRole('button', { name: 'Guardar plantilla' }).click()
     await expect(f.getByText('Escribe un día entre 1 y 31.')).toBeVisible()
-    await expect(f.getByText('Ingresa el importe sugerido o marca que el importe cambia cada mes.')).toBeVisible()
-    // Dos conceptos distintos, con nombres y explicación propios
-    await expect(f.getByText('Naturaleza del gasto')).toBeVisible()
-    await expect(f.getByText(/No es lo mismo que «el importe cambia cada mes»/)).toBeVisible()
-    await f.getByLabel('Día del mes (opcional)').fill('31')
-    await expect(f.getByText(/Este mes se registraría el/)).toBeVisible()
-    await f.getByLabel(/El importe cambia cada mes/).check()
+    await expect(f.getByText('Ingresa el importe sugerido o marca «¿El importe varía?».')).toBeVisible()
+    // Tipo de gasto (fijo/variable) e importe variable son conceptos distintos: dos controles distintos, sin párrafos de ayuda
+    await expect(f.getByLabel('¿El importe varía?')).toBeVisible()
+    await expect(f.getByRole('radiogroup', { name: 'Tipo de gasto' })).toBeVisible()
+    await f.getByLabel('Día sugerido').fill('31')
+    await f.getByLabel('¿El importe varía?').check()
     await f.getByLabel('Importe sugerido').fill('0')
-    await f.getByRole('button', { name: 'Guardar' }).click()
+    await f.getByRole('button', { name: 'Guardar plantilla' }).click()
     await expect(f.getByText('El importe debe ser mayor que 0.')).toBeVisible() // cero nunca es un importe confirmado
     await f.getByLabel('Importe sugerido').fill('')
-    await f.getByRole('button', { name: 'Guardar' }).click()
+    await f.getByRole('button', { name: 'Guardar plantilla' }).click()
     await expect(page.getByText('Plantilla guardada.')).toBeVisible()
     // En la lista: nombre, importe variable, día, clasificación y acciones con nombre accesible
-    const item = page.getByRole('listitem').filter({ hasText: nombre })
+    const item = filaPlantilla(page, nombre)
     await expect(item).toContainText('Importe variable')
-    await expect(item).toContainText('Día 31')
+    await expect(item).toContainText('día 31')
     await expect(item).toContainText('Servicios')
-    for (const a of ['Editar', 'Desactivar', 'Eliminar']) await expect(item.getByRole('button', { name: `${a} ${nombre}` })).toBeVisible()
-    await item.getByRole('button', { name: `Desactivar ${nombre}` }).click()
+    await page.getByRole('button', { name: `Más acciones de ${nombre}`, exact: true }).click()
+    for (const a of ['Editar plantilla', 'Duplicar', 'Desactivar', 'Eliminar']) await expect(page.getByRole('menuitem', { name: new RegExp(a) })).toBeVisible()
+    await page.getByRole('menuitem', { name: 'Desactivar' }).click()
+    await expect(item).toHaveCount(0) // por defecto solo se ven las activas
+    await elegir(page, page.getByRole('combobox', { name: 'Estado', exact: true }), 'Todas')
     await expect(item).toContainText('Inactiva')
-    await item.getByRole('button', { name: `Activar ${nombre}` }).click()
+    await accionPlantilla(page, nombre, 'Activar')
     await expect(item).not.toContainText('Inactiva')
     await eliminar(page, nombre)
   })
@@ -70,7 +73,7 @@ test.describe('Plantillas mensuales', () => {
     await abrirPlantillas(page)
     const nombre = `Mes ${sufijo()}`
     const f = await crear(page, { nombre, dia: '31', variable: true })
-    await f.getByRole('button', { name: 'Guardar' }).click()
+    await f.getByRole('button', { name: 'Guardar plantilla' }).click()
     await expect(page.getByText('Plantilla guardada.')).toBeVisible()
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Registrar mensuales' }).click()

@@ -1,6 +1,6 @@
-import * as Menu from '@radix-ui/react-dropdown-menu'
-import { ArrowDown, ArrowUp, Copy, Eye, GripVertical, MoreVertical, Pencil, Power, Trash2, Wallet } from 'lucide-react'
+import { ArrowDown, ArrowUp, BookmarkPlus, Copy, Eye, GripVertical, Pencil, Power, Trash2, Wallet } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
+import { FilaAcciones, GrupoAcciones, MenuDeAcciones, useAnchoMinimo, type AccionFila } from '@/components/ui/AccionesFila'
 import { Button } from '@/components/ui/Button'
 import { ChipK } from '@/components/ui/ChipK'
 import { Hint } from '@/components/ui/Hint'
@@ -35,6 +35,7 @@ interface Props {
   onEditar: (f: FilaFondo) => void
   onPresupuesto: (f: FilaFondo) => void
   onClonar: (f: FilaFondo) => void
+  onPlantilla: (f: FilaFondo) => void
   onMover: (f: FilaFondo, delta: -1 | 1) => void
   onActivar: (f: FilaFondo) => void
   onEliminar: (f: FilaFondo) => void
@@ -89,7 +90,7 @@ function DetalleCobertura({ c }: { c: Cobertura }) {
 }
 
 /** Hasta dos etiquetas; si hay más, un «+N» que muestra el detalle completo (con el ratón o el teclado). */
-function CeldaCobertura({ c, nombre }: { c: Cobertura | null; nombre: string }) {
+export function CeldaCobertura({ c, nombre }: { c: Cobertura | null; nombre: string }) {
   if (!c) return <span className="text-xs text-muted">—</span>
   if (c.sinReglas) return <span className="text-xs text-muted">Sin reglas de cobertura</span>
   const visibles = c.etiquetas.slice(0, 2)
@@ -127,50 +128,50 @@ function Uso({ f }: { f: FilaFondo }) {
   )
 }
 
-function MenuAcciones({ f, p }: { f: FilaFondo; p: Props }) {
+/** Todas las acciones de un fondo con sus restricciones reales (inactivo, primer o último lugar, Fondo General). Alimenta el menú y el panel. */
+function accionesDe(f: FilaFondo, p: Props): AccionFila[] {
   const pos = p.posicion.get(f.id)
-  const item = 'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-2'
-  return (
-    <Menu.Root>
-      <Menu.Trigger asChild>
-        <button type="button" aria-label={`Más acciones de ${f.nombre}`} className="grid size-8 shrink-0 place-items-center rounded-lg text-muted hover:bg-pri-soft hover:text-pri data-[state=open]:bg-pri-soft data-[state=open]:text-pri">
-          <MoreVertical className="size-4" aria-hidden="true" />
-        </button>
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content align="end" sideOffset={6} aria-label={`Acciones de ${f.nombre}`} className="anim-pop z-[80] w-64 rounded-xl border border-line bg-surface p-1.5 shadow-pop">
-          <Menu.Item className={item} onSelect={() => p.onEditar(f)}><Pencil className="size-4" aria-hidden="true" /> Editar fondo</Menu.Item>
-          <Menu.Item className={item} disabled={!f.activo} onSelect={() => p.onPresupuesto(f)}><Wallet className="size-4" aria-hidden="true" /> Cambiar presupuesto del período</Menu.Item>
-          <Menu.Item className={item} onSelect={() => p.onClonar(f)}><Copy className="size-4" aria-hidden="true" /> Clonar</Menu.Item>
-          {!f.esGeneral && (
-            <>
-              <Menu.Item className={item} disabled={!f.activo || !pos || pos <= 1} onSelect={() => p.onMover(f, -1)}><ArrowUp className="size-4" aria-hidden="true" /> Subir prioridad</Menu.Item>
-              <Menu.Item className={item} disabled={!f.activo || !pos || pos >= p.totalEspecificos} onSelect={() => p.onMover(f, 1)}><ArrowDown className="size-4" aria-hidden="true" /> Bajar prioridad</Menu.Item>
-            </>
-          )}
-          <Menu.Item className={item} onSelect={() => p.onActivar(f)}><Power className="size-4" aria-hidden="true" /> {f.activo ? 'Desactivar' : 'Activar'}</Menu.Item>
-          <Menu.Separator className="my-1.5 h-px bg-line" />
-          <Menu.Item className={cn(item, 'text-bad data-[highlighted]:bg-bad-soft')} onSelect={() => p.onEliminar(f)}><Trash2 className="size-4" aria-hidden="true" /> Eliminar fondo…</Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu.Root>
-  )
+  const prioridad = (delta: -1 | 1): Pick<AccionFila, 'deshabilitada' | 'motivo'> => {
+    if (!f.activo) return { deshabilitada: true, motivo: 'Fondo inactivo' }
+    if (!pos) return { deshabilitada: true, motivo: 'Sin posición de prioridad' }
+    if (delta === -1 && pos <= 1) return { deshabilitada: true, motivo: 'Ya es el primero' }
+    if (delta === 1 && pos >= p.totalEspecificos) return { deshabilitada: true, motivo: 'Ya es el último' }
+    return {}
+  }
+  const orden: AccionFila[] = f.esGeneral ? [] : [
+    { clave: 'subir', etiqueta: 'Subir prioridad', nombreAccesible: `Subir prioridad de ${f.nombre}`, icono: ArrowUp, ...prioridad(-1), onSelect: () => p.onMover(f, -1) },
+    { clave: 'bajar', etiqueta: 'Bajar prioridad', nombreAccesible: `Bajar prioridad de ${f.nombre}`, icono: ArrowDown, ...prioridad(1), onSelect: () => p.onMover(f, 1) },
+  ]
+  return [
+    { clave: 'editar', etiqueta: 'Editar fondo', nombreAccesible: `Editar fondo ${f.nombre}`, icono: Pencil, onSelect: () => p.onEditar(f) },
+    { clave: 'presupuesto', etiqueta: 'Cambiar presupuesto del período', nombreAccesible: `Cambiar presupuesto del período de ${f.nombre}`, icono: Wallet, deshabilitada: !f.activo, motivo: 'Fondo inactivo', onSelect: () => p.onPresupuesto(f) },
+    { clave: 'clonar', etiqueta: 'Clonar', nombreAccesible: `Clonar fondo ${f.nombre}`, icono: Copy, onSelect: () => p.onClonar(f) },
+    { clave: 'plantilla', etiqueta: 'Guardar como plantilla', nombreAccesible: `Guardar como plantilla el fondo ${f.nombre}`, icono: BookmarkPlus, onSelect: () => p.onPlantilla(f) },
+    ...orden,
+    { clave: 'activar', etiqueta: f.activo ? 'Desactivar' : 'Activar', nombreAccesible: `${f.activo ? 'Desactivar' : 'Activar'} fondo ${f.nombre}`, icono: Power, onSelect: () => p.onActivar(f) },
+    { clave: 'eliminar', etiqueta: 'Eliminar fondo…', nombreAccesible: `Eliminar fondo ${f.nombre}`, icono: Trash2, tono: 'peligro', onSelect: () => p.onEliminar(f) },
+  ]
 }
 
-function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean; onSobre: (id: string | null) => void }) {
+function Fila({ f, p, sobre, onSobre, tarjeta }: { f: FilaFondo; p: Props; sobre: boolean; onSobre: (id: string | null) => void; tarjeta: boolean }) {
   const pos = p.posicion.get(f.id)
   const arrastrable = p.permitirOrdenar && f.activo && !f.esGeneral && f.editable
   const disp = f.resumen.disponible
   return (
-    <li
-      className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 border-b border-line px-3.5 py-3 last:border-0 @min-[720px]:min-h-[68px] @min-[720px]:gap-x-3 @min-[720px]:py-2', COLS, 'transition-colors hover:bg-surface-2/50', f.esGeneral && 'bg-pri-soft/40')}
-      style={{ '--k': colorVar(f.color ?? 'pri'), boxShadow: sobre ? undefined : 'inset 4px 0 0 var(--k)' } as CSSProperties}
-      draggable={arrastrable}
-      onDragStart={(e) => { e.dataTransfer.setData('text/plain', f.id); e.dataTransfer.effectAllowed = 'move' }}
-      onDragOver={(e) => { if (p.permitirOrdenar && !f.esGeneral && f.activo) { e.preventDefault(); onSobre(f.id) } }}
-      onDragLeave={() => onSobre(null)}
-      onDrop={(e) => { e.preventDefault(); onSobre(null); const origen = e.dataTransfer.getData('text/plain'); if (origen && origen !== f.id && !f.esGeneral) p.onReordenar(f.id, origen) }}
+    <FilaAcciones as="li" id={f.id} nombre={f.nombre} acciones={accionesDe(f, p)} activo={tarjeta && f.editable} permitirRaton={!arrastrable}
+      className="border-b border-line last:border-0"
+      tarjetaClassName={cn('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-3.5 py-3 @min-[720px]:min-h-[68px] @min-[720px]:gap-x-3 @min-[720px]:py-2', COLS, 'transition-colors hover:bg-surface-2/50', f.esGeneral && 'bg-pri-soft/40')}
+      tarjetaStyle={{ '--k': colorVar(f.color ?? 'pri'), boxShadow: sobre ? undefined : 'inset 4px 0 0 var(--k)' } as CSSProperties}
+      tarjetaProps={{
+        draggable: arrastrable,
+        onDragStart: (e) => { e.dataTransfer.setData('text/plain', f.id); e.dataTransfer.effectAllowed = 'move' },
+        onDragOver: (e) => { if (p.permitirOrdenar && !f.esGeneral && f.activo) { e.preventDefault(); onSobre(f.id) } },
+        onDragLeave: () => onSobre(null),
+        onDrop: (e) => { e.preventDefault(); onSobre(null); const origen = e.dataTransfer.getData('text/plain'); if (origen && origen !== f.id && !f.esGeneral) p.onReordenar(f.id, origen) },
+      }}
     >
+      {(botonAcciones) => (
+      <>
       {/* Fondo: icono, nombre, insignias y, por debajo de 1056 px, prioridad y cobertura como información secundaria */}
       <div className="flex min-w-0 items-start gap-3 @min-[720px]:items-center">
         <span className="tinte-k grid size-10 shrink-0 place-items-center rounded-xl"><ItemIcon name={f.icon ?? 'wallet'} color={f.color ?? 'pri'} className="size-5" /></span>
@@ -192,7 +193,7 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
       <span className="hidden items-center gap-1.5 font-semibold @min-[1056px]:flex">
         {f.esGeneral ? <ChipK color="pri">Principal</ChipK> : (
           <>
-            {arrastrable ? <GripVertical className="size-4 shrink-0 cursor-grab text-muted" aria-hidden="true" /> : <span className="size-4 shrink-0" />}
+            {arrastrable ? <GripVertical data-sin-gesto className="size-4 shrink-0 cursor-grab text-muted" aria-hidden="true" /> : <span className="size-4 shrink-0" />}
             <span className="grid size-6 place-items-center rounded-lg bg-surface-2 text-xs">{pos ? `${pos}º` : '—'}</span>
           </>
         )}
@@ -204,35 +205,40 @@ function Fila({ f, p, sobre, onSobre }: { f: FilaFondo; p: Props; sobre: boolean
         {formatSoles(disp)}<span className="block text-[11px] font-normal text-muted @min-[720px]:hidden">disponible</span>
       </span>
       <div className="col-span-2 min-w-0 @min-[720px]:col-span-1"><Uso f={f} /></div>
-      <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 @min-[720px]:col-span-1 @min-[720px]:justify-end">
-        <span className="num min-w-0 flex-1 text-xs text-muted @min-[720px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
+      <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-end gap-2 @min-[720px]:col-span-1">
+        <span className="num w-full min-w-0 text-xs text-muted @min-[720px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
         {f.editable && (
           <span className="flex shrink-0 items-center gap-1">
-            <Button variant="secondary" aria-label={`Ver gastos de ${f.nombre}`} title="Ver gastos" className="shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[13px]" onClick={() => p.onVer(f)}>
+            <Button variant="secondary" aria-label={`Ver gastos de ${f.nombre}`} title="Ver gastos" className={cn('shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[13px]', botonAcciones && 'min-h-11')} onClick={() => p.onVer(f)}>
               <Eye className="size-4" aria-hidden="true" /> <span className="@min-[720px]:@max-[1055px]:sr-only">Ver gastos</span>
             </Button>
-            <MenuAcciones f={f} p={p} />
+            {botonAcciones ?? <MenuDeAcciones nombre={f.nombre} acciones={accionesDe(f, p)} />}
           </span>
         )}
       </div>
-    </li>
+      </>
+      )}
+    </FilaAcciones>
   )
 }
 
 /** Fondos en tabla equilibrada (tarjetas en móvil): el General siempre primero y el resto en su orden de prioridad. */
 export function TablaFondos(p: Props) {
   const [sobre, setSobre] = useState<string | null>(null)
+  const [raiz, ancha] = useAnchoMinimo<HTMLDivElement>(720)
   return (
-    <div className="@container overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+    <div ref={raiz} className="@container overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
       <div className={cn('hidden min-h-10 items-center gap-x-3 border-b border-line bg-surface-2 px-3.5 text-[11px] font-bold uppercase tracking-wider text-muted @min-[720px]:grid', COLS)} aria-hidden="true">
         <span>Fondo</span>
         <span className="hidden @min-[1056px]:block">Cobertura</span>
         <span className="hidden @min-[1056px]:block">Prioridad</span>
         <span className="text-right">Asignado</span><span className="text-right">Consumido</span><span className="text-right">Disponible</span><span>Uso</span><span className="text-right">Acciones</span>
       </div>
-      <ul aria-label="Fondos">
-        {p.filas.map((f) => <Fila key={f.id} f={f} p={p} sobre={sobre === f.id} onSobre={setSobre} />)}
-      </ul>
+      <GrupoAcciones clave={p.filas.map((f) => f.id).join(',')}>
+        <ul aria-label="Fondos">
+          {p.filas.map((f) => <Fila key={f.id} f={f} p={p} sobre={sobre === f.id} onSobre={setSobre} tarjeta={!ancha} />)}
+        </ul>
+      </GrupoAcciones>
     </div>
   )
 }

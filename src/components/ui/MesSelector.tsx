@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatMes } from '@/lib/format'
-import { sumarMeses } from '@/features/fondos/useFondos'
+import { sumarMeses } from '@/domain/periodo'
 
 /** Navegación entre meses con flechas. `mes` es el primer día del mes en ISO. */
 export function MesSelector({ mes, onChange, maximo }: { mes: string; onChange: (m: string) => void; maximo?: string }) {

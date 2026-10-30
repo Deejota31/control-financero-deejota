@@ -11,13 +11,18 @@ interface ModalProps {
   onOpenChange: (open: boolean) => void
   title: string
   description?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   /** Explicación breve que se abre desde un icono de información junto a la X. */
   ayuda?: ReactNode
   /** Hay cambios sin guardar: cerrar (X, Escape, fondo o «Cancelar») pregunta si seguir editando o descartar. */
   sucio?: boolean
   /** Acciones principales, siempre visibles bajo el cuerpo con scroll. Recibe `cerrar`, que respeta la confirmación de descarte. */
   footer?: ReactNode | ((cerrar: () => void) => ReactNode)
+  /**
+   * `scroll` (por defecto): el cuerpo completo se desplaza. `fijo`: el diálogo ocupa una altura acotada por la pantalla y el cuerpo NO se desplaza por sí
+   * mismo: el contenido reparte su altura (zona superior fija, una zona central con su propio scroll y el pie), así crecer o expandir filas no agranda el diálogo.
+   */
+  layout?: 'scroll' | 'fijo'
   children: ReactNode
 }
 
@@ -38,10 +43,10 @@ function devolverFoco(origen: HTMLElement | null) {
   }, 500)
 }
 
-const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' }
+const SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl', '2xl': 'max-w-6xl' }
 
 /** Diálogo modal accesible. Se muestra sobre la página de origen para conservar el contexto. */
-export function Modal({ open, onOpenChange, title, description, size = 'md', ayuda, sucio, footer, children }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, size = 'md', ayuda, sucio, footer, layout = 'scroll', children }: ModalProps) {
   // Al cerrar, el foco vuelve al control que abrió el diálogo (se monta al abrir).
   const [origen] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
   const [descartando, setDescartando] = useState(false)
@@ -61,13 +66,14 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
           className={cn(
             'anim-dialog fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-line bg-surface shadow-pop',
             SIZES[size],
+            layout === 'fijo' && 'h-[calc(100dvh-1rem)] sm:h-[min(92dvh,56rem)]',
           )}
         >
-          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4 [@media(max-height:520px)]:py-2">
             <div className="min-w-0">
-              <Dialog.Title className="break-words font-display text-lg font-bold">{title}</Dialog.Title>
+              <Dialog.Title className="break-words font-display text-lg font-bold [@media(max-height:520px)]:text-base">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="mt-1 break-words text-sm text-muted">{description}</Dialog.Description>
+                <Dialog.Description className="mt-1 break-words text-sm text-muted max-sm:line-clamp-2 max-sm:text-xs [@media(max-height:520px)]:sr-only">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
@@ -91,9 +97,9 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
               </Dialog.Close>
             </div>
           </div>
-          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">{children}</div>
+          <div className={cn('min-h-0 min-w-0 flex-1 px-4 sm:px-6', layout === 'fijo' ? 'flex flex-col overflow-hidden pb-2 pt-3' : 'overflow-y-auto overscroll-contain py-4 sm:py-5 [@media(max-height:520px)]:py-2')}>{children}</div>
           {footer && (
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 [@media(max-height:520px)]:py-2">
               {typeof footer === 'function' ? footer(cerrar) : footer}
             </div>
           )}

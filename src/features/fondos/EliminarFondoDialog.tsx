@@ -39,6 +39,7 @@ export function EliminarFondoDialog({ fondo, onClose, onDesactivar }: Props) {
       onError: (e) => { if (vigente) { setEfecto(null); setErrorSim(mensajeDeError(e)) } },
     })
     return () => { vigente = false }
+    // Se simula de nuevo SOLO al cambiar de destino o de fondo; `mut` cambia en cada render y lanzaría una simulación por render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destino, fondo.id])
 

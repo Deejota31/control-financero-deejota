@@ -2,6 +2,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import { ArrowDown, ArrowUp, Pencil, Plus, Power, Sparkles, Tags, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { FilaAcciones, GrupoAcciones, useAnchoMinimo, type AccionFila } from '@/components/ui/AccionesFila'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
 import { ConfirmDialog } from '@/components/ui/Dialog'
@@ -69,6 +70,7 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
   const [creando, setCreando] = useState(false)
   const [borrar, setBorrar] = useState<ItemCatalogo | null>(null)
   const [armonizando, setArmonizando] = useState(false)
+  const [refLista, listaAncha] = useAnchoMinimo<HTMLUListElement>(384) // con menos ancho los cinco iconos comprimirían el nombre: se usa el panel de acciones
 
   // Los filtros por padre arrancan en el primer elemento disponible (valor derivado, sin efectos).
   const ambitoId = catalogo.ambitos.some((a) => a.id === ambitoElegido) ? ambitoElegido : (catalogo.ambitos[0]?.id ?? null)
@@ -179,30 +181,46 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
           description={necesitaPadre ? 'Primero crea el elemento superior.' : `Crea ${cfg.genero === 'f' ? 'la primera' : 'el primero'} para poder usarl${cfg.genero === 'f' ? 'a' : 'o'} en tus gastos.`}
         />
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(18rem,30%)_minmax(0,1fr)]">
-          <ul aria-label={`Lista de ${cfg.label.toLowerCase()}`} className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(24rem,30%)_minmax(0,1fr)]">
+          <GrupoAcciones clave={`${kind}:${ambitoId}:${categoriaId}`}>
+          <ul ref={refLista} aria-label={`Lista de ${cfg.label.toLowerCase()}`} className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
             {items.map((it, i) => {
               const activo = seleccionado?.id === it.id
+              const acciones: AccionFila[] = [
+                { clave: 'subir', etiqueta: 'Subir', nombreAccesible: `Subir ${it.name}`, icono: ArrowUp, deshabilitada: i === 0 || mut.ordenar.isPending, motivo: i === 0 ? 'Ya es el primero' : 'Guardando el orden…', onSelect: () => mover(i, -1) },
+                { clave: 'bajar', etiqueta: 'Bajar', nombreAccesible: `Bajar ${it.name}`, icono: ArrowDown, deshabilitada: i === items.length - 1 || mut.ordenar.isPending, motivo: i === items.length - 1 ? 'Ya es el último' : 'Guardando el orden…', onSelect: () => mover(i, 1) },
+                { clave: 'editar', etiqueta: 'Editar', nombreAccesible: `Editar ${it.name}`, icono: Pencil, onSelect: () => { setElegido(it.id); setFocoTick((t) => t + 1) } },
+                { clave: 'activar', etiqueta: it.is_active ? 'Desactivar' : 'Activar', nombreAccesible: it.is_active ? `Desactivar ${it.name}` : `Activar ${it.name}`, icono: Power, onSelect: () => alternar(it) },
+                { clave: 'eliminar', etiqueta: 'Eliminar', nombreAccesible: `Eliminar ${it.name}`, icono: Trash2, tono: 'peligro', onSelect: () => setBorrar(it) },
+              ]
               return (
-                <li key={it.id} className={cn('flex flex-wrap items-center gap-2 px-3 py-2', activo && 'bg-pri-soft', !it.is_active && 'opacity-70')}>
-                  <button type="button" aria-pressed={activo} aria-label={`Ver ${it.name}`} onClick={() => setElegido(it.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border" style={{ background: `color-mix(in srgb, ${it.color_css} 12%, transparent)`, borderColor: `color-mix(in srgb, ${it.color_css} 40%, transparent)` }}>
-                      <ItemIcon name={it.icon_key} color={it.color_css} />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-medium">{it.name}</span>
-                  </button>
-                  {!it.is_active && <Pill tone="neutral">Inactivo</Pill>}
-                  <div className="flex items-center gap-0.5">
-                    <IconBtn label={`Subir ${it.name}`} disabled={i === 0 || mut.ordenar.isPending} onClick={() => mover(i, -1)}><ArrowUp className="size-4" aria-hidden="true" /></IconBtn>
-                    <IconBtn label={`Bajar ${it.name}`} disabled={i === items.length - 1 || mut.ordenar.isPending} onClick={() => mover(i, 1)}><ArrowDown className="size-4" aria-hidden="true" /></IconBtn>
-                    <IconBtn label={`Editar ${it.name}`} onClick={() => { setElegido(it.id); setFocoTick((t) => t + 1) }}><Pencil className="size-4" aria-hidden="true" /></IconBtn>
-                    <IconBtn label={it.is_active ? `Desactivar ${it.name}` : `Activar ${it.name}`} onClick={() => alternar(it)}><Power className="size-4" aria-hidden="true" /></IconBtn>
-                    <IconBtn label={`Eliminar ${it.name}`} onClick={() => setBorrar(it)}><Trash2 className="size-4" aria-hidden="true" /></IconBtn>
-                  </div>
-                </li>
+                <FilaAcciones key={it.id} as="li" id={it.id} nombre={it.name} acciones={acciones} activo={!listaAncha} botonCompacto
+                  tarjetaClassName={cn('flex items-center gap-2 px-3 py-2', activo && 'bg-pri-soft', !it.is_active && 'opacity-70')}>
+                  {(boton) => (
+                    <>
+                      <button type="button" data-gesto-ok aria-pressed={activo} aria-label={`Ver ${it.name}`} onClick={() => setElegido(it.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg border" style={{ background: `color-mix(in srgb, ${it.color_css} 12%, transparent)`, borderColor: `color-mix(in srgb, ${it.color_css} 40%, transparent)` }}>
+                          <ItemIcon name={it.icon_key} color={it.color_css} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span title={it.name} className="line-clamp-2 break-words font-medium leading-snug">{it.name}</span>
+                          {!it.is_active && <span className="mt-0.5 block"><Pill tone="neutral">Inactivo</Pill></span>}
+                        </span>
+                      </button>
+                      {boton ?? (
+                        <div className="flex items-center gap-0.5">
+                          {acciones.map((a) => (
+                            <IconBtn key={a.clave} label={a.nombreAccesible!} disabled={a.deshabilitada} onClick={a.onSelect}><a.icono className="size-4" aria-hidden="true" /></IconBtn>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </FilaAcciones>
               )
             })}
           </ul>
+          </GrupoAcciones>
           {seleccionado && (
             <div className="contents">
               <ElementoEditor

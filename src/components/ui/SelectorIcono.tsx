@@ -61,6 +61,7 @@ export function SelectorIcono({ value, onChange, sugerencias, color, nota }: Pro
     const alPulsar = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') contraer() }
     document.addEventListener('keydown', alPulsar)
     return () => document.removeEventListener('keydown', alPulsar)
+    // `contraer` cambia de identidad en cada render y solo restablece estado local: el oyente debe registrarse únicamente cuando `abierto` cambia.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto])
 

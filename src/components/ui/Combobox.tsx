@@ -11,6 +11,8 @@ export interface ComboOption {
   color?: string | null
   hint?: string
   disabled?: boolean
+  /** Texto breve para el disparador cuando está elegida; el menú muestra `label`. */
+  corto?: string
 }
 
 interface ComboboxProps {
@@ -29,6 +31,8 @@ interface ComboboxProps {
   /** Nombre accesible cuando no hay una etiqueta <label> asociada. */
   'aria-label'?: string
   className?: string
+  /** Altura reducida (para barras de herramientas y paginadores). */
+  compacto?: boolean
 }
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -36,7 +40,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 /** Selector con icono, búsqueda, estado seleccionado y navegación por teclado. */
 export function Combobox({
   id, value, onChange, options, placeholder = 'Seleccionar…', searchPlaceholder = 'Buscar…', emptyText = 'Sin resultados.',
-  clearable, disabled, searchable = true, invalid, className, ...aria
+  clearable, disabled, searchable = true, invalid, className, compacto, ...aria
 }: ComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -95,11 +99,12 @@ export function Combobox({
             disabled={disabled}
             className={cn(
               'flex w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-bad',
+              compacto && 'h-8 gap-1.5 px-2 py-0 text-xs',
               clearable && selected && 'pr-9',
             )}
           >
-            {selected && <ItemIcon name={selected.icon} color={selected.color} className="size-4 shrink-0" />}
-            <span className={cn('min-w-0 flex-1 truncate', !selected && 'text-muted')}>{selected ? selected.label : placeholder}</span>
+            {selected && (selected.icon || !compacto) && <ItemIcon name={selected.icon} color={selected.color} className="size-4 shrink-0" />}
+            <span className={cn('min-w-0 flex-1 truncate', !selected && 'text-muted')}>{selected ? (selected.corto ?? selected.label) : placeholder}</span>
             <ChevronDown className="size-4 shrink-0 text-muted" aria-hidden="true" />
           </button>
         </Popover.Trigger>

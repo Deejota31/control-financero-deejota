@@ -1,4 +1,4 @@
-import { CalendarDays, CircleCheck, CircleSlash, Copy, FileText, Paperclip, Pencil, Repeat, StickyNote, Tag, Wallet } from 'lucide-react'
+import { BookmarkPlus, CalendarDays, CircleCheck, CircleSlash, Copy, FileText, Paperclip, Pencil, Repeat, StickyNote, Tag, Wallet } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
@@ -38,10 +38,11 @@ interface Props {
   onClose: () => void
   onEditar: (g: GastoConFondos) => void
   onClonar: (g: GastoConFondos) => void
+  onPlantilla: (g: GastoConFondos) => void
 }
 
 /** Detalle financiero de un gasto: encabezado con importe, datos generales, clasificación, fondos y comprobante. */
-export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, onClonar }: Props) {
+export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, onClonar, onPlantilla }: Props) {
   const [abriendo, setAbriendo] = useState(false)
   async function verComprobante() {
     setAbriendo(true)
@@ -138,6 +139,7 @@ export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, o
 
         <div className="sticky -bottom-5 -mx-6 -mb-5 flex flex-wrap justify-end gap-2 border-t border-line bg-surface px-6 py-4">
           <Button variant="secondary" onClick={() => onClonar(g)}><Copy className="size-4" aria-hidden="true" /> Duplicar gasto</Button>
+          <Button variant="secondary" onClick={() => onPlantilla(g)}><BookmarkPlus className="size-4" aria-hidden="true" /> Guardar como plantilla</Button>
           {!anulado && <Button onClick={() => onEditar(g)}><Pencil className="size-4" aria-hidden="true" /> Editar gasto</Button>}
           <Button variant="ghost" onClick={onClose}>Cerrar</Button>
         </div>

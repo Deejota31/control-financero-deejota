@@ -112,6 +112,38 @@ select throws_ok(
     select hid, current_date, 10, 'directo', amb_hogar, cat_hogar, med from ids$$,
   '42501', null, 'el cliente no puede insertar gastos directamente');
 
+-- Crear un elemento y reordenar «Otros» es atómico (create_catalog_item)
+select lives_ok(
+  $$select public.create_catalog_item('categorias', jsonb_build_object('name', 'Mascotas', 'icon_key', 'tag', 'ambito_id', (select id from public.ambitos where name = 'Personal')),
+      (select array_agg(id order by sort_order) from public.categorias where ambito_id = (select id from public.ambitos where name = 'Personal')))$$,
+  'crea la categoría y coloca Otros al final en una sola operación');
+select is((select name from public.categorias where ambito_id = (select id from public.ambitos where name = 'Personal') order by sort_order desc limit 1), 'Otros', 'Otros sigue siendo la última');
+select is((select name from public.categorias where ambito_id = (select id from public.ambitos where name = 'Personal') order by sort_order desc offset 1 limit 1), 'Mascotas', 'el nuevo queda justo antes de Otros');
+select throws_ok($$select public.create_catalog_item('ambitos', jsonb_build_object('name', 'pareja'), '{}')$$, '23505', null, 'un nombre repetido falla y no deja nada a medias');
+select throws_ok($$select public.create_catalog_item('usuarios', '{"name":"x"}', '{}')$$, 'P0001', null, 'rechaza un tipo de catálogo no válido');
+
+-- Si falla la SEGUNDA parte (el reordenamiento), la inserción también se deshace
+reset role;
+create function public.tmp_falla_reorden() returns trigger language plpgsql as $f$ begin raise exception 'falla simulada del reordenamiento'; end $f$;
+create trigger tmp_falla_reorden before update of sort_order on public.categorias for each row execute function public.tmp_falla_reorden();
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}', true);
+select throws_ok(
+  $$select public.create_catalog_item('categorias', jsonb_build_object('name', 'Plantas', 'icon_key', 'tag', 'ambito_id', (select id from public.ambitos where name = 'Personal')),
+      (select array_agg(id order by sort_order) from public.categorias where ambito_id = (select id from public.ambitos where name = 'Personal')))$$,
+  'P0001', 'falla simulada del reordenamiento', 'el fallo del reordenamiento se propaga como error');
+select is((select count(*)::int from public.categorias where name = 'Plantas'), 0, 'y la categoría NO quedó creada (todo o nada)');
+reset role;
+drop trigger tmp_falla_reorden on public.categorias;
+drop function public.tmp_falla_reorden();
+
+-- Otro hogar no puede crear elementos bajo el ámbito ajeno
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}', true);
+select throws_ok(
+  format($q$select public.create_catalog_item('categorias', jsonb_build_object('name', 'Intruso', 'icon_key', 'tag', 'ambito_id', %L), '{}')$q$, (select id from public.ambitos where household_id = (select household_id from public.profiles where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') limit 1)),
+  null, null, 'B no puede crear bajo un ámbito de A (RLS y clave compuesta)');
+
 -- Anónimo
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);

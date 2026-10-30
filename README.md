@@ -2,7 +2,7 @@
 
 Control de gastos personales y familiares. React + TypeScript + Vite + Tailwind + Supabase.
 
-Módulos: Dashboard · Gastos · Fondos presupuestales · Catálogo · Salud financiera · Configuración (acceso, sesión y perfil).
+Módulos: Dashboard · Gastos · Fondos presupuestales (por mes) · Catálogo · Salud financiera · Planificación mensual · Configuración (acceso, sesión y perfil).
 
 ## Requisitos
 
@@ -54,11 +54,13 @@ Tras cambiar el esquema: `npm run db:types` regenera `src/lib/database.types.ts`
 | `npm test` | Vitest (lógica de dominio, formularios, sesión) |
 | `npm run test:e2e` | Playwright (requiere `db:start` y `.env.local` con credenciales E2E) |
 | `npm run db:start` / `db:stop` | Arranca o detiene Supabase local |
-| `npm run db:reset` | Recrea la base con migraciones y la cuenta de acceso (sin datos) |
+| `npm run db:reset` | **Borra** la base local y la recrea con migraciones y la cuenta de acceso (sin datos). No lo uses si tienes datos que quieras conservar |
 | `npm run db:test` | Pruebas pgTAP: RLS, jerarquía, motor de fondos, idempotencia, períodos cerrados |
 | `npm run db:types` | Regenera los tipos TypeScript desde el esquema |
 | `npm run verify:seed` | Comprueba que la base local está vacía, que la cuenta de acceso funciona y que no quedan rastros de pruebas. **Solo para una base recién creada: no lo ejecutes sobre una base con datos reales** |
 | `npm run verify:security` | Comprueba ausencia de secretos versionados, que las migraciones no crean usuarios ni datos demo y que el build de producción no incrusta URLs locales |
+| `npm run verify:install` | Instala TODAS las migraciones en una base desechable del contenedor local, revisa RLS/permisos y ejecuta pgTAP. No toca la base de desarrollo |
+| `npm run verify:release` | Controles previos a publicar: typecheck, lint, pruebas, build, contenido de `dist/`, migraciones, repositorio y Auth (`-- --instalacion` añade la prueba de instalación; `-- --produccion` exige un `dist/` construido con variables de producción) |
 | `npm run test:all` | Typecheck, lint, Vitest, pgTAP, E2E (incluye axe), verificación del seed y de seguridad |
 
 Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.0.0.1:54324
@@ -75,4 +77,4 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 - [Accesibilidad](docs/accesibilidad.md)
 - [Reglas de asignación de fondos](docs/reglas-fondos.md)
 - [Decisiones técnicas](docs/decisiones.md)
-- [Preparación para publicar](docs/despliegue.md) (pendiente de tu aprobación)
+- [Preparación para publicar](docs/despliegue.md) (qué se publica, migraciones, Auth; pendiente de tu aprobación)

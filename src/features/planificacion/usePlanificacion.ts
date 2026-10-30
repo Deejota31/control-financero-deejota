@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addDays } from 'date-fns'
+import { leerRpc, planFila, resumenPlan } from '@/lib/contratos'
 import { supabase } from '@/lib/supabase'
 import type { Json } from '@/lib/database.types'
 import { fromIso, toIso } from '@/lib/format'
@@ -42,8 +43,7 @@ export function useResumenPlan(mes: string) {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('planning_summary', { p_month: mes })
       if (error) throw error
-      const r = data as unknown as ResumenPlan
-      return { ...r, budget_total: Number(r.budget_total), expenses_total: Number(r.expenses_total) } satisfies ResumenPlan
+      return leerRpc(resumenPlan, data, 'planning_summary') // los importes se normalizan a número en el contrato
     },
   })
 }
@@ -55,7 +55,7 @@ export function useGuardarPlan() {
     mutationFn: async (v: { mes: string; patch: Partial<Pick<PlanFila, 'funds_stage' | 'expenses_stage' | 'status' | 'remind_after'>> }) => {
       const { data, error } = await supabase.rpc('save_period_plan', { p_month: v.mes, p_patch: v.patch as unknown as Json })
       if (error) throw error
-      return data as unknown as PlanFila
+      return leerRpc(planFila, data, 'save_period_plan')
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ['planificacion'] }),
   })

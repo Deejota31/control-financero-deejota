@@ -15,7 +15,7 @@ import { opciones, opcionesAgrupadas, useCatalogo, type Catalogo } from '@/featu
 import { useFondosRango } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
-import { GastoForm, type ModoGasto } from './GastoForm'
+import { GastoForm, inicialDesdeGasto, type ModoGasto } from './GastoForm'
 import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { useHoy } from '@/features/fondos/useHoy'
@@ -23,7 +23,7 @@ import * as Popover from '@radix-ui/react-popover'
 import { useRegistroGasto } from './RegistroGasto'
 import { TablaGastos } from './TablaGastos'
 import { LoteDialog, PlantillasDialog } from './Plantillas'
-import { TAMANO_PAGINA, gastosParaExportar, useFiltrosGastos, useGastoMutaciones, useGastosPagina, type FiltrosGastos, type GastoConFondos } from './useGastos'
+import { gastosParaExportar, useFiltrosGastos, useGastoMutaciones, useGastosPagina, type FiltrosGastos, type GastoConFondos } from './useGastos'
 
 const TIPOS: ComboOption[] = [{ value: 'fixed', label: 'Fijo', icon: 'repeat' }, { value: 'variable', label: 'Variable', icon: 'tag' }]
 const ESTADOS: ComboOption[] = [{ value: 'active', label: 'Activos', icon: 'receipt' }, { value: 'annulled', label: 'Anulados', icon: 'circle-ellipsis' }, { value: 'all', label: 'Todos', icon: 'tag' }]
@@ -56,10 +56,11 @@ export function GastosPage() {
   const textoDebounced = useDebounced(texto, 350)
   useEffect(() => {
     if (textoDebounced !== filtros.q) cambiar({ q: textoDebounced })
+    // Solo debe reaccionar al texto ya «debounced»; incluir `filtros`/`cambiar` reescribiría la URL en cada cambio de filtro.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textoDebounced])
 
-  const [form, setForm] = useState<{ modo: Exclude<ModoGasto, 'nuevo'>; gasto?: GastoConFondos } | null>(null)
+  const [form, setForm] = useState<{ modo: Exclude<ModoGasto, 'nuevo'>; gasto?: GastoConFondos; inicial?: Parameters<typeof GastoForm>[0]['inicial'] } | null>(null)
   const { abrir: abrirNuevo } = useRegistroGasto()
   // Filtros avanzados activos (los de período y la búsqueda se ven siempre o tienen su propio control).
   const nActivos = [filtros.ambito, filtros.categoria, filtros.subcategoria, filtros.medio, filtros.fondo, filtros.tipo].filter(Boolean).length + (filtros.estado !== 'active' ? 1 : 0)
@@ -74,12 +75,13 @@ export function GastosPage() {
     if (params.get('lote')) {
       setParams((p) => { const o = new URLSearchParams(p); o.delete('lote'); return o }, { replace: true })
     }
+    // Solo al montar: consume el parámetro ?lote=1 una vez (el estado inicial ya lo leyó).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filas = q.data?.filas ?? []
   const total = q.data?.total ?? 0
-  const paginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA))
+  const paginas = Math.max(1, Math.ceil(total / filtros.tamano))
   const todasSeleccionadas = filas.length > 0 && filas.every((f) => seleccion.has(f.id))
   const selArr = [...seleccion.values()]
   const selTotal = selArr.reduce((s, g) => s + Number(g.amount), 0)
@@ -216,15 +218,15 @@ export function GastosPage() {
           filas={filas} filtros={filtros} nom={nom} fondoPorId={fondoPorId} formato={formato} seleccion={seleccion} total={total} paginas={paginas}
           cargando={q.isFetching} recargando={q.isPlaceholderData}
           onAlternar={alternar} onAlternarTodas={alternarTodas} onOrdenar={ordenarPor} onCambiar={cambiar}
-          onDetalle={setDetalle} onEditar={(g) => setForm({ modo: 'editar', gasto: g })} onClonar={(g) => setForm({ modo: 'clonar', gasto: g })}
+          onDetalle={setDetalle} onEditar={(g) => setForm({ modo: 'editar', gasto: g })} onClonar={(g) => setForm({ modo: 'clonar', gasto: g })} onPlantilla={(g) => setForm({ modo: 'plantilla', inicial: inicialDesdeGasto(g) })}
           onConfirmar={(tipo, g) => setConfirmar({ tipo, gastos: [g] })}
         />
       )}
 
-      {form && <GastoForm modo={form.modo} gasto={form.gasto} onClose={() => setForm(null)} />}
+      {form && <GastoForm modo={form.modo} gasto={form.gasto} inicial={form.inicial} onClose={() => setForm(null)} />}
       {plantillas && <PlantillasDialog onClose={() => setPlantillas(false)} />}
       {lote && <LoteDialog onClose={() => setLote(false)} />}
-            {detalle && <DetalleGasto g={detalle} nom={nom} fondoPorId={fondoPorId} formato={formato} onClose={() => setDetalle(null)} onEditar={(g) => { setDetalle(null); setForm({ modo: 'editar', gasto: g }) }} onClonar={(g) => { setDetalle(null); setForm({ modo: 'clonar', gasto: g }) }} />}
+            {detalle && <DetalleGasto g={detalle} nom={nom} fondoPorId={fondoPorId} formato={formato} onClose={() => setDetalle(null)} onEditar={(g) => { setDetalle(null); setForm({ modo: 'editar', gasto: g }) }} onClonar={(g) => { setDetalle(null); setForm({ modo: 'clonar', gasto: g }) }} onPlantilla={(g) => { setDetalle(null); setForm({ modo: 'plantilla', inicial: inicialDesdeGasto(g) }) }} />}
 
       <ConfirmDialog
         open={Boolean(confirmar)}

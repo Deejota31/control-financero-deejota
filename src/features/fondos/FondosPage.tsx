@@ -1,4 +1,4 @@
-import { Banknote, CalendarCheck, Copy, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
+import { Banknote, BookmarkPlus, CalendarCheck, Copy, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
 import { useMemo, useState, type ComponentType } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -14,6 +14,8 @@ import { useHoy } from './useHoy'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { DetalleFondo } from './DetalleFondo'
 import { CopiarFondos } from './CopiarFondos'
+import { PlantillasFondosDialog } from './PlantillasFondos'
+import { inicialDesdeFondo, usePlantillaFondoMutaciones } from './usePlantillasFondos'
 import { usePlanificacionUI } from '@/features/planificacion/contexto'
 import { resumirCobertura } from '@/domain/cobertura'
 import { resumirFondo, round2, type ResumenFondo } from '@/domain/fondos'
@@ -28,10 +30,9 @@ import { EliminarFondoDialog } from './EliminarFondoDialog'
 import { useSolicitudFondos } from './useSolicitudFondos'
 import { FondoForm, type FondoInicial } from './FondoForm'
 import { TablaFondos, type FilaFondo } from './TablaFondos'
-import {
-  finDeMes, mesDeFecha, useAsignacionesPeriodo, useFondos, usePeriodo, usePresupuestosPeriodo, useSnapshotsPeriodo,
-  type FondoPayload,
-} from './useFondos'
+import { finDeMes, mesDeFecha } from '@/domain/periodo'
+import { usePeriodo } from '@/features/periodos/usePeriodo'
+import { useAsignacionesPeriodo, useFondos, usePresupuestosPeriodo, useSnapshotsPeriodo, type FondoPayload } from './useFondos'
 
 const MES_ACTUAL = mesDeFecha(new Date())
 const HOY = toIso(new Date())
@@ -74,6 +75,9 @@ export function FondosPage() {
   const [filtro, setFiltro] = useState<'activos' | 'inactivos' | 'todos'>('activos')
   const [eliminarDe, setEliminarDe] = useState<FondoFila | null>(null)
   const [copiando, setCopiando] = useState(false)
+  const [biblioteca, setBiblioteca] = useState(false)
+  const [formPlantilla, setFormPlantilla] = useState<FondoInicial | null>(null)
+  const mutPlantilla = usePlantillaFondoMutaciones()
   const planificacion = usePlanificacionUI()
 
   const consultas = [catalogo, periodo, fondosQ, presupuestos, asignaciones, gastos]
@@ -157,6 +161,14 @@ export function FondosPage() {
     setForm({ fondo: f, clon, ...reglas(f?.id), presupuestoPeriodo: f ? datos?.asignado.get(f.id) : undefined })
   }
 
+  /** Abre el formulario de plantilla precargado con la configuración del fondo; el fondo original no cambia. */
+  function abrirPlantilla(f: FondoFila) {
+    setDetalle(null)
+    setFormPlantilla(inicialDesdeFondo(
+      f, (fondosQ.data?.alcance ?? []).filter((r) => r.fund_id === f.id), (fondosQ.data?.medios ?? []).filter((r) => r.fund_id === f.id), datos?.asignado.get(f.id) ?? Number(f.default_amount),
+    ))
+  }
+
   const porId = new Map((fondosQ.data?.fondos ?? []).map((f) => [f.id, f]))
   // La cobertura sale de las reglas reales de cada fondo y de los nombres del catálogo (nada fijo).
   const nombresCobertura = {
@@ -208,6 +220,7 @@ export function FondosPage() {
         </BarraFiltros>
         <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2 md:shrink-0">
           {!cerrado && <Button variant="secondary" title="Planificación mensual" onClick={() => planificacion.abrirEstado(mes)}><CalendarCheck className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Planificación</span></Button>}
+          {!cerrado && <Button variant="secondary" title="Plantillas de fondos" aria-label="Plantillas de fondos" onClick={() => setBiblioteca(true)}><BookmarkPlus className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Plantillas</span></Button>}
           {!cerrado && <Button variant="secondary" title="Copiar fondos de otro mes" onClick={() => setCopiando(true)}><Copy className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Copiar fondos de otro mes</span></Button>}
           {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
           {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
@@ -246,6 +259,7 @@ export function FondosPage() {
           onEditar={(f) => abrirForm(fondoDe(f))}
           onPresupuesto={(f) => setPresupuestoDe(fondoDe(f))}
           onClonar={(f) => abrirForm(fondoDe(f), true)}
+          onPlantilla={(f) => abrirPlantilla(fondoDe(f))}
           onMover={(f, d) => mover({ id: f.id } as Tarjeta, d)}
           onActivar={(f) => alternarActivo(fondoDe(f))}
           onEliminar={(f) => setEliminarDe(fondoDe(f))}
@@ -254,6 +268,19 @@ export function FondosPage() {
       )}
 
       {copiando && <CopiarFondos destino={mes} onClose={() => setCopiando(false)} />}
+      {biblioteca && <PlantillasFondosDialog mes={mes} onClose={() => setBiblioteca(false)} />}
+      {formPlantilla && catalogo && (
+        <FondoForm
+          modo="plantilla"
+          catalogo={catalogo}
+          inicial={formPlantilla}
+          hayGeneralActivo={false}
+          periodoAbierto={false}
+          cargando={mutPlantilla.guardar.isPending}
+          onClose={() => setFormPlantilla(null)}
+          onSubmit={(payload) => mutPlantilla.guardar.mutate(payload, { onSuccess: () => { toast.success('Plantilla guardada.'); setFormPlantilla(null) }, onError: (e) => toast.error(mensajeDeError(e)) })}
+        />
+      )}
 
       {form && catalogo && (
         <FondoForm
@@ -279,6 +306,7 @@ export function FondosPage() {
           todas={asignaciones.data ?? []}
           formato={formato}
           onClose={() => setDetalle(null)}
+          onPlantilla={!cerrado && detalleFondo.fondo ? () => abrirPlantilla(detalleFondo.fondo!) : undefined}
         />
       )}
 

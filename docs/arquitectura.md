@@ -13,13 +13,14 @@ React (Vite SPA) ── supabase-js (clave publishable + JWT del usuario)
 
 - **Identidad:** `households`, `household_members`, `profiles`. Todo cuelga de `household_id`; hoy un hogar por usuario (`owner`). Abrir colaboración = añadir miembros y roles.
 - **Catálogo:** `ambitos` → `categorias` → `subcategorias`, y `medios_pago`. Claves foráneas compuestas garantizan mismo hogar y jerarquía coherente (un gasto no mezcla ámbito/categoría/subcategoría). Iconos y colores limitados a listas seguras.
-- **Presupuesto:** `budget_periods` (mensuales), `funds`, `fund_period_budgets`, reglas `fund_scope_rules` y `fund_payment_rules`, `period_fund_snapshots` (histórico de períodos cerrados).
+- **Presupuesto:** `budget_periods` (mensuales) y, por mes, `funds` (instancias de un solo mes), `fund_period_budgets`, reglas `fund_scope_rules` y `fund_payment_rules`, `period_fund_snapshots` (histórico de períodos cerrados). Planificación mensual: `period_plans`.
+- **Plantillas:** `expense_templates` (gastos) y `fund_templates` con `fund_template_scope_rules` / `fund_template_payment_rules` (fondos): configuración reutilizable, sin saldos.
 - **Gastos:** `expenses` (baja lógica), `expense_fund_allocations` (imputación; la suma por gasto activo = importe, verificado con restricción diferida), `expense_templates`, `template_batches` y `template_batch_items`.
 - **Trazabilidad:** `audit_logs` (triggers; solo lectura para el propietario) e `idempotency_requests`.
 
 ## Qué es solo lectura para el cliente
 
-Períodos, fondos, reglas, presupuestos, gastos, imputaciones, lotes y auditoría **solo se escriben con RPC** (`SECURITY DEFINER`, con comprobación de pertenencia al hogar): `create_expense`, `update_expense`, `annul_expenses`, `restore_expenses`, `preview_expense`, `save_fund`, `reorder_funds`, `set_fund_period_budget`, `close_period`, `apply_template_batch`, `ensure_period_rpc`. Las que recalculan aceptan `dry_run`/previsualización exacta (se ejecuta y se revierte).
+Períodos, fondos, reglas, presupuestos, gastos, imputaciones, lotes y auditoría **solo se escriben con RPC** (`SECURITY DEFINER`, con comprobación de pertenencia al hogar): `create_expense`, `update_expense`, `annul_expenses`, `restore_expenses`, `preview_expense`, `save_fund`, `reorder_funds`, `set_fund_period_budget`, `close_period`, `copy_funds`, `delete_fund`, `apply_template_batch`, `apply_fund_templates`, `save_fund_template`, `reorder_templates`, `save_period_plan`, `ensure_period_rpc`. El catálogo se escribe directo (RLS), salvo crear (`create_catalog_item`, atómica: inserta y deja «Otros» al final en una transacción) y ordenar (`reorder_catalog`). Las que recalculan aceptan `dry_run`/previsualización exacta (se ejecuta y se revierte).
 
 ## Reglas de fondos
 
@@ -27,16 +28,20 @@ Ver [reglas-fondos.md](reglas-fondos.md). Códigos de error propios `GD001`…`G
 
 ## Frontend
 
-`src/features/*` por módulo (auth, catálogo, fondos, gastos, dashboard, salud, perfil), `src/domain` con lógica pura probada (compatibilidad de fondos, series y proyección, tendencias), `src/components/ui` con componentes accesibles (selector con búsqueda, calendario, importe con prefijo `S/`, diálogos). Datos con TanStack Query: consultas con cancelación al cambiar filtros, invalidación coherente tras cada operación; sin actualizaciones optimistas en operaciones financieras (la imputación depende del servidor).
+`src/features/*` por módulo (auth, catálogo, fondos, gastos, plantillas, planificación, periodos, dashboard, salud, perfil), `src/domain` con lógica pura probada (incluye meses y períodos, registro desde plantillas, gesto de acciones) (compatibilidad de fondos, series y proyección, tendencias), `src/components/ui` con componentes accesibles (selector con búsqueda, calendario, importe con prefijo `S/`, diálogos). Datos con TanStack Query: consultas con cancelación al cambiar filtros, invalidación coherente tras cada operación (`lib/consultas.ts`: dominios por operación); sin actualizaciones optimistas en operaciones financieras (la imputación depende del servidor).
+
+**Sesión y caché:** `app/ConsultasPorUsuario` crea un `QueryClient` por identidad de usuario y lo vacía al cambiar de sesión o cerrarla, de modo que los datos de una persona nunca se muestran a la siguiente en el mismo navegador (ni siquiera consultas con `staleTime`). Las claves de hogar y perfil incluyen además el id de usuario.
+
+**Contratos con Supabase:** `lib/database.types.ts` es generado (`npm run db:types`; no se edita). Las respuestas JSON de las RPC financieras se validan en el límite con `lib/contratos.ts` (zod): si una RPC cambia de forma de manera incompatible, falla con `ContratoRpcError` indicando la función y el campo.
 
 ## Límites de consulta y métricas financieras
 
 PostgREST recorta cada respuesta en `max_rows` (1000) **sin avisar**. Reglas del proyecto:
 
 - Los KPIs y gráficos del Dashboard se calculan **en PostgreSQL** con `dashboard_panel` (total, cantidad, serie diaria, distribución por ámbito/categoría/subcategoría, recientes, fondos, excedente) para el período, su comparativo y los filtros cruzados (ámbito, categoría, subcategoría, medio, tipo, día). Incluyen todos los registros.
-- Cualquier otra lectura que alimente una cifra (Fondos, Salud, estado de plantillas, exportaciones) usa `leerTodo`: pagina hasta agotar la consulta y **falla** si el servidor entrega menos de lo que declara (`ResultadoIncompletoError`), en lugar de devolver datos parciales.
+- Cualquier otra lectura que alimente una cifra o un nombre mostrado (fondos por rango, presupuestos, asignaciones, catálogo completo, estado de plantillas, exportaciones) usa `leerTodo`: pagina hasta agotar la consulta y **falla** si el servidor entrega menos de lo que declara (`ResultadoIncompletoError`), en lugar de devolver datos parciales.
 - La tabla de gastos sigue paginada en servidor, con total exacto y desempate único por `id` en el orden (sin él, filas con la misma fecha y `created_at` podían repetirse u omitirse entre páginas).
-- Las listas cortas (6 gastos recientes) son listas, no métricas.
+- Las listas cortas (6 gastos recientes) son listas, no métricas. También leen una sola página, por estar acotadas por diseño: los fondos y sus reglas de UN mes, las plantillas (decenas) y los fondos/presupuestos de un solo período.
 
 ## Comprobantes y limpieza
 

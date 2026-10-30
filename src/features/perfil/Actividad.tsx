@@ -1,10 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Ban, ChevronLeft, ChevronRight, Cog, FilePlus2, Pencil, RotateCcw, Tag, Trash2, Wallet, type LucideIcon } from 'lucide-react'
+import { Ban, Cog, FilePlus2, Pencil, RotateCcw, Tag, Trash2, Wallet, type LucideIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Combobox, type ComboOption } from '@/components/ui/Combobox'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Modal } from '@/components/ui/Dialog'
+import { Paginacion } from '@/components/ui/Paginacion'
 import { ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { ACCIONES, clasificar, ENTIDADES, ETIQUETA_CATEGORIA, nombreDeEvento, type CategoriaActividad } from '@/domain/actividad'
 import { supabase } from '@/lib/supabase'
@@ -92,7 +93,6 @@ function ActividadCompleta({ open, onOpenChange, tz, formato }: { open: boolean;
   const q = useActividad(f, TAM)
   const cambiar = (p: Partial<FiltroActividad>) => setF((x) => ({ ...x, pagina: 1, ...p }))
   const total = q.data?.total ?? 0
-  const paginas = Math.max(1, Math.ceil(total / TAM))
   const hayFiltros = f.desde || f.hasta || f.entidad || f.accion || f.sistema
 
   return (
@@ -113,13 +113,7 @@ function ActividadCompleta({ open, onOpenChange, tz, formato }: { open: boolean;
           <ul className="divide-y divide-line" aria-label="Actividad" aria-busy={q.isPlaceholderData}>{q.data.filas.map((e) => <Fila key={e.id} e={e} tz={tz} />)}</ul>
         )}
 
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted" aria-live="polite">{total.toLocaleString('es-PE')} {total === 1 ? 'evento' : 'eventos'} · página {f.pagina} de {paginas}</span>
-          <div className="flex gap-2">
-            <Button variant="secondary" disabled={f.pagina <= 1} onClick={() => setF((x) => ({ ...x, pagina: x.pagina - 1 }))}><ChevronLeft className="size-4" aria-hidden="true" /> Anterior</Button>
-            <Button variant="secondary" disabled={f.pagina >= paginas} onClick={() => setF((x) => ({ ...x, pagina: x.pagina + 1 }))}>Siguiente <ChevronRight className="size-4" aria-hidden="true" /></Button>
-          </div>
-        </div>
+        <Paginacion pagina={f.pagina} total={total} tamano={TAM} onPagina={(n) => setF((x) => ({ ...x, pagina: n }))} cargando={q.isPlaceholderData} etiqueta="Paginación de la actividad" />
       </div>
     </Modal>
   )

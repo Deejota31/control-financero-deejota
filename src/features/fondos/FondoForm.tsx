@@ -20,14 +20,26 @@ import type { FondoPayload } from './useFondos'
 
 type Regla = 'none' | 'include' | 'exclude'
 
+/** Lo que el formulario necesita de un fondo; una plantilla de fondo tiene la misma forma (su importe sugerido va en `default_amount`). */
+export type FondoBase = Pick<Fila<'funds'>, 'id' | 'name' | 'description' | 'icon_key' | 'color_token' | 'is_general' | 'is_active' | 'default_amount' | 'priority'>
+
 export interface FondoInicial {
-  fondo: Fila<'funds'> | null
-  alcance: Fila<'fund_scope_rules'>[]
-  medios: Fila<'fund_payment_rules'>[]
+  fondo: FondoBase | null
+  alcance: Pick<Fila<'fund_scope_rules'>, 'ambito_id' | 'categoria_id' | 'subcategoria_id' | 'effect'>[]
+  medios: Pick<Fila<'fund_payment_rules'>, 'payment_method_id' | 'effect'>[]
   /** Si se clona, el nombre lleva "(copia)" y no hay id. */
   clon?: boolean
+  /** Con `clon`: conserva el nombre original (convertir en plantilla o crear desde una plantilla). */
+  conservarNombre?: boolean
   presupuestoPeriodo?: number
+  /** Plantilla de la que sale el fondo que se crea: queda vinculada para no duplicarla en el mes. */
+  plantillaId?: string
+  /** Grupo propio de la plantilla (solo plantillas): organiza la biblioteca, no cambia ninguna regla financiera. */
+  grupo?: string | null
 }
+
+/** `fondo` es el formulario de un fondo del mes; `plantilla` el de una plantilla de fondo (global, sin período). Misma pantalla, solo cambian textos y datos de período. */
+export type ModoFondo = 'fondo' | 'plantilla'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Escribe un nombre.').max(60, 'Máximo 60 caracteres.'),
@@ -37,6 +49,7 @@ const schema = z.object({
   is_general: z.boolean(),
   is_active: z.boolean(),
   default_amount: z.string().superRefine((v, ctx) => { const e = errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
+  group_name: z.string().trim().max(40, 'Máximo 40 caracteres.'),
   period_amount: z.string().superRefine((v, ctx) => { const e = v === '' ? null : errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
 })
 type Values = z.infer<typeof schema>
@@ -101,8 +114,9 @@ function ResumenRamas({ inc, exc }: { inc: number; exc: number }) {
 }
 
 export function FondoForm({
-  catalogo, inicial, hayGeneralActivo, periodoAbierto, periodId, onClose, onSubmit, cargando,
+  catalogo, inicial, hayGeneralActivo, periodoAbierto, periodId, onClose, onSubmit, cargando, modo = 'fondo',
 }: {
+  modo?: ModoFondo
   catalogo: Catalogo
   inicial: FondoInicial
   hayGeneralActivo: boolean
@@ -113,6 +127,7 @@ export function FondoForm({
   cargando: boolean
 }) {
   const { fondo, clon } = inicial
+  const esPlantilla = modo === 'plantilla'
   const [inicialAlcance] = useState<Record<string, Regla>>(() => {
     const m: Record<string, Regla> = {}
     for (const r of inicial.alcance) {
@@ -129,12 +144,13 @@ export function FondoForm({
   const { register, handleSubmit, control, setFocus, formState: { errors, isDirty } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: fondo ? (clon ? `${fondo.name} (copia)` : fondo.name) : '',
+      name: fondo ? (clon && !inicial.conservarNombre ? `${fondo.name} (copia)` : fondo.name) : '',
       description: fondo?.description ?? '',
       icon_key: fondo?.icon_key ?? 'wallet',
       color_token: fondo?.color_token ?? 'c1',
       is_general: fondo?.is_general ?? false,
       is_active: fondo?.is_active ?? true,
+      group_name: inicial.grupo ?? '',
       default_amount: fondo ? Number(fondo.default_amount).toFixed(2) : '0.00',
       period_amount: inicial.presupuestoPeriodo !== undefined && !clon ? inicial.presupuestoPeriodo.toFixed(2) : '',
     },
@@ -147,6 +163,7 @@ export function FondoForm({
   const color = useWatch({ control, name: 'color_token' })
   const nombreFondo = useWatch({ control, name: 'name' })
   const editando = Boolean(fondo && !clon)
+  const textoImporte = esPlantilla ? 'Importe sugerido (S/)' : 'Importe de este mes (S/)'
 
   const arbol = useMemo(
     () =>
@@ -201,9 +218,13 @@ export function FondoForm({
     const payment_rules = Object.entries(medios)
       .filter(([, e]) => e !== 'none')
       .map(([method, effect]) => ({ method, effect: effect as 'include' | 'exclude' }))
-    const importeMes = parseMontoNoNegativo(editando && periodoAbierto && v.period_amount !== '' ? v.period_amount : v.default_amount)!
+    const importeMes = parseMontoNoNegativo(!esPlantilla && editando && periodoAbierto && v.period_amount !== '' ? v.period_amount : v.default_amount)!
     const payload: FondoPayload = {
       id: editando ? fondo!.id : undefined,
+      template_id: inicial.plantillaId,
+      ...(esPlantilla ? { group_name: v.group_name || null } : {}),
+      // La prioridad sugerida de una plantilla se conserva y se resuelve contra las del mes al usarla.
+      ...(esPlantilla || inicial.plantillaId ? { priority: fondo?.priority } : {}),
       name: v.name,
       description: v.description,
       icon_key: v.icon_key,
@@ -214,19 +235,19 @@ export function FondoForm({
       scope_rules,
       payment_rules,
       // Cada fondo es una instancia de UN mes: siempre se guarda en el período que se está viendo, con el importe de ese mes.
-      ...(periodId ? { period_id: periodId, period_amount: importeMes } : {}),
+      ...(periodId && !esPlantilla ? { period_id: periodId, period_amount: importeMes } : {}),
     }
     onSubmit(payload)
   })
 
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title={editando ? 'Editar fondo' : clon ? 'Clonar fondo' : 'Nuevo fondo'} size="xl"
-      description="Un fondo es presupuesto asignado, no dinero ingresado ni una cuenta."
+    <Modal open onOpenChange={(o) => !o && onClose()} title={esPlantilla ? (editando ? 'Editar plantilla de fondo' : 'Nueva plantilla de fondo') : editando ? 'Editar fondo' : inicial.plantillaId ? 'Nuevo fondo desde plantilla' : clon ? 'Clonar fondo' : 'Nuevo fondo'} size="xl"
+      description={esPlantilla ? 'Una plantilla es una configuración reutilizable: no es presupuesto asignado ni afecta a ningún mes hasta que la uses.' : 'Un fondo es presupuesto asignado, no dinero ingresado ni una cuenta.'}
       sucio={sucio}
       footer={(cerrar) => (
         <>
           <Button variant="secondary" onClick={cerrar} disabled={cargando}>Cancelar</Button>
-          <Button type="submit" form={idForm} loading={cargando}>{cargando ? 'Revisando…' : 'Guardar fondo'}</Button>
+          <Button type="submit" form={idForm} loading={cargando}>{cargando ? (esPlantilla ? 'Guardando…' : 'Revisando…') : esPlantilla ? 'Guardar plantilla' : 'Guardar fondo'}</Button>
         </>
       )}
       ayuda={
@@ -244,16 +265,17 @@ export function FondoForm({
       <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-3">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} {...register('name')} />}</Field>
-          {editando && periodoAbierto ? (
+          {!esPlantilla && editando && periodoAbierto ? (
             <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes: los demás meses no cambian.">
               {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
             </Field>
           ) : (
-            <Field label="Importe de este mes (S/)" error={errors.default_amount?.message} hint="El fondo existe solo en este mes.">
+            <Field label={textoImporte} error={errors.default_amount?.message} hint={esPlantilla ? 'Esta plantilla puede utilizarse en diferentes meses.' : 'El fondo existe solo en este mes.'}>
               {(p) => <Controller control={control} name="default_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.default_amount)} />} />}
             </Field>
           )}
           <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
+          {esPlantilla && <Field label="Grupo (opcional)" error={errors.group_name?.message} hint="Solo organiza tu biblioteca de plantillas (por ejemplo, «Alimentación»). No cambia las reglas ni la prioridad del fondo.">{(p) => <Input {...p} {...register('group_name')} />}</Field>}
           <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-sm font-medium">Icono</span>
             <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={field.value} onChange={field.onChange} sugerencias={sugerirIconos(nombreFondo ?? '')} color={color} />} />
@@ -263,14 +285,14 @@ export function FondoForm({
           </div>
           <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" disabled={editando && fondo?.is_general ? true : hayGeneralActivo && !fondo?.is_general} {...register('is_general')} />
+              <input type="checkbox" className="mt-1" disabled={esPlantilla ? false : editando && fondo?.is_general ? true : hayGeneralActivo && !fondo?.is_general} {...register('is_general')} />
               <span>
                 <b>Fondo General</b> (absorbe el excedente de los fondos específicos y puede quedar en negativo).
-                {hayGeneralActivo && !fondo?.is_general && <span className="block text-muted">Ya existe un Fondo General activo.</span>}
+                {!esPlantilla && hayGeneralActivo && !fondo?.is_general && <span className="block text-muted">Ya existe un Fondo General activo.</span>}
               </span>
             </label>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" {...register('is_active')} /> Fondo activo
+              <input type="checkbox" {...register('is_active')} /> {esPlantilla ? 'Plantilla activa' : 'Fondo activo'}
             </label>
           </div>
         </div>

@@ -33,3 +33,21 @@ export async function elegir(page: Page, selector: Locator, opcion: string) {
   await selector.click()
   await page.getByRole('option', { name: opcion, exact: true }).click()
 }
+
+/** Fila de una plantilla de gasto en el gestor (secciones, selección múltiple y edición inline). */
+export const filaPlantilla = (page: Page, nombre: string) => page.locator('[data-plantilla]').filter({ has: page.getByLabel(`Seleccionar ${nombre}`, { exact: true }) })
+
+/** Ejecuta una acción del menú «Más acciones» de una plantilla de gasto. */
+export async function accionPlantilla(page: Page, nombre: string, accion: string | RegExp) {
+  await page.getByRole('button', { name: `Más acciones de ${nombre}`, exact: true }).click()
+  await page.getByRole('menuitem', { name: accion }).or(page.getByRole('group', { name: `Acciones de ${nombre}`, exact: true }).getByRole('button', { name: accion })).first().click()
+}
+
+/** Fila de una plantilla de fondo en el gestor. */
+export const filaPlantillaFondo = (page: Page, nombre: string) => page.locator(`[data-plantilla-fondo][data-nombre="${nombre}"]`)
+
+/** Ejecuta una acción del menú «Más acciones» de una plantilla de fondo. */
+export async function accionPlantillaFondo(page: Page, nombre: string, accion: string | RegExp) {
+  await page.getByRole('button', { name: `Más acciones de la plantilla ${nombre}`, exact: true }).or(page.getByRole('button', { name: `Más acciones de ${nombre}`, exact: true })).click()
+  await page.getByRole('menuitem', { name: accion }).or(page.getByRole('group', { name: `Acciones de ${nombre}`, exact: true }).getByRole('button', { name: accion })).first().click()
+}

@@ -1,3 +1,6 @@
+import { addMonths, endOfMonth, format, startOfMonth } from 'date-fns'
+import { fromIso, toIso } from '@/lib/format'
+
 /** Etiqueta temporal de un mes respecto a hoy. Es calendario: no cambia ningún permiso de edición ni el cierre contable de los fondos. */
 export type EstadoMes = 'open' | 'closed' | 'future'
 
@@ -13,3 +16,9 @@ export function estadoDelMes(mes: string, hoy: string): EstadoMes {
 }
 
 export const TEXTO_ESTADO: Record<EstadoMes, string> = { open: 'Período abierto', closed: 'Período cerrado', future: 'Período futuro' }
+
+/** Primer día del mes de una fecha (yyyy-MM-dd). */
+export const mesDeFecha = (d: Date) => format(startOfMonth(d), 'yyyy-MM-dd')
+export const sumarMeses = (iso: string, n: number) => mesDeFecha(addMonths(fromIso(iso), n))
+/** Último día del mes de una fecha ISO. */
+export const finDeMes = (iso: string) => toIso(endOfMonth(fromIso(iso)))
