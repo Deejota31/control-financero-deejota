@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 /** Identificador fijo del usuario de pruebas E2E (no es un secreto; sus credenciales viven en .env.local). */
 export const E2E_UID = '22222222-2222-2222-2222-222222222222'
-const CONTENEDOR = process.env.SUPABASE_DB_CONTAINER ?? 'supabase_db_control-financero-deejota'
+export const CONTENEDOR = process.env.SUPABASE_DB_CONTAINER ?? 'supabase_db_control-financero-deejota'
 
 function psql(sql: string): string {
   try {

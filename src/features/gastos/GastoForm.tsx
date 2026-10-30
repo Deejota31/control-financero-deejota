@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Paperclip, X } from 'lucide-react'
-import { useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -87,6 +87,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
   const formId = useId()
 
   const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm<Values>({
+    shouldFocusError: false, // el foco al primer error lo decide enfocarPrimerError: el orden lógico del formulario, no el del registro de campos
     resolver: zodResolver(schema),
     defaultValues: {
       expense_date: gasto?.expense_date ?? inicial?.expense_date ?? HOY,
@@ -131,6 +132,25 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
     if (!TIPOS_ARCHIVO.includes(f.type)) return setErrorArchivo('Usa una imagen JPG, PNG o WebP, o un PDF.')
     if (f.size > MAX_BYTES) return setErrorArchivo('El archivo supera los 5 MB.')
     setArchivo(f)
+  }
+
+  /** Enfoca un control del formulario; un grupo de chips (radiogroup) enfoca su opción elegida o la primera. */
+  function enfocarControl(el: Element | null | undefined) {
+    if (!el) return
+    const objetivo = el.getAttribute('role') === 'radiogroup' ? (el.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]') ?? el.querySelector<HTMLElement>('[role="radio"]')) : (el as HTMLElement)
+    objetivo?.focus()
+  }
+
+  // Foco inicial: el primer dato (Ámbito), no el botón Cerrar. Se difiere para que el diálogo termine de montarse y pausar la trampa de foco inferior.
+  useEffect(() => {
+    const id = window.setTimeout(() => enfocarControl(document.getElementById(formId)?.querySelector('[role="radiogroup"]')), 0)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Al guardar con errores, el foco va al primero en el orden de lectura (Ámbito antes que Descripción), tras pintarse sus marcas de error. */
+  function enfocarPrimerError() {
+    window.setTimeout(() => enfocarControl(document.getElementById(formId)?.querySelector('[aria-invalid="true"]')), 0)
   }
 
   const enviar = (ev: React.FormEvent<HTMLFormElement>) => handleSubmit(async (vals) => {
@@ -194,7 +214,7 @@ export function GastoForm({ modo, gasto, inicial, onClose }: { modo: ModoGasto; 
     } finally {
       setEnviando(false)
     }
-  })(ev)
+  }, enfocarPrimerError)(ev)
 
   const resumenValido = parseImporte(v.amount ?? '') !== null && Boolean(v.expense_date)
   const titulo = modo === 'editar' ? 'Editar gasto' : modo === 'clonar' ? 'Clonar gasto' : 'Nuevo gasto'

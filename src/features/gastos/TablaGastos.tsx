@@ -84,7 +84,7 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
 }
 
 /** Ancho del contenedor desde el que cabe la tabla completa; por debajo se usan tarjetas (un solo DOM a la vez, sin controles duplicados). */
-const ANCHO_TABLA = 940
+const ANCHO_TABLA = 1150 // ancho real que necesita la tabla (columnas + acciones): medido en 1140 px
 
 export function TablaGastos(p: Props) {
   const raiz = useRef<HTMLDivElement>(null)
@@ -107,7 +107,7 @@ export function TablaGastos(p: Props) {
     <div ref={raiz} className={cn('overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition-opacity', p.recargando && 'opacity-60')} aria-busy={p.cargando}>
       {ancha ? (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[940px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1140px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-surface-2/70 text-muted">
               <th className="w-12 px-0 text-center">

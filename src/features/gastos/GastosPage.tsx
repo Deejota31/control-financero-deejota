@@ -146,14 +146,14 @@ export function GastosPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted" aria-live="polite">{q.isPending ? 'Cargando…' : `${total} ${total === 1 ? 'movimiento' : 'movimientos'} con los filtros aplicados`}</p>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex h-10 w-52 max-w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri xl:w-64">
+          <label className="flex h-10 w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-muted focus-within:border-pri sm:w-52 xl:w-64">
             <Search className="size-4 shrink-0" aria-hidden="true" />
             <span className="sr-only">Buscar</span>
             <input id="buscar" type="search" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar descripción…" aria-label="Buscar" className="sin-anillo min-w-0 flex-1 bg-transparent text-sm text-fg placeholder:text-muted" />
           </label>
-          <Button variant="secondary" onClick={() => setPlantillas(true)}><FileStack className="size-4" aria-hidden="true" /> Plantillas</Button>
-          <Button variant="secondary" onClick={() => setLote(true)}><ListChecks className="size-4" aria-hidden="true" /> Registrar mensuales</Button>
-          <Button variant="secondary" onClick={exportarFiltro} loading={exportando}><Download className="size-4" aria-hidden="true" /> Exportar CSV</Button>
+          <Button variant="secondary" title="Plantillas" onClick={() => setPlantillas(true)}><FileStack className="size-4" aria-hidden="true" /><span className="max-sm:sr-only">Plantillas</span></Button>
+          <Button variant="secondary" title="Registrar mensuales" onClick={() => setLote(true)}><ListChecks className="size-4" aria-hidden="true" /><span className="max-sm:sr-only">Registrar mensuales</span></Button>
+          <Button variant="secondary" title="Exportar CSV" onClick={exportarFiltro} loading={exportando}><Download className="size-4" aria-hidden="true" /><span className="max-sm:sr-only">Exportar CSV</span></Button>
           <Button onClick={abrirNuevo}><Plus className="size-4" aria-hidden="true" /> Nuevo gasto</Button>
         </div>
       </div>

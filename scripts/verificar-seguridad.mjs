@@ -34,18 +34,30 @@ ok(hallazgos.length === 0, `sin claves service_role/JWT/sb_secret en código, mi
 
 // 3. Las migraciones (las que se despliegan a producción) no crean usuarios ni datos de ejemplo
 const migraciones = versionados.filter((f) => f.startsWith('supabase/migrations/') && f.endsWith('.sql'))
+/**
+ * Una migración puede MOVER datos reales ya existentes (insert … select … from public.<tabla>, p. ej. al pasar de fondos globales a fondos por mes),
+ * pero no sembrar datos de ejemplo: un insert en estas tablas con VALUES literales, o cuyo SELECT no lee de una tabla del esquema public
+ * (generate_series, constantes), se considera dato de ejemplo. Las comprobaciones de secretos y semillas no cambian.
+ */
+function datosDeEjemplo(texto) {
+  for (const m of texto.matchAll(/insert\s+into\s+public\.(?:expenses|expense_templates|fund_period_budgets|budget_periods)\b[^;]*;/gi)) {
+    const sentencia = m[0]
+    if (/\bvalues\b/i.test(sentencia) || !/\bfrom\s+public\./i.test(sentencia)) return true
+  }
+  return false
+}
 const prohibido = [
   [/insert\s+into\s+auth\./i, 'inserta en el esquema auth (usuarios)'],
   [/crypt\s*\(/i, 'genera hashes de contraseña'],
   [/demo@|DemoLocal|E2eLocal|gastodeejota\.local/i, 'contiene credenciales o correos demo'],
-  [/insert\s+into\s+public\.(expenses|expense_templates|fund_period_budgets|budget_periods)\b/i, 'inserta gastos, plantillas o presupuestos de ejemplo'],
+  [datosDeEjemplo, 'inserta gastos, plantillas o presupuestos de ejemplo'],
   [/\bdev_(seed|reset)_user\b/i, 'define funciones solo de desarrollo'],
 ]
 const malas = []
 for (const f of migraciones) {
   // Se quitan los cuerpos de funciones (lógica de la aplicación): lo que importa es lo que la migración ejecuta al aplicarse.
   const t = readFileSync(f, 'utf8').replace(/create\s+(?:or\s+replace\s+)?function[\s\S]*?\$\$[\s\S]*?\$\$/gi, '')
-  for (const [re, nombre] of prohibido) if (re.test(t)) malas.push(`${f}: ${nombre}`)
+  for (const [re, nombre] of prohibido) if (typeof re === 'function' ? re(t) : re.test(t)) malas.push(`${f}: ${nombre}`)
 }
 ok(malas.length === 0, `las ${migraciones.length} migraciones no crean usuarios demo ni datos de ejemplo${malas.length ? ': ' + malas.join('; ') : ''}`)
 ok(!versionados.includes('supabase/seed.sql') || !migraciones.some((f) => readFileSync(f, 'utf8').includes('seed.sql')), 'ninguna migración referencia seed.sql')

@@ -99,7 +99,7 @@ function Estructura() {
         </main>
       </div>
 
-      <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
+      <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_3.5rem_repeat(3,minmax(0,1fr))] min-[360px]:grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
         {MODULOS.slice(0, 3).map((m) => <EnlaceInferior key={m.path} modulo={m} />)}
         <button type="button" onClick={abrir} aria-label="Registrar gasto" className="fab-gasto relative -top-4 mx-auto grid size-14 place-items-center rounded-full bg-pri text-pri-fg shadow-pop ring-4 ring-surface">
           <Plus className="size-7" aria-hidden="true" />
@@ -120,12 +120,12 @@ function EnlaceInferior({ modulo: { path, label, corto, icon: Icon } }: { modulo
       to={path}
       end={path === '/'}
       aria-label={label}
-      className={({ isActive }) => cn('flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] font-medium', isActive ? 'text-pri' : 'text-muted')}
+      className={({ isActive }) => cn('flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0 text-[9.5px] font-medium tracking-tight min-[360px]:px-0.5 min-[360px]:text-[11px] min-[360px]:tracking-normal', isActive ? 'text-pri' : 'text-muted')}
     >
       {({ isActive }) => (
         <>
-          <span className={cn('grid h-7 w-12 place-items-center rounded-full', isActive && 'bg-pri-soft')}><Icon className="size-5" aria-hidden="true" /></span>
-          <span className={cn('max-w-full truncate', isActive && 'font-bold')}>{corto}</span>
+          <span className={cn('grid h-7 w-10 place-items-center rounded-full min-[360px]:w-12', isActive && 'bg-pri-soft')}><Icon className="size-5" aria-hidden="true" /></span>
+          <span className={cn('max-w-full', isActive && 'font-bold')}>{corto}</span>
         </>
       )}
     </NavLink>
