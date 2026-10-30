@@ -247,7 +247,12 @@ test.describe('Selector de íconos', () => {
     for (const [w, h] of [[1366, 768], [1440, 900], [1920, 1080], [390, 844]] as const) {
       await page.setViewportSize({ width: w, height: h })
       await irACatalogo(page)
-      await page.getByRole('button', { name: 'Editar Trabajo' }).click()
+      // En móvil las acciones de la fila están en su panel («Más acciones de …»); en escritorio, el icono directo.
+      const editar = page.getByRole('button', { name: 'Editar Trabajo', exact: true })
+      const masAcciones = page.getByRole('button', { name: 'Más acciones de Trabajo', exact: true })
+      await expect(editar.or(masAcciones)).toBeVisible()
+      if (!(await editar.isVisible())) await masAcciones.click()
+      await editar.click()
       await abrir(page)
       await bloque(page).getByRole('combobox', { name: 'Sección de íconos' }).selectOption('todos')
       const caja = (await bloque(page).boundingBox())!

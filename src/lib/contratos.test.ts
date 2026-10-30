@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ContratoRpcError, cambioFondos, leerRpc, planFila, reporteGasto, resumenPlan, resultadoAplicacion } from './contratos'
+import { ContratoRpcError, cambioFondos, eliminacionFondo, leerRpc, planFila, reporteGasto, resumenPlan, resultadoAplicacion } from './contratos'
 
 const reporte = { allocations: [{ fund_id: 'f1', fund_name: 'Hogar', is_general: false, kind: 'specific', amount: 10.5, remaining_after: 89.5 }], warnings: [], blocked: null, replayed: false }
 
@@ -46,5 +46,18 @@ describe('contratos de las RPC', () => {
     const base = { id: 'x', period_id: 'p', status: 'pending', funds_stage: 'pending', expenses_stage: 'done', started_at: null, completed_at: null, remind_after: null, updated_at: 't' }
     expect(leerRpc(planFila, base, 'save_period_plan').expenses_stage).toBe('done')
     expect(() => leerRpc(planFila, { ...base, funds_stage: 'otra' }, 'save_period_plan')).toThrow(/funds_stage/)
+  })
+
+  it('un gasto bloqueado trae solo código, motivo y mensaje (sin asignaciones): es una respuesta válida', () => {
+    const r = leerRpc(reporteGasto, { blocked: true, code: 'GD001', reason: 'classification', message: 'Ningún fondo admite…' }, 'preview_expense')
+    expect(r.blocked).toBe(true)
+    expect(r.allocations).toEqual([])
+    expect(r.warnings).toEqual([])
+  })
+
+  it('eliminar fondo: el código puede faltar cuando se puede eliminar', () => {
+    const base = { dry_run: false, fund_name: 'Vacío', is_general: false, open_expenses: 0, open_allocations: 0, closed_allocations: 0, closed_snapshots: 0, budgets: 1, templates: 0, destinations: [], blocked: false, changed_expenses: 0, consumption_before: {}, consumption_after: {} }
+    expect(leerRpc(eliminacionFondo, base, 'delete_fund').code).toBeNull()
+    expect(() => leerRpc(eliminacionFondo, { ...base, blocked: 'no' }, 'delete_fund')).toThrow(ContratoRpcError)
   })
 })

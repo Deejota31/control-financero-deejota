@@ -30,12 +30,14 @@ const op = <S extends z.ZodType>(s: S) => s.nullish().transform((v) => v ?? unde
 const num = z.number()
 const dinero = z.record(z.string(), num)
 
+// Una respuesta bloqueada (`blocked: true`) trae solo código, motivo y mensaje: sin asignaciones ni advertencias.
+const lista = <S extends z.ZodType>(s: S) => z.array(s).nullish().transform((v) => v ?? [])
 export const reporteGasto: z.ZodType<ReporteGasto, unknown> = z.object({
   expense_id: op(z.string()),
-  allocations: z.array(z.object({
+  allocations: lista(z.object({
     fund_id: z.string(), fund_name: z.string(), is_general: z.boolean(), kind: z.enum(['specific', 'general']), amount: num, remaining_after: num,
   })),
-  warnings: z.array(z.object({ code: z.enum(['general_negative', 'specific_overspend']), fund_id: z.string(), fund_name: z.string(), remaining_after: num })),
+  warnings: lista(z.object({ code: z.enum(['general_negative', 'specific_overspend']), fund_id: z.string(), fund_name: z.string(), remaining_after: num })),
   replayed: op(z.boolean()),
   blocked: op(z.boolean()),
   code: op(z.string()),
@@ -77,7 +79,7 @@ export const eliminacionFondo: z.ZodType<EliminacionFondo, unknown> = z.object({
   open_expenses: num, open_allocations: num, closed_allocations: num, closed_snapshots: num, budgets: num, templates: num,
   destinations: z.array(z.object({ id: z.string(), name: z.string(), is_general: z.boolean() })),
   blocked: z.boolean(),
-  code: z.string().nullable(),
+  code: z.string().nullish().transform((v) => v ?? null), // ausente cuando el fondo se puede eliminar
   changed_expenses: op(z.number()),
   consumption_before: op(dinero),
   consumption_after: z.record(z.string(), num).nullish().transform((v) => v),

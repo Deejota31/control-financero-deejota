@@ -12,7 +12,7 @@ export function CasillaTriestado({ estado, onChange, etiqueta, disabled, classNa
   return (
     // El área pulsable llega a 44 × 44 px (pseudo-elemento de la etiqueta) sin agrandar la casilla ni la fila.
     <label className="relative inline-grid size-5 shrink-0 place-items-center after:absolute after:-inset-3 after:content-['']">
-      <input ref={ref} type="checkbox" className={cn('size-5', className)} aria-label={etiqueta} checked={estado === 'all'} disabled={disabled}
+      <input ref={ref} type="checkbox" className={cn('relative z-[1] size-5', className)} aria-label={etiqueta} checked={estado === 'all'} disabled={disabled}
         onChange={(e) => onChange(estado === 'some' ? true : e.target.checked)} />
     </label>
   )

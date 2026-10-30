@@ -70,7 +70,7 @@ function Seccion({ kind, catalogo }: { kind: CatalogoKind; catalogo: Catalogo })
   const [creando, setCreando] = useState(false)
   const [borrar, setBorrar] = useState<ItemCatalogo | null>(null)
   const [armonizando, setArmonizando] = useState(false)
-  const [refLista, listaAncha] = useAnchoMinimo<HTMLUListElement>(384) // con menos ancho los cinco iconos comprimirían el nombre: se usa el panel de acciones
+  const [refLista, listaAncha] = useAnchoMinimo<HTMLUListElement>(360) // con menos ancho los cinco iconos comprimirían el nombre: se usa el panel de acciones
 
   // Los filtros por padre arrancan en el primer elemento disponible (valor derivado, sin efectos).
   const ambitoId = catalogo.ambitos.some((a) => a.id === ambitoElegido) ? ambitoElegido : (catalogo.ambitos[0]?.id ?? null)

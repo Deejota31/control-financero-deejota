@@ -41,7 +41,7 @@ Solo valores **públicos**; nunca `service_role`:
 
 La guardia de `src/lib/env.ts` impide que una compilación de producción apunte a `localhost` y que desarrollo apunte a una URL remota.
 
-Comando de build: `npm run build` · carpeta de salida: `dist` · Node 22 o superior. La aplicación es una SPA: configura la redirección de todas las rutas a `index.html`.
+Comando de build: `npm run build` · carpeta de salida: `dist` · Node 22. `netlify.toml` ya lo configura (comando, carpeta, Node 22, redirección de la SPA a `index.html` y cabeceras de seguridad). **Las variables `VITE_*` se incrustan al construir:** defínelas en Netlify (Site configuration → Environment variables) ANTES del primer despliegue y vuelve a desplegar si las cambias.
 
 ## 4. Despliegue de `main`
 
