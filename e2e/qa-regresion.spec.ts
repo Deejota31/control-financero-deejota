@@ -36,8 +36,9 @@ test.describe('Revisión de calidad: regresiones', () => {
     await d.getByRole('radiogroup', { name: 'Categoría' }).getByRole('radio').first().click()
     await d.getByLabel('Descripción', { exact: true }).fill('')
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
-    const primero = await page.evaluate(() => document.activeElement?.getAttribute('aria-invalid') ?? document.activeElement?.closest('[aria-invalid]')?.getAttribute('aria-invalid'))
-    expect(primero).toBe('true') // el foco está en un control inválido
+    // el foco llega al primer control inválido (se mueve tras pintarse los errores, por eso se espera)
+    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute('aria-invalid') ?? document.activeElement?.closest('[aria-invalid]')?.getAttribute('aria-invalid'))).toBe('true')
+    await expect(d.getByLabel('Descripción', { exact: true })).toBeFocused()
     // el campo inválido está relacionado con su mensaje
     const descrito = await d.getByLabel('Importe', { exact: true }).getAttribute('aria-describedby')
     expect(descrito).toBeTruthy()

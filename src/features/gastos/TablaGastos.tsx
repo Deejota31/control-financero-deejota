@@ -39,7 +39,7 @@ interface Props {
   onConfirmar: (tipo: 'anular' | 'restaurar', g: GastoConFondos) => void
 }
 
-const ENC = 'px-2.5 py-3 text-[11px] font-semibold uppercase tracking-wider'
+const ENC = 'px-2 py-3 text-[11px] font-semibold uppercase tracking-wider'
 
 function Th({ children, activo, dir, onClick, alinear }: { children: ReactNode; activo: boolean; dir: 'asc' | 'desc'; onClick: () => void; alinear?: 'right' }) {
   return (
@@ -69,7 +69,7 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
     <div className="flex flex-wrap items-center gap-1">
       {visibles.map((x) => {
         const f = fondoPorId.get(x.fund_id)
-        return <ChipK key={x.fund_id} color={f?.color_token}>{f?.name ?? 'Fondo'} <span className="num font-bold">{formatSoles(Number(x.amount))}</span></ChipK>
+        return <ChipK key={x.fund_id} color={f?.color_token}><span className="min-w-0 truncate">{f?.name ?? 'Fondo'}</span>{' '}<span className="num shrink-0 font-bold">{formatSoles(Number(x.amount))}</span></ChipK>
       })}
       {resto.length > 0 && (
         <Hint
@@ -84,7 +84,7 @@ function ChipsFondos({ g, fondoPorId }: { g: GastoConFondos; fondoPorId: Map<str
 }
 
 /** Ancho del contenedor desde el que cabe la tabla completa; por debajo se usan tarjetas (un solo DOM a la vez, sin controles duplicados). */
-const ANCHO_TABLA = 1150 // ancho real que necesita la tabla (columnas + acciones): medido en 1140 px
+const ANCHO_TABLA = 950 // suma de los anchos de columna de la tabla compacta (ver colgroup)
 
 export function TablaGastos(p: Props) {
   const raiz = useRef<HTMLDivElement>(null)
@@ -104,10 +104,16 @@ export function TablaGastos(p: Props) {
   const parcial = seleccionadas > 0 && !todas
 
   return (
-    <div ref={raiz} className={cn('overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition-opacity', p.recargando && 'opacity-60')} aria-busy={p.cargando}>
+    <div ref={raiz} className={cn('@container overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition-opacity', p.recargando && 'opacity-60')} aria-busy={p.cargando}>
       {ancha ? (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1140px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[950px] table-fixed border-collapse text-left text-sm">
+          {/* Anchos explícitos (suman 950 px; con más espacio se reparte en proporción). El ámbito solo tiene columna propia desde 1150 px. */}
+          <colgroup>
+            <col style={{ width: 40 }} /><col style={{ width: 88 }} /><col style={{ width: 140 }} /><col style={{ width: 170 }} />
+            <col className="hidden @min-[1150px]:table-column" style={{ width: 110 }} />
+            <col style={{ width: 118 }} /><col style={{ width: 160 }} /><col style={{ width: 84 }} /><col style={{ width: 150 }} />
+          </colgroup>
           <thead>
             <tr className="border-b border-line bg-surface-2/70 text-muted">
               <th className="w-12 px-0 text-center">
@@ -118,7 +124,8 @@ export function TablaGastos(p: Props) {
               <Th activo={filtros.orden === 'fecha'} dir={filtros.dir} onClick={() => p.onOrdenar('fecha')}>Fecha</Th>
               <Th activo={filtros.orden === 'descripcion'} dir={filtros.dir} onClick={() => p.onOrdenar('descripcion')}>Descripción</Th>
               <th className={ENC}>Clasificación</th>
-              <th className={ENC}>Ámbito</th>
+              {/* Con poco ancho el ámbito pasa a la línea secundaria de Clasificación y su columna se oculta: así la tabla cabe sin desplazarse. */}
+              <th className={cn(ENC, 'hidden @min-[1150px]:table-cell')}>Ámbito</th>
               <th className={ENC}>Medio</th>
               <th className={ENC}>Fondos</th>
               <Th activo={filtros.orden === 'monto'} dir={filtros.dir} onClick={() => p.onOrdenar('monto')} alinear="right">Importe</Th>
@@ -137,22 +144,22 @@ export function TablaGastos(p: Props) {
                       <input type="checkbox" className="size-4 accent-[var(--pri)]" aria-label={`Seleccionar ${g.description}`} checked={marcada} onChange={() => p.onAlternar(g)} />
                     </label>
                   </td>
-                  <td className="num whitespace-nowrap px-2.5">{formatFecha(g.expense_date, formato)}</td>
-                  <td className="max-w-52 px-2.5">
+                  <td className="num whitespace-nowrap px-2">{formatFecha(g.expense_date, formato)}</td>
+                  <td className="px-2">
                     <p className={cn('truncate font-semibold', anulado && 'line-through')}>{g.description}</p>
                     <p className="flex items-center gap-1 text-xs text-muted">{g.expense_type === 'fixed' ? 'Fijo' : 'Variable'}{g.is_recurring && <><span aria-hidden="true">·</span><Repeat className="size-3" aria-hidden="true" /> Recurrente</>}</p>
                   </td>
-                  <td className="px-3">
+                  <td className="px-2">
                     <div className="flex items-center gap-2.5">
                       <TinteK color={cat?.color_css} className="size-9 rounded-lg"><ItemIcon name={cat?.icon_key} color={cat?.color_css} /></TinteK>
-                      <div className="min-w-0"><p className="truncate font-medium">{cat?.name}</p><p className="truncate text-xs text-muted">{sub?.name ?? '—'}</p></div>
+                      <div className="min-w-0"><p className="truncate font-medium">{cat?.name}</p><p className="truncate text-xs text-muted"><span className="@min-[1150px]:hidden">{amb?.name} · </span>{sub?.name ?? '—'}</p></div>
                     </div>
                   </td>
-                  <td className="px-2.5"><ChipK color={amb?.color_css}><ItemIcon name={amb?.icon_key} className="size-3" /> {amb?.name}</ChipK></td>
-                  <td className="px-2.5"><ChipK color={med?.color_css}><ItemIcon name={med?.icon_key} className="size-3" /> {med?.name}</ChipK></td>
-                  <td className="px-2.5">{anulado ? <ChipK color="muted">Anulado</ChipK> : <ChipsFondos g={g} fondoPorId={fondoPorId} />}</td>
-                  <td className={cn('num whitespace-nowrap px-2.5 text-right text-[15px] font-semibold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</td>
-                  <td className="px-3">
+                  <td className="hidden px-2 @min-[1150px]:table-cell"><ChipK color={amb?.color_css}><ItemIcon name={amb?.icon_key} className="size-3" /> {amb?.name}</ChipK></td>
+                  <td className="px-2"><ChipK color={med?.color_css}><ItemIcon name={med?.icon_key} className="size-3" /> {med?.name}</ChipK></td>
+                  <td className="px-2">{anulado ? <ChipK color="muted">Anulado</ChipK> : <ChipsFondos g={g} fondoPorId={fondoPorId} />}</td>
+                  <td className={cn('num whitespace-nowrap px-2 text-right text-[15px] font-semibold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</td>
+                  <td className="px-2">
                     <div className="flex justify-end gap-0.5">
                       <Accion label={`Ver detalle de ${g.description}`} onClick={() => p.onDetalle(g)}><Eye className="size-4" aria-hidden="true" /></Accion>
                       <Accion label={`Editar ${g.description}`} disabled={anulado} onClick={() => p.onEditar(g)}><Pencil className="size-4" aria-hidden="true" /></Accion>
