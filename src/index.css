@@ -1,0 +1,171 @@
+@import 'tailwindcss';
+
+/* Paleta B "Índigo" aprobada. Los tokens se consumen como utilidades de Tailwind (bg-surface, text-fg, ...). */
+:root {
+  --bg: #f6f6fa;
+  --surface: #ffffff;
+  --surface-2: #ececf4;
+  --line: #d9d9e6;
+  --fg: #17172b;
+  --muted: #58587a;
+  --pri: #3a3fa6;
+  --pri-fg: #ffffff;
+  --pri-soft: #e0e1f7;
+  --acc: #b4411f;
+  --acc-soft: #fbe3da;
+  --ok: #12663a;
+  --ok-soft: #dcf2e4;
+  --warn: #8f5400;
+  --bad: #b3261e;
+  --bad-soft: #f9dedc;
+  --shadow-pop: 0 12px 28px -8px rgba(23, 23, 43, 0.22), 0 2px 8px rgba(23, 23, 43, 0.08);
+  --c1: #3a3fa6;
+  --c2: #e0622f;
+  --c3: #1e8a8a;
+  --c4: #a8478f;
+  --c5: #8a8a2e;
+  --k-mix: 100%;
+  --k-tint: #000000;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f0f1c;
+  --surface: #181829;
+  --surface-2: #222238;
+  --line: #34344f;
+  --fg: #ececf8;
+  --muted: #a5a5c8;
+  --pri: #9ea3ff;
+  --pri-fg: #101030;
+  --pri-soft: #26264a;
+  --acc: #ff9a73;
+  --acc-soft: #3e2218;
+  --ok: #5ad08a;
+  --ok-soft: #14301f;
+  --warn: #f0b24a;
+  --bad: #ff8f86;
+  --bad-soft: #3f1b18;
+  --shadow-pop: 0 14px 32px -8px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
+  --c1: #9ea3ff;
+  --c2: #ff9a73;
+  --c3: #5fd0d0;
+  --c4: #e58bd0;
+  --c5: #c9c95a;
+  --k-mix: 68%;
+  --k-tint: #ffffff;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-pri: var(--pri);
+  --color-pri-fg: var(--pri-fg);
+  --color-pri-soft: var(--pri-soft);
+  --color-acc: var(--acc);
+  --color-acc-soft: var(--acc-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --shadow-pop: var(--shadow-pop);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--pri);
+  outline-offset: 2px;
+}
+
+/* ---- Componentes flotantes: entrada discreta y consistente (se desactiva con prefers-reduced-motion) ---- */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* El diálogo se centra con la propiedad `translate` (Tailwind v4); aquí solo se anima `transform`, sin mover el centro. */
+@keyframes dialog-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.anim-pop:not([data-state='closed']) { animation: pop-in 140ms ease-out; }
+.anim-dialog:not([data-state='closed']) { animation: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.anim-overlay:not([data-state='closed']) { animation: overlay-in 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-pop, .anim-dialog, .anim-overlay { animation: none; }
+}
+
+/* Notificaciones (sonner) con la paleta y la sombra del sistema */
+[data-sonner-toast] {
+  border-radius: 12px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--fg) !important;
+  box-shadow: var(--shadow-pop) !important;
+  font-family: var(--font-sans) !important;
+}
+[data-sonner-toast][data-type='success'] { border-left: 4px solid var(--ok) !important; }
+[data-sonner-toast][data-type='error'] { border-left: 4px solid var(--bad) !important; }
+[data-sonner-toast][data-type='warning'] { border-left: 4px solid var(--warn) !important; }
+[data-sonner-toast] [data-description] { color: var(--muted) !important; }
+
+/* Acentos de color para tarjetas, iconos e indicadores (generados con domain/color.ts: 4.5:1 texto, 3:1 icono) */
+.acento-indigo { --a: #4F46E5; --a-soft: #EDEDFC; --a-bd: #C1BEF6; --a-ic: #4F46E5; --a-fg: #4F46E5; }
+.acento-blue { --a: #2563EB; --a-soft: #E9EFFD; --a-bd: #B3C8F8; --a-ic: #2563EB; --a-fg: #235EDF; }
+.acento-sky { --a: #0EA5E9; --a-soft: #E7F6FD; --a-bd: #ABE0F7; --a-ic: #0C95D2; --a-fg: #0A74A3; }
+.acento-teal { --a: #0D9488; --a-soft: #E7F4F3; --a-bd: #AADAD5; --a-ic: #0D9488; --a-fg: #0A796F; }
+.acento-amber { --a: #D97706; --a-soft: #FBF1E6; --a-bd: #F2CFA8; --a-ic: #D97706; --a-fg: #A05706; }
+.acento-orange { --a: #EA580C; --a-soft: #FDEEE7; --a-bd: #F8C5AA; --a-ic: #EA580C; --a-fg: #B5440A; }
+.acento-red { --a: #DC2626; --a-soft: #FCE9E9; --a-bd: #F3B3B3; --a-ic: #DC2626; --a-fg: #C72222; }
+.acento-violet { --a: #7C3AED; --a-soft: #F2EBFD; --a-bd: #D1BAF9; --a-ic: #7C3AED; --a-fg: #7C3AED; }
+.acento-slate { --a: #64748B; --a-soft: #F0F1F3; --a-bd: #C9CED6; --a-ic: #64748B; --a-fg: #5A697D; }
+.acento-green { --a: #16A34A; --a-soft: #E8F6ED; --a-bd: #ADDFC0; --a-ic: #16A34A; --a-fg: #117E3A; }
+:root[data-theme='dark'] .acento-indigo { --a-soft: #242252; --a-bd: #342F87; --a-ic: #6860E8; --a-fg: #8A84ED; }
+:root[data-theme='dark'] .acento-blue { --a-soft: #1B2954; --a-bd: #1F3E8A; --a-ic: #3A72ED; --a-fg: #6692F2; }
+:root[data-theme='dark'] .acento-sky { --a-soft: #163753; --a-bd: #135F89; --a-ic: #0EA5E9; --a-fg: #1AAAEA; }
+:root[data-theme='dark'] .acento-teal { --a-soft: #16333E; --a-bd: #135659; --a-ic: #0D9488; --a-fg: #3AA89E; }
+:root[data-theme='dark'] .acento-amber { --a-soft: #422D21; --a-bd: #794818; --a-ic: #D97706; --a-fg: #DF8A29; }
+:root[data-theme='dark'] .acento-orange { --a-soft: #462623; --a-bd: #81381B; --a-ic: #EA580C; --a-fg: #EE7739; }
+:root[data-theme='dark'] .acento-red { --a-soft: #431B28; --a-bd: #7A1F28; --a-ic: #DE3131; --a-fg: #E76F6F; }
+:root[data-theme='dark'] .acento-violet { --a-soft: #2E1F54; --a-bd: #4A298B; --a-ic: #8F56F0; --a-fg: #A97CF5; }
+:root[data-theme='dark'] .acento-slate { --a-soft: #292C3F; --a-bd: #3E465A; --a-ic: #6C7B91; --a-fg: #8D99AA; }
+:root[data-theme='dark'] .acento-green { --a-soft: #183730; --a-bd: #175E3A; --a-ic: #16A34A; --a-fg: #38B064; }
+
+
+/* Encabezados degradados (Presupuesto consolidado): índigo profundo → azul índigo, derivados de la paleta B */
+:root { --grad-a: #2B2D86; --grad-b: #3A3FA6; --grad-c: #4F63D8; }
+:root[data-theme='dark'] { --grad-a: #1A1B4D; --grad-b: #2A2D78; --grad-c: #3B4BB0; }
+
+/* Etiquetas y superficies con el color de un elemento (--k); el texto se mezcla con el del tema para mantener contraste */
+.chip-k { --k: var(--muted); display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%; border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); background: color-mix(in srgb, var(--k) 12%, var(--surface)); color: color-mix(in srgb, var(--k) 40%, var(--fg)); padding: 0.125rem 0.6rem; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; white-space: nowrap; }
+.tinte-k { --k: var(--muted); background: color-mix(in srgb, var(--k) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 30%, transparent); color: color-mix(in srgb, var(--k) 65%, var(--fg)); }
+
+/* Los disparadores globales de «Registrar gasto» se ocultan mientras un diálogo bloquea la pantalla. */
+body[data-scroll-locked] .fab-gasto { display: none; }
+
+/* Campos que ya dibujan su propio anillo de foco en el contenedor (focus-within): sin contorno doble en el input. */
+.sin-anillo:focus-visible { outline: none; }
+
+/* Paso de la cascada del formulario de gasto (categoría, subcategoría): aparece al elegir el anterior. */
+@keyframes aparecer { from { opacity: 0; transform: translateY(-3px); } }
+.paso-cascada { animation: aparecer 0.16s ease-out; }
+@media (prefers-reduced-motion: reduce) { .paso-cascada { animation: none; } }

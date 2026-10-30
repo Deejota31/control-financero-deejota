@@ -1,0 +1,26 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+
+# Entorno y secretos: solo se versiona .env.example
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+capturas/
+
+# Respaldos locales de la base (datos reales)
+respaldos/
+
+# Salidas de la revisión de calidad (logs y JSON); la matriz va en docs/qa
+/qa/
+
+# Borradores de consultas del Studio local
+supabase/snippets/
