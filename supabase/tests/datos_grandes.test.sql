@@ -7,8 +7,11 @@ values ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaa
 
 -- Hogar de partida para estas pruebas: el alta ya no crea catálogo ni fondos (solo lo técnico), así que se crean aquí.
 select public.bootstrap_catalog(household_id) from public.profiles where user_id in (select id from auth.users where email like '%@test.local');
-insert into public.funds (household_id, name, description, is_general, default_amount, priority, icon_key, color_token)
-select household_id, 'Fondo General', 'Cobertura general; absorbe el excedente de los fondos específicos.', true, 0, 1000, 'wallet', 'pri' from public.profiles where user_id in (select id from auth.users where email like '%@test.local');
+-- Cada fondo pertenece a un mes: el Fondo General de partida es el del mes actual (con su presupuesto en 0).
+insert into public.funds (household_id, period_id, name, description, is_general, default_amount, priority, icon_key, color_token)
+select p.household_id, public.ensure_period(p.household_id, current_date), 'Fondo General', 'Cobertura general; absorbe el excedente de los fondos específicos.', true, 0, 1000, 'wallet', 'pri' from public.profiles p where p.user_id in (select id from auth.users where email like '%@test.local');
+insert into public.fund_period_budgets (household_id, fund_id, period_id, assigned_amount)
+select fu.household_id, fu.id, fu.period_id, 0 from public.funds fu where fu.is_general and not exists (select 1 from public.fund_period_budgets b where b.fund_id = fu.id);
 
 create temp table ids as
 select
@@ -53,7 +56,8 @@ select is((select sum((e ->> 'total')::numeric) from r, jsonb_array_elements(j -
 select is((select sum((e ->> 'cantidad')::int)::int from r, jsonb_array_elements(j -> 'por_categoria') e), 6000, 'la distribución por categoría cuenta todos los gastos');
 select is((select jsonb_array_length(j -> 'recientes') from r), 6, 'los recientes se limitan a 6 por diseño (lista, no métrica)');
 select is((select (j ->> 'total_prev')::numeric from r), 0::numeric, 'sin gasto previo el total anterior es 0');
-select is((select (j -> 'presupuesto') = 'null'::jsonb from r), true, 'sin períodos no hay presupuesto (null, no 0 inventado)');
+select is((select (j ->> 'presupuesto')::numeric from r), 0::numeric, 'el mes con un solo fondo sin importe asignado tiene presupuesto 0');
+select is((public.dashboard_panel('2020-01-01', '2020-01-31', '2019-12-01', '2019-12-31') -> 'presupuesto') = 'null'::jsonb, true, 'un rango sin períodos no tiene presupuesto (null, no 0 inventado)');
 
 -- Un rango invertido se rechaza
 select throws_ok($$select public.dashboard_panel(current_date, current_date - 1, current_date, current_date)$$, '22023', null, 'rechaza rangos invertidos');

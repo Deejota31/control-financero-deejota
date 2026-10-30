@@ -15,3 +15,6 @@ test-results/
 supabase/.temp/
 supabase/.branches/
 capturas/
+
+# Respaldos locales de la base (datos reales)
+respaldos/

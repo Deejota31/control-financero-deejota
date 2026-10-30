@@ -6,8 +6,11 @@ insert into auth.users (instance_id, id, aud, role, email) values
   ('00000000-0000-0000-0000-000000000000', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'authenticated', 'authenticated', 'b@test.local');
 
 select public.bootstrap_catalog(household_id) from public.profiles where user_id in (select id from auth.users where email like '%@test.local');
-insert into public.funds (household_id, name, description, is_general, default_amount, priority, icon_key, color_token)
-select household_id, 'Fondo General', 'Cobertura general', true, 0, 1000, 'wallet', 'pri' from public.profiles where user_id in (select id from auth.users where email like '%@test.local');
+-- Cada fondo pertenece a un mes: el Fondo General de partida es el del mes actual (con su presupuesto en 0).
+insert into public.funds (household_id, period_id, name, description, is_general, default_amount, priority, icon_key, color_token)
+select p.household_id, public.ensure_period(p.household_id, current_date), 'Fondo General', 'Cobertura general', true, 0, 1000, 'wallet', 'pri' from public.profiles p where p.user_id in (select id from auth.users where email like '%@test.local');
+insert into public.fund_period_budgets (household_id, fund_id, period_id, assigned_amount)
+select fu.household_id, fu.id, fu.period_id, 0 from public.funds fu where fu.is_general and not exists (select 1 from public.fund_period_budgets b where b.fund_id = fu.id);
 
 create schema th;
 grant usage on schema th to authenticated;
@@ -27,7 +30,7 @@ returns jsonb language sql stable as $$
 $$;
 create function th.fund(p_name text, p_amb text, p_amount numeric, p_prio int)
 returns jsonb language sql stable as $$
-  select jsonb_build_object('name', p_name, 'is_general', false, 'default_amount', p_amount, 'priority', p_prio,
+  select jsonb_build_object('name', p_name, 'period_id', (select id from public.budget_periods where start_date = date_trunc('month', current_date)::date), 'is_general', false, 'default_amount', p_amount, 'priority', p_prio,
     'scope_rules', jsonb_build_array(jsonb_build_object('kind', 'ambito', 'ref', th.kid('amb:' || p_amb), 'effect', 'include')));
 $$;
 grant execute on all functions in schema th to authenticated;
