@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
@@ -32,14 +32,6 @@ export function useCopiaFondos(destino: string, origenInicial?: string) {
   const fondosDestino = useFondos(periodoDestino.data?.id)
   const copiar = useCopiarFondos()
 
-  const [marcados, setMarcados] = useState<Set<string>>(new Set())
-  const [importes, setImportes] = useState<Record<string, string>>({})
-  const [error, setError] = useState<string | null>(null)
-  // Traer todo seleccionado por defecto no es un cambio de la persona: solo cuenta lo que toca (sirve para avisar al cancelar).
-  const [tocado, setTocado] = useState(false)
-  const marcar = (fn: (s: Set<string>) => Set<string>) => { setTocado(true); setMarcados(fn) }
-  const cambiarImporte = (id: string, v: string) => { setTocado(true); setImportes((s) => ({ ...s, [id]: v })) }
-
   const meses = useMemo(() => Array.from({ length: 25 }, (_, i) => sumarMeses(destino, i - 12)).filter((m) => m !== destino).map((m) => ({ value: m, label: formatMes(m) })), [destino])
 
   // Todos los fondos del origen; los que el destino ya tiene quedan marcados como omitidos (no se pueden copiar de nuevo).
@@ -56,13 +48,18 @@ export function useCopiaFondos(destino: string, origenInicial?: string) {
     })
   }, [fondosOrigen.data, presupuestosOrigen.data, fondosDestino.data])
 
-  // Al cambiar de mes de origen o cargar sus datos se proponen todos los copiables con su importe.
-  useEffect(() => {
-    setMarcados(new Set(filas.filter((f) => !f.omitido).map((f) => f.fondo.id)))
-    setImportes(Object.fromEntries(filas.map((f) => [f.fondo.id, f.importe.toFixed(2)])))
-    setError(null)
-    setTocado(false)
-  }, [filas])
+  // Lo que la persona cambia (marcas e importes) vale solo para la lista actual: al cambiar de mes de origen o recargar sus datos se vuelve a proponer
+  // todo lo copiable con su importe. Traer todo seleccionado por defecto no cuenta como cambio (sirve para avisar al cancelar).
+  const claveFilas = `${origen}|${filas.map((f) => f.fondo.id).join(',')}`
+  const [edicion, setEdicion] = useState<{ clave: string; marcados: Set<string> | null; importes: Record<string, string> }>({ clave: '', marcados: null, importes: {} })
+  const [fallo, setFallo] = useState<{ clave: string; mensaje: string } | null>(null)
+  const vigente = edicion.clave === claveFilas ? edicion : { clave: claveFilas, marcados: null, importes: {} }
+  const marcados = vigente.marcados ?? new Set(filas.filter((f) => !f.omitido).map((f) => f.fondo.id))
+  const importes: Record<string, string> = { ...Object.fromEntries(filas.map((f) => [f.fondo.id, f.importe.toFixed(2)])), ...vigente.importes }
+  const marcar = (fn: (s: Set<string>) => Set<string>) => setEdicion({ clave: claveFilas, marcados: fn(marcados), importes: vigente.importes })
+  const cambiarImporte = (id: string, v: string) => setEdicion({ clave: claveFilas, marcados: vigente.marcados, importes: { ...vigente.importes, [id]: v } })
+  const tocado = vigente.marcados !== null || Object.keys(vigente.importes).length > 0
+  const error = fallo?.clave === claveFilas ? fallo.mensaje : null
 
   const cargando = periodoOrigen.isPending || fondosOrigen.isPending || presupuestosOrigen.isPending || fondosDestino.isPending || periodoDestino.isPending
   const copiables = filas.filter((f) => !f.omitido)
@@ -73,7 +70,7 @@ export function useCopiaFondos(destino: string, origenInicial?: string) {
   /** Crea las instancias elegidas en el mes destino. Devuelve el resultado o null si falló (el error queda en `error`). */
   async function confirmar(): Promise<ResultadoCopia | null> {
     if (!periodoOrigen.data || !periodoDestino.data) return null
-    setError(null)
+    setFallo(null)
     try {
       return await copiar.mutateAsync({
         origen: periodoOrigen.data.id,
@@ -81,7 +78,7 @@ export function useCopiaFondos(destino: string, origenInicial?: string) {
         items: seleccionados.map((f) => ({ fund_id: f.fondo.id, amount: parseMontoNoNegativo(importes[f.fondo.id])! })),
       })
     } catch (e) {
-      setError(mensajeDeError(e, 'No se pudieron copiar los fondos. No se creó ninguno.'))
+      setFallo({ clave: claveFilas, mensaje: mensajeDeError(e, 'No se pudieron copiar los fondos. No se creó ninguno.') })
       return null
     }
   }

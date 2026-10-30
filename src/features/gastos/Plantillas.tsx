@@ -154,7 +154,7 @@ function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 function PlantillaForm({ plantilla, orden, onClose }: { plantilla: Plantilla | null; orden: number; onClose: () => void }) {
   const catalogo = useCatalogo()
-  const periodoActual = usePeriodo(mesDeFecha(new Date()))
+  const periodoActual = usePeriodo(MES_ACTUAL)
   const fondos = useFondos(periodoActual.data?.id)
   const mut = usePlantillaMutaciones()
   const idForm = useId()
