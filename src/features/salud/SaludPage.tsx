@@ -65,7 +65,8 @@ export function SaludPage() {
   const desdeHist = sumarMeses(mes, -MESES_BASE)
 
   const catalogo = useCatalogo()
-  const fondosQ = useFondos()
+  const periodoFondos = usePeriodo(mes)
+  const fondosQ = useFondos(periodoFondos.data?.id)
   const gastosQ = useGastosRango(desdeHist, finMes)
   const presupuestoQ = usePresupuestoRango(mes, finMes)
   const plantillasQ = usePlantillas()

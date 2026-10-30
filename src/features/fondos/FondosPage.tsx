@@ -1,5 +1,5 @@
-import { Banknote, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
-import { useMemo, useState, type ComponentType } from 'react'
+import { Banknote, CalendarCheck, Copy, Percent, Plus, Search, TriangleAlert, Wallet } from 'lucide-react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Alert } from '@/components/ui/Alert'
@@ -13,6 +13,8 @@ import { Combobox } from '@/components/ui/Combobox'
 import { useHoy } from './useHoy'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { DetalleFondo } from './DetalleFondo'
+import { CopiarFondos } from './CopiarFondos'
+import { usePlanificacionUI } from '@/features/planificacion/contexto'
 import { cambiosPorPeriodo, resumirFondo, round2, type CambioFondos, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
@@ -61,7 +63,7 @@ export function FondosPage() {
 
   const catalogo = useCatalogo()
   const periodo = usePeriodo(mes)
-  const fondosQ = useFondos()
+  const fondosQ = useFondos(periodo.data?.id)
   const presupuestos = usePresupuestosPeriodo(periodo.data?.id)
   const asignaciones = useAsignacionesPeriodo(periodo.data?.id)
   const gastos = useGastosRango(periodo.data?.start_date ?? '', periodo.data?.end_date ?? '', { habilitado: Boolean(periodo.data) })
@@ -80,6 +82,8 @@ export function FondosPage() {
   const [q, setQ] = useState('')
   const [filtro, setFiltro] = useState<'activos' | 'inactivos' | 'todos'>('activos')
   const [eliminarDe, setEliminarDe] = useState<FondoFila | null>(null)
+  const [copiando, setCopiando] = useState(false)
+  const planificacion = usePlanificacionUI()
 
   const consultas = [catalogo, periodo, fondosQ, presupuestos, asignaciones, gastos]
   const cargando = consultas.some((q) => q.isPending) || (cerrado && snapshots.isPending)
@@ -116,6 +120,17 @@ export function FondosPage() {
   )
 
   const lista = useMemo(() => (cerrado ? tarjetasCerradas : (datos?.activos ?? [])), [cerrado, tarjetasCerradas, datos])
+
+  // El asistente de planificación envía aquí con ?nuevo=1 para crear un fondo en el mes que se está preparando.
+  const pedirNuevo = params.get('nuevo') === '1'
+  useEffect(() => {
+    if (!pedirNuevo || !datos || cerrado) return
+    abrirForm(null)
+    const siguiente = new URLSearchParams(params)
+    siguiente.delete('nuevo')
+    setParams(siguiente, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedirNuevo, datos, cerrado])
   const totales = useMemo(() => {
     const asignado = round2(lista.reduce((s, t) => s + t.resumen.asignado, 0))
     const consumido = round2(lista.reduce((s, t) => s + t.resumen.consumido, 0))
@@ -233,7 +248,7 @@ export function FondosPage() {
     <div className="flex w-full min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
         <BarraFiltros className="w-full min-w-0 md:flex-1">
-          <CeldaFiltro peso={1.4} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} maximo={MES_ACTUAL} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
+          <CeldaFiltro peso={1.4} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
           {!cerrado && (
             <CeldaFiltro peso={0.8} min="9rem">
               <Combobox id="f-estado-fondos" aria-label="Estado" value={filtro} searchable={false} options={[{ value: 'activos', label: 'Activos' }, { value: 'inactivos', label: 'Inactivos' }, { value: 'todos', label: 'Todos' }]} onChange={(v) => setFiltro((v ?? 'activos') as typeof filtro)} />
@@ -246,7 +261,9 @@ export function FondosPage() {
             </label>
           </CeldaFiltro>
         </BarraFiltros>
-        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2 md:shrink-0">
+          {!cerrado && <Button variant="secondary" title="Planificación mensual" onClick={() => planificacion.abrirEstado(mes)}><CalendarCheck className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Planificación</span></Button>}
+          {!cerrado && <Button variant="secondary" title="Copiar fondos de otro mes" onClick={() => setCopiando(true)}><Copy className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Copiar fondos de otro mes</span></Button>}
           {puedeCerrar && <Button variant="secondary" onClick={() => setCerrando(true)}>Cerrar período</Button>}
           {!cerrado && <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Nuevo fondo</Button>}
         </div>
@@ -262,7 +279,16 @@ export function FondosPage() {
       </section>
 
       {filasTabla.length === 0 || lista.length === 0 && filtro === 'activos' && !cerrado && datos.inactivos.length === 0 ? (
-        <EmptyState icon={Wallet} title="Aún no hay fondos" description="Crea un fondo para asignar presupuesto a tus gastos. Empieza con el Fondo General, que absorbe el excedente de los demás." action={!cerrado && <Button onClick={() => abrirForm(null)}>Nuevo fondo</Button>} />
+        <EmptyState icon={Wallet}
+          title={cerrado ? `${formatMes(mes)} no tiene fondos registrados` : `Todavía no tienes fondos configurados para ${formatMes(mes).toLowerCase()}.`}
+          description={cerrado ? 'Este período está cerrado: su histórico no se modifica.' : 'Cada mes tiene sus propios fondos. Crea uno nuevo (empieza con el Fondo General, que absorbe el excedente de los demás), copia los de otro mes o prepara el mes con la planificación.'}
+          action={!cerrado && (
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => abrirForm(null)}><Plus className="size-4" aria-hidden="true" /> Crear nuevo fondo</Button>
+              <Button variant="secondary" onClick={() => setCopiando(true)}>Copiar fondos del mes anterior</Button>
+              <Button variant="secondary" onClick={() => planificacion.abrirAsistente(mes)}>Abrir planificación mensual</Button>
+            </div>
+          )} />
       ) : visibles.length === 0 ? (
         <EmptyState icon={Wallet} title="Ningún fondo coincide" description="Prueba con otro nombre o cambia el filtro de estado." action={<Button variant="secondary" onClick={() => { setQ(''); setFiltro('todos') }}>Ver todos</Button>} />
       ) : (
@@ -281,6 +307,8 @@ export function FondosPage() {
           onReordenar={reordenar}
         />
       )}
+
+      {copiando && <CopiarFondos destino={mes} onClose={() => setCopiando(false)} />}
 
       {form && catalogo && (
         <FondoForm

@@ -102,7 +102,7 @@ function construir(f: FiltrosGastos, rango?: [number, number]) {
   if (f.subcategoria) q = q.in('subcategoria_id', idsDe(f.subcategoria))
   if (f.medio) q = q.eq('payment_method_id', f.medio)
   if (f.tipo) q = q.eq('expense_type', f.tipo)
-  if (f.fondo) q = q.eq('filtro.fund_id' as 'status', f.fondo)
+  if (f.fondo) q = q.in('filtro.fund_id' as 'status', idsDe(f.fondo))
   const col = f.orden === 'monto' ? 'amount' : f.orden === 'descripcion' ? 'description' : 'expense_date'
   q = q.order(col, { ascending: f.dir === 'asc' })
   if (col !== 'expense_date') q = q.order('expense_date', { ascending: false })

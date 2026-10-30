@@ -197,6 +197,7 @@ export function FondoForm({
     const payment_rules = Object.entries(medios)
       .filter(([, e]) => e !== 'none')
       .map(([method, effect]) => ({ method, effect: effect as 'include' | 'exclude' }))
+    const importeMes = parseMontoNoNegativo(editando && periodoAbierto && v.period_amount !== '' ? v.period_amount : v.default_amount)!
     const payload: FondoPayload = {
       id: editando ? fondo!.id : undefined,
       name: v.name,
@@ -205,10 +206,11 @@ export function FondoForm({
       color_token: v.color_token,
       is_general: v.is_general,
       is_active: v.is_active,
-      default_amount: parseMontoNoNegativo(v.default_amount)!,
+      default_amount: importeMes,
       scope_rules,
       payment_rules,
-      ...(editando && periodoAbierto && periodId && v.period_amount !== '' ? { period_id: periodId, period_amount: parseMontoNoNegativo(v.period_amount)! } : {}),
+      // Cada fondo es una instancia de UN mes: siempre se guarda en el período que se está viendo, con el importe de ese mes.
+      ...(periodId ? { period_id: periodId, period_amount: importeMes } : {}),
     }
     onSubmit(payload)
   })
@@ -238,16 +240,15 @@ export function FondoForm({
       <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-3">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} autoFocus {...register('name')} />}</Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Importe por defecto (S/)" error={errors.default_amount?.message} hint="Para períodos nuevos.">
+          {editando && periodoAbierto ? (
+            <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes: los demás meses no cambian.">
+              {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
+            </Field>
+          ) : (
+            <Field label="Importe de este mes (S/)" error={errors.default_amount?.message} hint="El fondo existe solo en este mes.">
               {(p) => <Controller control={control} name="default_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.default_amount)} />} />}
             </Field>
-            {editando && periodoAbierto && (
-              <Field label="Importe de este período (S/)" error={errors.period_amount?.message} hint="Solo el período abierto.">
-                {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
-              </Field>
-            )}
-          </div>
+          )}
           <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
           <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-sm font-medium">Icono</span>

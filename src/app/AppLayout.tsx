@@ -11,6 +11,8 @@ import { useTema } from '@/features/tema/ThemeProvider'
 import { ThemeToggle } from '@/features/tema/ThemeToggle'
 import { procesarLimpieza } from '@/features/gastos/comprobantes'
 import { RegistroGastoProvider, useRegistroGasto } from '@/features/gastos/RegistroGasto'
+import { InvitacionPlanificacion } from '@/features/planificacion/InvitacionPlanificacion'
+import { PlanificacionProvider } from '@/features/planificacion/PlanificacionProvider'
 import { BarraLateral } from './BarraLateral'
 import { MODULOS, type Modulo } from './modulos'
 import { useBarraLateral } from './useBarraLateral'
@@ -18,7 +20,9 @@ import { useBarraLateral } from './useBarraLateral'
 export function AppLayout() {
   return (
     <RegistroGastoProvider>
-      <Estructura />
+      <PlanificacionProvider>
+        <Estructura />
+      </PlanificacionProvider>
     </RegistroGastoProvider>
   )
 }
@@ -88,6 +92,7 @@ function Estructura() {
           </div>
         </header>
         <main id="contenido" tabIndex={-1} className="px-4 py-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-6 lg:pb-24">
+          <InvitacionPlanificacion />
           <Suspense fallback={<div role="status" aria-label="Cargando módulo" className="flex flex-col gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /></div>}>
             <Outlet />
           </Suspense>

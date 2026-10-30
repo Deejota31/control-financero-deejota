@@ -116,8 +116,8 @@ test.describe('Formulario de fondo: orden de campos y color', () => {
     const d = page.getByRole('dialog', { name: 'Nuevo fondo' })
     // Orden visual: Nombre → Importe por defecto → Descripción
     const y = async (n: string) => (await d.getByLabel(n).first().boundingBox())!.y
-    expect(await y('Nombre')).toBeLessThan(await y('Importe por defecto (S/)'))
-    expect(await y('Importe por defecto (S/)')).toBeLessThan(await y('Descripción (opcional)'))
+    expect(await y('Nombre')).toBeLessThan(await y('Importe de este mes (S/)'))
+    expect(await y('Importe de este mes (S/)')).toBeLessThan(await y('Descripción (opcional)'))
     await expect(d.getByText(/color c\d/i)).toHaveCount(0) // sin identificadores técnicos
     const nombre = `Color ${sufijo()}`
     await d.getByLabel('Nombre').fill(nombre)

@@ -12,7 +12,7 @@ import { formatSoles } from '@/lib/format'
 import { useDebounced } from '@/lib/useDebounced'
 import { agruparPorNombre, idsDe, valorDeGrupo } from '@/domain/idsFiltro'
 import { opciones, opcionesAgrupadas, useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
-import { useFondos } from '@/features/fondos/useFondos'
+import { useFondosRango } from '@/features/fondos/useFondos'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { DetalleGasto } from './DetalleGasto'
 import { GastoForm, type ModoGasto } from './GastoForm'
@@ -42,13 +42,15 @@ export function GastosPage() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const catalogo = useCatalogo()
-  const fondosQ = useFondos()
+  const fondosQ = useFondosRango(filtros.desde, filtros.hasta)
   const perfil = usePerfil()
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const q = useGastosPagina(filtros)
   const mut = useGastoMutaciones()
   const nom = useMemo(() => nombres(catalogo), [catalogo])
-  const fondoPorId = useMemo(() => new Map((fondosQ.data?.fondos ?? []).map((f) => [f.id, f])), [fondosQ.data])
+  const fondoPorId = useMemo(() => new Map((fondosQ.data ?? []).map((f) => [f.id, f])), [fondosQ.data])
+  // Cada fondo es de un solo mes: en un rango de varios meses se muestra una opción por nombre y filtra todas sus instancias.
+  const opcionesFondo = useMemo(() => agruparPorNombre(fondosQ.data ?? [], filtros.fondo).map((g) => ({ value: g.valor, label: g.nombre, icon: g.primero.icon_key, color: g.primero.color_token })), [fondosQ.data, filtros.fondo])
 
   const [texto, setTexto] = useState(filtros.q)
   const textoDebounced = useDebounced(texto, 350)
@@ -176,7 +178,7 @@ export function GastosPage() {
               <Popover.Content align="end" sideOffset={6} collisionPadding={12} aria-label="Filtros adicionales" className="anim-pop z-[80] w-[min(19rem,calc(100vw-1.5rem))] rounded-xl border border-line bg-surface p-4 shadow-pop">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="f-fondo" className="text-sm font-medium">Fondo</label>
-                  <Combobox id="f-fondo" value={filtros.fondo || null} clearable searchable={false} options={(fondosQ.data?.fondos ?? []).map((x) => ({ value: x.id, label: x.name, icon: x.icon_key, color: x.color_token }))} placeholder="Todos los fondos" onChange={(v) => cambiar({ fondo: v ?? '' })} />
+                  <Combobox id="f-fondo" value={filtros.fondo || null} clearable searchable={false} options={opcionesFondo} placeholder="Todos los fondos" onChange={(v) => cambiar({ fondo: v ?? '' })} />
                 </div>
               </Popover.Content>
             </Popover.Portal>

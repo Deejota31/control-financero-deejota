@@ -32,7 +32,7 @@ async function nuevoFondo(page: Page, nombre: string, ambito: string, importe: s
   await d.getByLabel('Nombre').fill(nombre)
   await d.getByRole('radiogroup', { name: `Regla para ${ambito}` }).getByRole('radio', { name: 'Incluir' }).click()
   if (soloMedio) await d.getByRole('radiogroup', { name: `Regla para ${soloMedio}` }).getByRole('radio', { name: 'Incluir' }).click()
-  await d.getByLabel('Importe por defecto (S/)').fill(importe)
+  await d.getByLabel('Importe de este mes (S/)').fill(importe)
   await d.getByRole('button', { name: 'Guardar fondo' }).click()
   await confirmarSiPide(page, 'Fondo guardado.')
 }
@@ -52,7 +52,7 @@ test.describe('Fondos presupuestales', () => {
     // El Fondo General va siempre primero; después, los específicos por prioridad
     const nombres = await page.getByRole('list', { name: 'Fondos' }).getByRole('heading').allTextContents()
     expect(nombres[0]).toBe('Fondo General')
-    const esperados = sqlLocal(`select name from public.funds where household_id = ${HID} and is_active and not is_general order by priority, name`).split('\n')
+    const esperados = sqlLocal(`select name from public.funds where household_id = ${HID} and period_id = (select id from public.budget_periods where household_id = ${HID} and start_date = date_trunc('month', current_date)::date) and is_active and not is_general order by priority, name`).split('\n')
     expect(nombres.slice(1)).toEqual(esperados)
     // Altura de fila compacta (64–76 px)
     const alto = (await page.getByRole('list', { name: 'Fondos' }).getByRole('listitem').nth(1).boundingBox())!.height
@@ -146,7 +146,7 @@ test.describe('Fondos presupuestales', () => {
     await expect(dialogo.getByText('Un fondo específico necesita al menos un ámbito, categoría o subcategoría incluido.')).toBeVisible()
     await dialogo.getByRole('radiogroup', { name: 'Regla para Trabajo' }).getByRole('radio', { name: 'Incluir' }).click()
     await dialogo.getByRole('radiogroup', { name: 'Regla para Efectivo' }).getByRole('radio', { name: 'Excluir' }).click()
-    await dialogo.getByLabel('Importe por defecto (S/)').fill('150')
+    await dialogo.getByLabel('Importe de este mes (S/)').fill('150')
     await dialogo.getByRole('button', { name: 'Guardar fondo' }).click()
     await confirmarSiPide(page, 'Fondo guardado.')
     await expect(fila(page, nombre)).toContainText('S/ 150.00')
@@ -253,16 +253,15 @@ test.describe('Fondos presupuestales', () => {
     expect(sqlLocal(`select count(*) from public.expenses e where e.household_id = ${HID} and e.status = 'active' and e.amount <> (select sum(a.amount) from public.expense_fund_allocations a where a.expense_id = e.id)`)).toBe('0')
   })
 
-  test('un fondo con historial cerrado y el Fondo General explican el motivo y ofrecen desactivar, no eliminar', async ({ page }) => {
+  test('un mes cerrado conserva sus fondos sin acciones, y el Fondo General explica el motivo y ofrece desactivar, no eliminar', async ({ page }) => {
     await iniciarSesion(page)
-    await page.getByRole('link', { name: 'Fondos' }).first().click()
-    await accion(page, 'Hogar', /Eliminar fondo/)
-    const d = page.getByRole('dialog', { name: 'Eliminar fondo «Hogar»' })
-    await expect(d).toContainText('historial en períodos cerrados')
-    await expect(d.getByRole('button', { name: /Reasignar y eliminar|^Eliminar fondo$/ })).toHaveCount(0)
-    await expect(d.getByRole('button', { name: 'Desactivar en su lugar' })).toBeVisible()
-    await d.getByRole('button', { name: 'Cancelar' }).click()
-    expect(sqlLocal(`select count(*) from public.funds where household_id = ${HID} and name = 'Hogar'`)).toBe('1')
+    // El mes cerrado (el más antiguo del demo) muestra su histórico: sus fondos no se editan ni se eliminan.
+    const cerrado = sqlLocal(`select to_char(start_date, 'YYYY-MM-DD') from public.budget_periods where household_id = ${HID} and status = 'closed' order by start_date limit 1`)
+    await page.goto(`/fondos?mes=${cerrado}`)
+    await expect(page.getByText(/Este período está cerrado/)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Más acciones de Hogar' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Nuevo fondo' })).toHaveCount(0)
+    await page.goto('/fondos')
 
     await accion(page, 'Fondo General', /Eliminar fondo/)
     const g = page.getByRole('dialog', { name: 'Eliminar fondo «Fondo General»' })

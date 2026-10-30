@@ -1,0 +1,73 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { addDays } from 'date-fns'
+import { supabase } from '@/lib/supabase'
+import type { Json } from '@/lib/database.types'
+import { fromIso, toIso } from '@/lib/format'
+
+export type EtapaPlan = 'pending' | 'done' | 'skipped'
+export type EstadoPlan = 'pending' | 'in_progress' | 'completed'
+
+export interface PlanFila {
+  id: string
+  period_id: string
+  status: EstadoPlan
+  funds_stage: EtapaPlan
+  expenses_stage: EtapaPlan
+  started_at: string | null
+  completed_at: string | null
+  remind_after: string | null
+  updated_at: string
+}
+
+/** Cifras reales del mes (solo sus fondos y sus gastos) y el estado de su planificación. */
+export interface ResumenPlan {
+  period_id: string | null
+  funds_count: number
+  budget_total: number
+  expenses_total: number
+  expenses_count: number
+  overspent_funds: number
+  plan: PlanFila | null
+}
+
+export const ETIQUETA_ESTADO: Record<EstadoPlan, string> = { pending: 'Pendiente', in_progress: 'En progreso', completed: 'Completada' }
+export const ETIQUETA_ETAPA: Record<EtapaPlan, string> = { pending: 'Pendiente', done: 'Confirmada', skipped: 'Omitida' }
+
+export function useResumenPlan(mes: string) {
+  return useQuery({
+    queryKey: ['planificacion', 'resumen', mes],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('planning_summary', { p_month: mes })
+      if (error) throw error
+      const r = data as unknown as ResumenPlan
+      return { ...r, budget_total: Number(r.budget_total), expenses_total: Number(r.expenses_total) } satisfies ResumenPlan
+    },
+  })
+}
+
+/** Guarda el avance del plan de un mes: etapas, estado y aplazamiento del aviso. Nunca crea fondos ni gastos. */
+export function useGuardarPlan() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (v: { mes: string; patch: Partial<Pick<PlanFila, 'funds_stage' | 'expenses_stage' | 'status' | 'remind_after'>> }) => {
+      const { data, error } = await supabase.rpc('save_period_plan', { p_month: v.mes, p_patch: v.patch as unknown as Json })
+      if (error) throw error
+      return data as unknown as PlanFila
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['planificacion'] }),
+  })
+}
+
+/**
+ * ¿Hay que invitar a planificar el mes en curso? Sí mientras el mes no esté completado, el aviso no esté aplazado y los recordatorios estén activos.
+ * Si el mes ya tiene fondos y no hay un proceso empezado se considera preparado a mano y no se insiste. `hoy` es la fecha en la zona de la persona.
+ */
+export function debeInvitar(v: { recordatorios: boolean; fondos: number; plan: Pick<PlanFila, 'status' | 'remind_after'> | null; hoy: string }): boolean {
+  if (!v.recordatorios) return false
+  if (v.plan?.status === 'completed') return false
+  if (v.plan?.remind_after && v.plan.remind_after > v.hoy) return false
+  return v.plan?.status === 'in_progress' || v.fondos === 0
+}
+
+/** Mañana (en la zona horaria de la persona), para posponer el aviso. */
+export const mananaDe = (hoy: string) => toIso(addDays(fromIso(hoy), 1))

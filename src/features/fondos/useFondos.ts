@@ -23,19 +23,56 @@ export function usePeriodo(mes: string) {
   })
 }
 
-export function useFondos() {
+/** Fondos DEL MES indicado (cada fondo es una instancia de un solo período) con sus reglas. Sin período no consulta nada. */
+export function useFondos(periodId: string | undefined) {
   return useQuery({
-    queryKey: ['fondos', 'lista'],
+    queryKey: ['fondos', 'lista', periodId],
+    enabled: Boolean(periodId),
     queryFn: async () => {
-      const [f, s, p] = await Promise.all([
-        supabase.from('funds').select('*').order('priority').order('name'),
-        supabase.from('fund_scope_rules').select('*'),
-        supabase.from('fund_payment_rules').select('*'),
-      ])
+      const f = await supabase.from('funds').select('*').eq('period_id', periodId!).order('priority').order('name')
       if (f.error) throw f.error
+      const ids = f.data.map((x) => x.id)
+      if (ids.length === 0) return { fondos: f.data, alcance: [], medios: [] }
+      const [s, p] = await Promise.all([
+        supabase.from('fund_scope_rules').select('*').in('fund_id', ids),
+        supabase.from('fund_payment_rules').select('*').in('fund_id', ids),
+      ])
       if (s.error) throw s.error
       if (p.error) throw p.error
       return { fondos: f.data, alcance: s.data, medios: p.data }
+    },
+  })
+}
+
+/** Fondos de todos los meses que toca un rango de fechas (para filtrar gastos por fondo). Cada fila sigue siendo de un solo mes. */
+export function useFondosRango(desde: string, hasta: string) {
+  return useQuery({
+    queryKey: ['fondos', 'rango', desde, hasta],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('funds').select('*, budget_periods!inner(start_date, end_date)')
+        .lte('budget_periods.start_date', hasta).gte('budget_periods.end_date', desde).order('priority').order('name')
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+export interface ResultadoCopia {
+  created: { source_id: string; id: string; name: string; amount: number }[]
+  skipped: { source_id: string; name: string | null; reason: 'already_copied' | 'name_exists' | 'general_exists' | 'not_in_source' }[]
+}
+
+/** Copia explícita de fondos a otro mes: crea instancias independientes y nunca sobrescribe lo que ya existe. */
+export function useCopiarFondos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (v: { origen: string; destino: string; items: { fund_id: string; amount?: number; name?: string }[] }) => {
+      const { data, error } = await supabase.rpc('copy_funds', { p_source: v.origen, p_target: v.destino, p_items: v.items as unknown as Json })
+      if (error) throw error
+      return data as unknown as ResultadoCopia
+    },
+    onSettled: () => {
+      for (const k of ['fondos', 'gastos', 'periodo', 'dashboard', 'planificacion']) qc.invalidateQueries({ queryKey: [k] })
     },
   })
 }

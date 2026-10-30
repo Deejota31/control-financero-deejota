@@ -63,38 +63,10 @@ begin
 
   select household_id into hid from public.profiles where user_id = p_uid;
   perform public.bootstrap_catalog(hid);
-  insert into public.funds (household_id, name, description, is_general, default_amount, priority, icon_key, color_token)
-  values (hid, 'Fondo General', 'Cobertura general; absorbe el excedente de los fondos específicos.', true, 0, 1000, 'wallet', 'pri');
 
   update public.profiles set display_name = p_nombre where user_id = p_uid;
   update public.households set name = 'Hogar demo', is_demo = true where created_by = p_uid;
   select household_id into hid from public.profiles where user_id = p_uid;
-
-  -- Fondos de demostración
-  update public.funds set default_amount = 1500 where household_id = hid and is_general;
-  select id into fid from public.funds where household_id = hid and is_general;
-  insert into public.fund_payment_rules (household_id, fund_id, payment_method_id, effect)
-  values (hid, fid, public.dev_med(hid, 'Sodexo'), 'exclude');
-
-  insert into public.funds (household_id, name, description, icon_key, color_token, default_amount, priority)
-  values (hid, 'Alimentos Sodexo', 'Solo gastos pagados con Sodexo en alimentación.', 'utensils', 'c2', 300, 10) returning id into fid;
-  insert into public.fund_scope_rules (household_id, fund_id, categoria_id, effect) values
-    (hid, fid, public.dev_cat(hid, 'Personal', 'Alimentación'), 'include'),
-    (hid, fid, public.dev_cat(hid, 'Trabajo', 'Alimentación'), 'include');
-  insert into public.fund_payment_rules (household_id, fund_id, payment_method_id, effect)
-  values (hid, fid, public.dev_med(hid, 'Sodexo'), 'include');
-
-  insert into public.funds (household_id, name, description, icon_key, color_token, default_amount, priority)
-  values (hid, 'Hogar', 'Servicios, despensa y mantenimiento.', 'home', 'c3', 700, 20) returning id into fid;
-  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Hogar'), 'include');
-
-  insert into public.funds (household_id, name, description, icon_key, color_token, default_amount, priority)
-  values (hid, 'Bebé', 'Todo lo relacionado con el bebé.', 'baby', 'c4', 350, 30) returning id into fid;
-  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Bebé'), 'include');
-
-  insert into public.funds (household_id, name, description, icon_key, color_token, default_amount, priority)
-  values (hid, 'Familia', 'Educación, viajes y regalos.', 'users', 'c1', 600, 40) returning id into fid;
-  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Familia'), 'include');
 
   -- Plantillas mensuales
   insert into public.expense_templates (household_id, name, description, default_amount, is_amount_variable, ambito_id, categoria_id, subcategoria_id, payment_method_id, expense_type, day_of_month, sort_order)
@@ -105,10 +77,39 @@ begin
     (hid, 'Internet', 'Internet del hogar', 120, false, public.dev_amb(hid, 'Hogar'), public.dev_cat(hid, 'Hogar', 'Servicios'), public.dev_sub(hid, 'Hogar', 'Servicios', 'Internet'), public.dev_med(hid, 'Transferencia'), 'fixed', 6, 4),
     (hid, 'Agua', 'Recibo de agua', 60, true, public.dev_amb(hid, 'Hogar'), public.dev_cat(hid, 'Hogar', 'Servicios'), public.dev_sub(hid, 'Hogar', 'Servicios', 'Agua'), public.dev_med(hid, 'Transferencia'), 'fixed', 8, 5);
 
-  -- Períodos: mes actual y los dos anteriores. Los fondos ya existen, así reciben presupuesto.
+  -- Períodos: mes actual y los dos anteriores. Cada mes tiene sus propios fondos (instancias independientes con su presupuesto).
   for m in 0..2 loop
     v_start := (date_trunc('month', current_date) - make_interval(months => m))::date;
     per := public.ensure_period(hid, v_start);
+    -- Fondos de demostración de este mes (cada fondo pertenece a su período)
+    insert into public.funds (household_id, period_id, name, description, is_general, default_amount, priority, icon_key, color_token)
+    values (hid, per, 'Fondo General', 'Cobertura general; absorbe el excedente de los fondos específicos.', true, 1500, 1000, 'wallet', 'pri') returning id into fid;
+  insert into public.fund_payment_rules (household_id, fund_id, payment_method_id, effect)
+  values (hid, fid, public.dev_med(hid, 'Sodexo'), 'exclude');
+
+  insert into public.funds (household_id, period_id, name, description, icon_key, color_token, default_amount, priority)
+    values (hid, per, 'Alimentos Sodexo', 'Solo gastos pagados con Sodexo en alimentación.', 'utensils', 'c2', 300, 10) returning id into fid;
+  insert into public.fund_scope_rules (household_id, fund_id, categoria_id, effect) values
+    (hid, fid, public.dev_cat(hid, 'Personal', 'Alimentación'), 'include'),
+    (hid, fid, public.dev_cat(hid, 'Trabajo', 'Alimentación'), 'include');
+  insert into public.fund_payment_rules (household_id, fund_id, payment_method_id, effect)
+  values (hid, fid, public.dev_med(hid, 'Sodexo'), 'include');
+
+  insert into public.funds (household_id, period_id, name, description, icon_key, color_token, default_amount, priority)
+    values (hid, per, 'Hogar', 'Servicios, despensa y mantenimiento.', 'home', 'c3', 700, 20) returning id into fid;
+  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Hogar'), 'include');
+
+  insert into public.funds (household_id, period_id, name, description, icon_key, color_token, default_amount, priority)
+    values (hid, per, 'Bebé', 'Todo lo relacionado con el bebé.', 'baby', 'c4', 350, 30) returning id into fid;
+  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Bebé'), 'include');
+
+  insert into public.funds (household_id, period_id, name, description, icon_key, color_token, default_amount, priority)
+    values (hid, per, 'Familia', 'Educación, viajes y regalos.', 'users', 'c1', 600, 40) returning id into fid;
+  insert into public.fund_scope_rules (household_id, fund_id, ambito_id, effect) values (hid, fid, public.dev_amb(hid, 'Familia'), 'include');
+
+    insert into public.fund_period_budgets (household_id, fund_id, period_id, assigned_amount)
+    select hid, fu.id, per, fu.default_amount from public.funds fu where fu.period_id = per;
+
     for x in select * from jsonb_array_elements(rows) loop
       v_date := v_start + ((x ->> 4)::int - 1);
       continue when v_date > current_date;

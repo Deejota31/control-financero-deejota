@@ -134,6 +134,12 @@ isOneToOne: false
       referencedRelation: "funds"
       referencedColumns: ["id","household_id"]
     },{
+      foreignKeyName: "expense_fund_allocations_fund_period_fk"
+      columns: ["fund_id","period_id"]
+isOneToOne: false
+      referencedRelation: "funds"
+      referencedColumns: ["id","period_id"]
+    },{
       foreignKeyName: "expense_fund_allocations_household_id_fkey"
       columns: ["household_id"]
 isOneToOne: false
@@ -298,6 +304,12 @@ isOneToOne: false
       referencedRelation: "funds"
       referencedColumns: ["id","household_id"]
     },{
+      foreignKeyName: "fund_period_budgets_fund_period_fk"
+      columns: ["fund_id","period_id"]
+isOneToOne: true
+      referencedRelation: "funds"
+      referencedColumns: ["id","period_id"]
+    },{
       foreignKeyName: "fund_period_budgets_household_id_fkey"
       columns: ["household_id"]
 isOneToOne: false
@@ -357,22 +369,34 @@ isOneToOne: false
                   ]
                 },"funds": {
                   Row: {
-                    "color_token": string | null,"created_at": string,"default_amount": number,"description": string | null,"household_id": string,"icon_key": string | null,"id": string,"is_active": boolean,"is_general": boolean,"name": string,"priority": number,"updated_at": string
+                    "color_token": string | null,"copied_from": string | null,"created_at": string,"default_amount": number,"description": string | null,"household_id": string,"icon_key": string | null,"id": string,"is_active": boolean,"is_general": boolean,"name": string,"period_id": string,"priority": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "color_token"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id": string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name": string,"priority"?: number,"updated_at"?: string
+                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id": string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name": string,"period_id": string,"priority"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "color_token"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id"?: string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name"?: string,"priority"?: number,"updated_at"?: string
+                    "color_token"?: string | null,"copied_from"?: string | null,"created_at"?: string,"default_amount"?: number,"description"?: string | null,"household_id"?: string,"icon_key"?: string | null,"id"?: string,"is_active"?: boolean,"is_general"?: boolean,"name"?: string,"period_id"?: string,"priority"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "funds_copied_from_fkey"
+      columns: ["copied_from"]
+isOneToOne: false
+      referencedRelation: "funds"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "funds_household_id_fkey"
       columns: ["household_id"]
 isOneToOne: false
       referencedRelation: "households"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "funds_period_fk"
+      columns: ["period_id","household_id"]
+isOneToOne: false
+      referencedRelation: "budget_periods"
+      referencedColumns: ["id","household_id"]
     }
                   ]
                 },"household_members": {
@@ -468,6 +492,12 @@ isOneToOne: false
       referencedRelation: "funds"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "period_fund_snapshots_fund_period_fk"
+      columns: ["fund_id","period_id"]
+isOneToOne: false
+      referencedRelation: "funds"
+      referencedColumns: ["id","period_id"]
+    },{
       foreignKeyName: "period_fund_snapshots_household_id_fkey"
       columns: ["household_id"]
 isOneToOne: false
@@ -481,16 +511,42 @@ isOneToOne: false
       referencedColumns: ["id","household_id"]
     }
                   ]
-                },"profiles": {
+                },"period_plans": {
                   Row: {
-                    "created_at": string,"date_format": string,"display_currency": string,"display_name": string | null,"household_id": string | null,"theme": string,"timezone": string,"updated_at": string,"user_id": string
+                    "completed_at": string | null,"created_at": string,"expenses_stage": string,"funds_stage": string,"household_id": string,"id": string,"period_id": string,"remind_after": string | null,"started_at": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"date_format"?: string,"display_currency"?: string,"display_name"?: string | null,"household_id"?: string | null,"theme"?: string,"timezone"?: string,"updated_at"?: string,"user_id": string
+                    "completed_at"?: string | null,"created_at"?: string,"expenses_stage"?: string,"funds_stage"?: string,"household_id": string,"id"?: string,"period_id": string,"remind_after"?: string | null,"started_at"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"date_format"?: string,"display_currency"?: string,"display_name"?: string | null,"household_id"?: string | null,"theme"?: string,"timezone"?: string,"updated_at"?: string,"user_id"?: string
+                    "completed_at"?: string | null,"created_at"?: string,"expenses_stage"?: string,"funds_stage"?: string,"household_id"?: string,"id"?: string,"period_id"?: string,"remind_after"?: string | null,"started_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "period_plans_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "period_plans_period_id_household_id_fkey"
+      columns: ["period_id","household_id"]
+isOneToOne: false
+      referencedRelation: "budget_periods"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"profiles": {
+                  Row: {
+                    "created_at": string,"date_format": string,"display_currency": string,"display_name": string | null,"household_id": string | null,"planning_reminders": boolean,"theme": string,"timezone": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"date_format"?: string,"display_currency"?: string,"display_name"?: string | null,"household_id"?: string | null,"planning_reminders"?: boolean,"theme"?: string,"timezone"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"date_format"?: string,"display_currency"?: string,"display_name"?: string | null,"household_id"?: string | null,"planning_reminders"?: boolean,"theme"?: string,"timezone"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -635,6 +691,9 @@ isOneToOne: false
 "completar_limpieza":
 { Args: { "p_ids": (string)[] }; Returns: number
                            },
+"copy_funds":
+{ Args: { "p_items": Json,"p_source": string,"p_target": string }; Returns: Json
+                           },
 "count_changed":
 { Args: { "p_after": Json,"p_before": Json }; Returns: number
                            },
@@ -648,7 +707,7 @@ isOneToOne: false
 { Args: { "p_desde": string,"p_hasta": string }; Returns: Json
                            },
 "dashboard_panel":
-{ Args: { "p_ambito"?: string,"p_categoria"?: string[],"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: string[],"p_tipo"?: string }; Returns: Json
+{ Args: { "p_ambito"?: string,"p_categoria"?: (string)[],"p_desde": string,"p_dia"?: string,"p_hasta": string,"p_medio"?: string,"p_prev_desde": string,"p_prev_hasta": string,"p_subcategoria"?: (string)[],"p_tipo"?: string }; Returns: Json
                            },
 "delete_fund":
 { Args: { "p_destino"?: string,"p_dry_run"?: boolean,"p_fund": string }; Returns: Json
@@ -710,6 +769,9 @@ isOneToOne: false
 "open_consumption":
 { Args: { "hid": string }; Returns: Json
                            },
+"planning_summary":
+{ Args: { "p_month": string }; Returns: Json
+                           },
 "preview_expense":
 { Args: { "p": Json }; Returns: Json
                            },
@@ -733,6 +795,9 @@ isOneToOne: false
                            },
 "save_fund":
 { Args: { "p": Json,"p_dry_run"?: boolean }; Returns: Json
+                           },
+"save_period_plan":
+{ Args: { "p_month": string,"p_patch": Json }; Returns: Json
                            },
 "set_expenses_status":
 { Args: { "p_annul": boolean,"p_ids": (string)[] }; Returns: Json

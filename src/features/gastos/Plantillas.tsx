@@ -154,7 +154,8 @@ function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 function PlantillaForm({ plantilla, orden, onClose }: { plantilla: Plantilla | null; orden: number; onClose: () => void }) {
   const catalogo = useCatalogo()
-  const fondos = useFondos()
+  const periodoActual = usePeriodo(mesDeFecha(new Date()))
+  const fondos = useFondos(periodoActual.data?.id)
   const mut = usePlantillaMutaciones()
   const idForm = useId()
   const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm<Values>({
@@ -281,8 +282,9 @@ const DECISIONES: { value: Decision; label: string; ayuda: string }[] = [
   { value: 'skip', label: 'Omitir', ayuda: 'No se crea nada ahora; la plantilla se podrá revisar de nuevo.' },
 ]
 
-export function LoteDialog({ onClose }: { onClose: () => void }) {
-  const [mes, setMes] = useState(MES_ACTUAL)
+/** Registro por lote de las plantillas de un mes. La planificación lo abre con el mes que se está preparando (incluso futuro). */
+export function LoteDialog({ onClose, mesInicial, maximo }: { onClose: () => void; mesInicial?: string; maximo?: string }) {
+  const [mes, setMes] = useState(mesInicial ?? MES_ACTUAL)
   const [pendientes, setPendientes] = useState(0)
   const [sucio, setSucio] = useState(false)
   const [cambiarA, setCambiarA] = useState<string | null>(null)
@@ -291,7 +293,7 @@ export function LoteDialog({ onClose }: { onClose: () => void }) {
       footer={null}>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <MesSelector mes={mes} onChange={(m) => (sucio ? setCambiarA(m) : setMes(m))} maximo={MES_ACTUAL} />
+          <MesSelector mes={mes} onChange={(m) => (sucio ? setCambiarA(m) : setMes(m))} maximo={maximo ?? MES_ACTUAL} />
           <p className="text-sm text-muted" aria-live="polite">{formatMes(mes)} · <b className="text-fg">{pendientes}</b> {pendientes === 1 ? 'plantilla por revisar' : 'plantillas por revisar'}</p>
         </div>
         <LoteMes key={mes} mes={mes} onClose={onClose} onPendientes={setPendientes} onSucio={setSucio} />
