@@ -78,7 +78,7 @@ const resumen = (lista) => ({
 const L = []
 const fecha = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
 const tot = resumen(pruebas)
-L.push('# Matriz de calidad — Gasto Deejota', '', `Generada: ${fecha} (hora de Lima) desde \`${rutaJson}\`.`, '')
+L.push('# Matriz de calidad — Control Financiero', '', `Generada: ${fecha} (hora de Lima) desde \`${rutaJson}\`.`, '')
 L.push('## Resultado global de la suite E2E', '', `- Pruebas ejecutadas: **${tot.total}** · Aprobadas: **${tot.ok}** · Fallidas: **${tot.mal}** · Omitidas: **${tot.omitidas}**`)
 L.push(`- Duración total: **${seg(informe.stats?.duration ?? 0)}**`, '')
 

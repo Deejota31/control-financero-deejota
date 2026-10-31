@@ -2,7 +2,8 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Popover from '@radix-ui/react-popover'
 import { Info, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { registrarCambiosPendientes } from '@/lib/cambiosPendientes'
 import { cn } from '@/lib/cn'
 import { Button } from './Button'
 
@@ -51,6 +52,7 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
   const [origen] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
   const [descartando, setDescartando] = useState(false)
   const cerrar = () => (sucio ? setDescartando(true) : onOpenChange(false))
+  useEffect(() => (open && sucio ? registrarCambiosPendientes() : undefined), [open, sucio])
   return (
     <Dialog.Root open={open} onOpenChange={(o) => (o ? onOpenChange(true) : cerrar())}>
       <Dialog.Portal>

@@ -23,7 +23,7 @@ async function auditar(page: Page, contexto: string) {
 async function fijarTema(page: Page, tema: 'claro' | 'oscuro') {
   const actual = await page.locator('html').getAttribute('data-theme')
   if ((tema === 'oscuro') !== (actual === 'dark')) {
-    await page.getByRole('button', { name: /Cambiar a tema/ }).click()
+    await page.getByRole('switch', { name: /Cambiar a tema/ }).filter({ visible: true }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', tema === 'oscuro' ? 'dark' : 'light')
   }
 }
@@ -45,14 +45,14 @@ test.describe('Accesibilidad (axe)', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
   test('pantallas de acceso, recuperación y sesión vencida', async ({ page }) => {
-    for (const [ruta, texto] of [['/acceso', 'Iniciar sesión'], ['/recuperar', 'Recuperar contraseña'], ['/sesion-expirada', 'Tu sesión venció'], ['/restablecer', 'Enlace no válido']] as const) {
+    for (const [ruta, texto] of [['/acceso', 'Bienvenido de nuevo'], ['/recuperar', 'Recuperar contraseña'], ['/sesion-expirada', 'Tu sesión venció'], ['/restablecer', 'Enlace no válido']] as const) {
       await page.goto(ruta)
       await expect(page.getByRole('heading', { name: texto })).toBeVisible()
       await auditar(page, `${ruta} (claro)`)
     }
     // login con errores visibles
     await page.goto('/acceso')
-    await page.getByRole('button', { name: 'Entrar' }).click()
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click()
     await expect(page.getByText('Ingresa tu correo.')).toBeVisible()
     await auditar(page, '/acceso con errores de validación')
   })

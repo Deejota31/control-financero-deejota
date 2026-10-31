@@ -10,10 +10,10 @@ import { formatSoles } from '@/lib/format'
 
 const ESTADO: Record<ResumenPresupuesto['estado'], { etiqueta: string; relleno: string }> = {
   'sin-presupuesto': { etiqueta: 'Sin presupuesto', relleno: 'from-slate-400 to-slate-500' },
-  ok: { etiqueta: 'En curso', relleno: 'from-[#4F46E5] to-[#6D78F0]' },
-  casi: { etiqueta: 'Casi agotado', relleno: 'from-[#D97706] to-[#F0A030]' },
-  agotado: { etiqueta: 'Agotado', relleno: 'from-[#D97706] to-[#F0A030]' },
-  excedido: { etiqueta: 'Excedido', relleno: 'from-[#4F46E5] to-[#6D78F0]' },
+  ok: { etiqueta: 'En curso', relleno: 'from-[var(--barra-ok-a)] to-[var(--barra-ok-b)]' },
+  casi: { etiqueta: 'Casi agotado', relleno: 'from-[var(--barra-aviso-a)] to-[var(--barra-aviso-b)]' },
+  agotado: { etiqueta: 'Agotado', relleno: 'from-[var(--barra-aviso-a)] to-[var(--barra-aviso-b)]' },
+  excedido: { etiqueta: 'Excedido', relleno: 'from-[var(--barra-ok-a)] to-[var(--barra-ok-b)]' },
 }
 
 const Chip = ({ children, className }: { children: ReactNode; className?: string }) => (
@@ -84,7 +84,7 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
         <div className="flex flex-wrap items-center gap-2">
           <Chip>{e.etiqueta}</Chip>
           <Chip>{r.fondosActivos} {r.fondosActivos === 1 ? 'fondo activo' : 'fondos activos'}</Chip>
-          {excede && <Chip className="border-white bg-white text-[#B3261E]"><TriangleAlert className="size-3.5" aria-hidden="true" /> Excedente de {formatSoles(r.exceso)}</Chip>}
+          {excede && <Chip className="border-white bg-white text-[var(--bad-sobre-blanco)]"><TriangleAlert className="size-3.5" aria-hidden="true" /> Excedente de {formatSoles(r.exceso)}</Chip>}
         </div>
       </header>
 
@@ -123,7 +123,7 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
                   {excede && (
                     <div
                       className="absolute inset-y-0 transition-[width] duration-500"
-                      style={{ left: `${g.limitePct}%`, width: `${g.excesoPct}%`, backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px), linear-gradient(90deg,#E0553F,#C62F2F)' }}
+                      style={{ left: `${g.limitePct}%`, width: `${g.excesoPct}%`, backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px), var(--barra-exceso)' }}
                     />
                   )}
                 </div>
@@ -136,7 +136,7 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
                 <li className="inline-flex items-center gap-1.5"><span className={cn('size-2.5 rounded-sm bg-gradient-to-r', e.relleno)} /> Consumido</li>
                 <li className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-surface-2 ring-1 ring-line" /> Disponible</li>
                 <li className="inline-flex items-center gap-1.5"><span className="h-3 w-0.5 rounded bg-fg" /> Límite presupuestario</li>
-                {excede && <li className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[#D33F33]" /> Exceso</li>}
+                {excede && <li className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-bad" /> Exceso</li>}
               </ul>
             </div>
           </>

@@ -320,13 +320,13 @@ test.describe('Dashboard', () => {
 
   test('el tema oscuro mantiene gráficos y componentes flotantes legibles', async ({ page }) => {
     await iniciarSesion(page)
-    await page.getByRole('button', { name: 'Cambiar a tema oscuro' }).click()
+    await page.getByRole('switch', { name: 'Cambiar a tema oscuro' }).filter({ visible: true }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('.recharts-surface').first()).toBeVisible()
     await page.getByRole('combobox', { name: 'Medio de pago', exact: true }).click()
     await expect(page.getByRole('listbox')).toBeVisible()
     await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'Cambiar a tema claro' }).click()
+    await page.getByRole('switch', { name: 'Cambiar a tema claro' }).filter({ visible: true }).click()
   })
 })
 

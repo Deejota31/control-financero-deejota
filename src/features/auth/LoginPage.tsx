@@ -1,11 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ArrowRight, Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
-import { Field, Input } from '@/components/ui/Field'
+import { Field } from '@/components/ui/Field'
+import { InputConIcono } from '@/components/ui/InputConIcono'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { env } from '@/lib/supabase'
+import { AccesoSocial } from './AccesoSocial'
 import { useAuth } from './AuthProvider'
 import { AuthShell } from './AuthShell'
 import { loginSchema, type LoginValues } from './schemas'
@@ -34,7 +38,7 @@ export function LoginPage() {
   })
 
   return (
-    <AuthShell title="Iniciar sesión" subtitle="Accede a tu control de gastos.">
+    <AuthShell title="Bienvenido de nuevo" subtitle="Ingresa a tu cuenta para continuar." tituloPestana="Iniciar sesión">
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         {formError && (
           <Alert tone="error">
@@ -51,19 +55,23 @@ export function LoginPage() {
             )}
           </Alert>
         )}
-        <Field label="Correo" error={errors.email?.message}>
-          {(p) => <Input {...p} type="email" autoComplete="username" {...register('email')} />}
+        <Field label="Correo electrónico" error={errors.email?.message}>
+          {(p) => <InputConIcono {...p} icono={Mail} type="email" autoComplete="username" placeholder="tu@correo.com" className="campo-login" {...register('email')} />}
         </Field>
         <Field label="Contraseña" error={errors.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="current-password" {...register('password')} />}
+          {(p) => <PasswordInput {...p} icono={Lock} autoComplete="current-password" placeholder="Tu contraseña" className="campo-login" {...register('password')} />}
         </Field>
-        <Button type="submit" loading={isSubmitting}>
-          {isSubmitting ? 'Entrando…' : 'Entrar'}
+        <div className="-mt-1 flex justify-end">
+          <Link to="/recuperar" className="rounded text-sm font-medium text-[var(--esc-texto)] underline decoration-[var(--esc-icono-borde)] underline-offset-4 hover:decoration-[var(--esc-linea)]">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+        <Button type="submit" variant="marca" loading={isSubmitting} className="h-[3.25rem] w-full rounded-xl text-[15px]">
+          {isSubmitting ? 'Iniciando sesión…' : <>Iniciar sesión <ArrowRight className="size-4" aria-hidden="true" /></>}
         </Button>
-        <Link to="/recuperar" className="text-sm font-medium text-pri underline">
-          ¿Olvidaste tu contraseña?
-        </Link>
       </form>
+      {/* Solo visual por ahora: sin OAuth, SDK ni redirecciones (ver AccesoSocial). */}
+      <AccesoSocial />
     </AuthShell>
   )
 }

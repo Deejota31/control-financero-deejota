@@ -6,8 +6,8 @@ export const password = process.env.E2E_USER_PASSWORD
 export async function iniciarSesion(page: Page) {
   await page.goto('/acceso')
   await page.getByLabel('Correo').fill(email!)
-  await page.getByLabel('Contraseña').fill(password!)
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByLabel('Contraseña', { exact: true }).fill(password!)
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toHaveAttribute('aria-current', 'page')
 }
 

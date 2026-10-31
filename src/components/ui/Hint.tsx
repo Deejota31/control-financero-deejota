@@ -33,12 +33,3 @@ export function Hint({ contenido, children, side = 'top', align = 'center' }: { 
   )
 }
 
-/** Fila etiqueta/valor para el contenido de un tooltip. */
-export function FilaHint({ etiqueta, valor, destacado }: { etiqueta: string; valor: ReactNode; destacado?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="text-muted">{etiqueta}</span>
-      <span className={cn('num', destacado && 'font-semibold')}>{valor}</span>
-    </div>
-  )
-}

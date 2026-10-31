@@ -1,24 +1,50 @@
 @import 'tailwindcss';
 
-/* Paleta B "Índigo" aprobada. Los tokens se consumen como utilidades de Tailwind (bg-surface, text-fg, ...). */
+/* =====================================================================================================================
+   SISTEMA DE DISEÑO «AURORA FINTECH PREMIUM» — única fuente de colores de la aplicación.
+   Tres capas, en este orden:
+     1. PALETA (--aur-*): los colores de referencia de la marca. No se usan directamente en componentes.
+     2. TOKENS BASE por tema (--bg, --surface, --fg, --pri…): derivados de la paleta y con contraste comprobado por pruebas automáticas
+        (src/domain/tokens.test.ts). Tailwind los consume como utilidades (bg-surface, text-fg, border-line, text-pri…).
+     3. TOKENS SEMÁNTICOS (--background-*, --surface-*, --text-*, --border-*, --brand-*, estados, --chart-*, efectos): alias con nombre de
+        propósito sobre los tokens base, para escribir estilos nuevos sin elegir colores a mano.
+   Regla: ningún componente escribe un HEX; si necesita un color, usa un token (o el color del elemento con --k / domain/color.ts).
+   ===================================================================================================================== */
 :root {
-  --bg: #f6f6fa;
+  /* 1. Paleta de referencia */
+  --aur-medianoche: #0f1045; /* Midnight Navy */
+  --aur-indigo: #181a5c; /* Deep Indigo */
+  --aur-pizarra: #293064; /* Slate Indigo */
+  --aur-electrico: #5d58f0; /* Electric Indigo */
+  --aur-violeta: #8b5cf6; /* Aurora Violet */
+  --aur-lavanda: #d6c4fe; /* Soft Lavender */
+  --aur-hielo: #67d9f5; /* Ice Blue */
+  --aur-lavanda-suave: #a5a8be; /* Muted Lavender */
+  --aur-nube: #f5f5ff; /* Cloud White */
+
+  /* 2. Tokens base — tema claro (lavanda muy claro + superficies blancas) */
+  --bg: #f1f0fd;
   --surface: #ffffff;
-  --surface-2: #ececf4;
-  --line: #d9d9e6;
-  --fg: #17172b;
-  --muted: #58587a;
-  --pri: #3a3fa6;
+  --surface-2: #ebeafa;
+  --surface-3: #e0def5;
+  --line: #d8d7ee;
+  --line-strong: #b4b2d9;
+  --fg: #15163f;
+  --muted: #55587f;
+  --pri: #4a45d6;
   --pri-fg: #ffffff;
-  --pri-soft: #e0e1f7;
+  --pri-soft: #e6e5fc;
   --acc: #b4411f;
   --acc-soft: #fbe3da;
-  --ok: #12663a;
-  --ok-soft: #dcf2e4;
+  --ok: #0f6b3f;
+  --ok-soft: #d9f3e5;
   --warn: #8f5400;
+  --warn-soft: #fbecd2;
   --bad: #b3261e;
   --bad-soft: #f9dedc;
-  --shadow-pop: 0 12px 28px -8px rgba(23, 23, 43, 0.22), 0 2px 8px rgba(23, 23, 43, 0.08);
+  --info: #1d4fb8;
+  --info-soft: #dce8fc;
+  /* Compatibilidad de datos: fondos y plantillas guardados con un color «c1…c5» siguen mostrando exactamente ese color. Los colores nuevos se eligen de la paleta de 36 y se guardan como HEX. */
   --c1: #3a3fa6;
   --c2: #e0622f;
   --c3: #1e8a8a;
@@ -26,27 +52,115 @@
   --c5: #8a8a2e;
   --k-mix: 100%;
   --k-tint: #000000;
+
+  /* Efectos */
+  --shadow-sm: 0 1px 2px rgb(21 22 63 / 0.06), 0 1px 3px rgb(21 22 63 / 0.05);
+  --shadow-md: 0 10px 22px -12px rgb(74 69 214 / 0.28), 0 2px 6px rgb(21 22 63 / 0.06);
+  --shadow-lg: 0 28px 52px -26px rgb(74 69 214 / 0.38), 0 4px 12px rgb(21 22 63 / 0.06);
+  --shadow-pop: 0 14px 32px -10px rgb(21 22 63 / 0.26), 0 2px 8px rgb(21 22 63 / 0.08);
+  --transition-fast: 120ms ease-out;
+  --transition-normal: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--pri) 35%, transparent);
+
+  /* 3. Tokens semánticos */
+  --background-primary: var(--bg);
+  --background-secondary: var(--surface-2);
+  --background-tertiary: var(--surface-3);
+  --surface-primary: var(--surface);
+  --surface-secondary: var(--surface-2);
+  --surface-elevated: #ffffff;
+  --surface-overlay: color-mix(in srgb, var(--aur-medianoche) 55%, transparent);
+  --surface-hover: var(--surface-2);
+  --surface-selected: var(--pri-soft);
+  --surface-disabled: color-mix(in srgb, var(--surface-2) 70%, var(--bg));
+  --text-primary: var(--fg);
+  --text-secondary: var(--muted);
+  --text-tertiary: color-mix(in srgb, var(--muted) 80%, var(--bg));
+  --text-inverse: var(--pri-fg);
+  --text-disabled: color-mix(in srgb, var(--muted) 55%, var(--bg));
+  --text-link: var(--pri);
+  --border-default: var(--line);
+  --border-subtle: color-mix(in srgb, var(--line) 55%, transparent);
+  --border-strong: var(--line-strong);
+  --border-focus: var(--pri);
+  --border-selected: var(--pri);
+  --border-error: var(--bad);
+  --brand-primary: var(--pri);
+  --brand-secondary: var(--aur-violeta);
+  --brand-accent: var(--aur-hielo);
+  --brand-gradient: linear-gradient(90deg, var(--aur-electrico), color-mix(in srgb, var(--aur-electrico) 55%, var(--aur-violeta)));
+  --brand-hover: color-mix(in srgb, var(--pri) 88%, black);
+  --brand-pressed: color-mix(in srgb, var(--pri) 76%, black);
+  --success-bg: var(--ok-soft);
+  --success-fg: var(--ok);
+  --success-border: color-mix(in srgb, var(--ok) 35%, transparent);
+  --success-icon: var(--ok);
+  --warning-bg: var(--warn-soft);
+  --warning-fg: var(--warn);
+  --warning-border: color-mix(in srgb, var(--warn) 35%, transparent);
+  --warning-icon: var(--warn);
+  --danger-bg: var(--bad-soft);
+  --danger-fg: var(--bad);
+  --danger-border: color-mix(in srgb, var(--bad) 35%, transparent);
+  --danger-icon: var(--bad);
+  --info-bg: var(--info-soft);
+  --info-fg: var(--info);
+  --info-border: color-mix(in srgb, var(--info) 35%, transparent);
+  --info-icon: var(--info);
+  --neutral-bg: var(--surface-2);
+  --neutral-fg: var(--muted);
+  --neutral-border: var(--line);
+  --neutral-icon: var(--muted);
+
+  /* Gráficos: ocho series con tonos bien distintos (no solo variaciones del violeta) */
+  --chart-series-1: #5d58f0;
+  --chart-series-2: #0c8fb0;
+  --chart-series-3: #8b5cf6;
+  --chart-series-4: #16a37f;
+  --chart-series-5: #c47a00;
+  --chart-series-6: #e5566d;
+  --chart-series-7: #3b82f6;
+  --chart-series-8: #7a84a8;
+  --chart-grid: color-mix(in srgb, var(--line) 80%, transparent);
+  --chart-axis: var(--muted);
+  --chart-tooltip: var(--surface-elevated);
+  --chart-highlight: var(--pri);
+  --chart-positive: var(--ok);
+  --chart-negative: var(--bad);
+
+  /* Barras de progreso con significado: avance normal (índigo), aviso (ámbar) y exceso (rojo). Siempre acompañadas de texto, nunca solo color. */
+  --barra-ok-a: var(--aur-electrico);
+  --barra-ok-b: color-mix(in srgb, var(--aur-electrico) 62%, var(--aur-hielo));
+  --barra-aviso-a: color-mix(in srgb, var(--warn) 70%, white);
+  --barra-aviso-b: var(--warn);
+  --barra-exceso: linear-gradient(90deg, color-mix(in srgb, var(--bad) 75%, white), var(--bad));
+  --bad-sobre-blanco: #b3261e; /* rojo para chips blancos sobre cabeceras con degradado (no cambia con el tema) */
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0f0f1c;
-  --surface: #181829;
-  --surface-2: #222238;
-  --line: #34344f;
-  --fg: #ececf8;
-  --muted: #a5a5c8;
-  --pri: #9ea3ff;
-  --pri-fg: #101030;
-  --pri-soft: #26264a;
+  /* Tema oscuro: azul medianoche e índigo profundo, con superficies que se distinguen por elevación y borde (nunca negro puro) */
+  --bg: #0f1045;
+  --surface: #181a5c;
+  --surface-2: #22256e;
+  --surface-3: #2c3080;
+  --line: #333787;
+  --line-strong: #4a4fa3;
+  --fg: #f5f5ff;
+  --muted: #a9acd2;
+  --pri: #a9a5ff;
+  --pri-fg: #0f1045;
+  --pri-soft: #2a2d7e;
   --acc: #ff9a73;
   --acc-soft: #3e2218;
   --ok: #5ad08a;
-  --ok-soft: #14301f;
+  --ok-soft: #12382a;
   --warn: #f0b24a;
+  --warn-soft: #3d2c0e;
   --bad: #ff8f86;
-  --bad-soft: #3f1b18;
-  --shadow-pop: 0 14px 32px -8px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
+  --bad-soft: #4a1d2a;
+  --info: #8db4ff;
+  --info-soft: #1b2f6b;
   --c1: #9ea3ff;
   --c2: #ff9a73;
   --c3: #5fd0d0;
@@ -54,13 +168,32 @@
   --c5: #c9c95a;
   --k-mix: 68%;
   --k-tint: #ffffff;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 20 / 0.4);
+  --shadow-md: 0 12px 24px -12px rgb(0 0 24 / 0.6), 0 2px 6px rgb(0 0 20 / 0.35);
+  --shadow-lg: 0 30px 56px -26px rgb(0 0 24 / 0.75), 0 4px 12px rgb(0 0 20 / 0.4);
+  --shadow-pop: 0 18px 38px -10px rgb(0 0 24 / 0.7), 0 2px 10px rgb(0 0 20 / 0.5);
+  --surface-elevated: #20236a;
+  --surface-overlay: color-mix(in srgb, var(--aur-medianoche) 72%, transparent);
+  --brand-hover: color-mix(in srgb, var(--pri) 88%, white);
+  --brand-pressed: color-mix(in srgb, var(--pri) 76%, white);
+  --chart-series-1: #8f8bff;
+  --chart-series-2: #4cc9e8;
+  --chart-series-3: #b296ff;
+  --chart-series-4: #3fd3a8;
+  --chart-series-5: #f5b84a;
+  --chart-series-6: #ff8095;
+  --chart-series-7: #6aa3ff;
+  --chart-series-8: #9aa3c7;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-pri: var(--pri);
@@ -71,15 +204,22 @@
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-bad: var(--bad);
   --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-sans: 'Figtree', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --shadow-pop: var(--shadow-pop);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 22px;
 }
 
 body {
@@ -139,25 +279,28 @@ body {
 .acento-violet { --a: #7C3AED; --a-soft: #F2EBFD; --a-bd: #D1BAF9; --a-ic: #7C3AED; --a-fg: #7C3AED; }
 .acento-slate { --a: #64748B; --a-soft: #F0F1F3; --a-bd: #C9CED6; --a-ic: #64748B; --a-fg: #5A697D; }
 .acento-green { --a: #16A34A; --a-soft: #E8F6ED; --a-bd: #ADDFC0; --a-ic: #16A34A; --a-fg: #117E3A; }
-:root[data-theme='dark'] .acento-indigo { --a-soft: #242252; --a-bd: #342F87; --a-ic: #6860E8; --a-fg: #8A84ED; }
-:root[data-theme='dark'] .acento-blue { --a-soft: #1B2954; --a-bd: #1F3E8A; --a-ic: #3A72ED; --a-fg: #6692F2; }
-:root[data-theme='dark'] .acento-sky { --a-soft: #163753; --a-bd: #135F89; --a-ic: #0EA5E9; --a-fg: #1AAAEA; }
-:root[data-theme='dark'] .acento-teal { --a-soft: #16333E; --a-bd: #135659; --a-ic: #0D9488; --a-fg: #3AA89E; }
-:root[data-theme='dark'] .acento-amber { --a-soft: #422D21; --a-bd: #794818; --a-ic: #D97706; --a-fg: #DF8A29; }
-:root[data-theme='dark'] .acento-orange { --a-soft: #462623; --a-bd: #81381B; --a-ic: #EA580C; --a-fg: #EE7739; }
-:root[data-theme='dark'] .acento-red { --a-soft: #431B28; --a-bd: #7A1F28; --a-ic: #DE3131; --a-fg: #E76F6F; }
-:root[data-theme='dark'] .acento-violet { --a-soft: #2E1F54; --a-bd: #4A298B; --a-ic: #8F56F0; --a-fg: #A97CF5; }
-:root[data-theme='dark'] .acento-slate { --a-soft: #292C3F; --a-bd: #3E465A; --a-ic: #6C7B91; --a-fg: #8D99AA; }
-:root[data-theme='dark'] .acento-green { --a-soft: #183730; --a-bd: #175E3A; --a-ic: #16A34A; --a-fg: #38B064; }
+:root[data-theme='dark'] .acento-indigo { --a-soft: #24247A; --a-bd: #3430A1; --a-ic: #7770EA; --a-fg: #9690EF; }
+:root[data-theme='dark'] .acento-blue { --a-soft: #1B2A7B; --a-bd: #1F3FA4; --a-ic: #4479EE; --a-fg: #759CF4; }
+:root[data-theme='dark'] .acento-sky { --a-soft: #16397B; --a-bd: #1360A3; --a-ic: #0EA5E9; --a-fg: #3AB6ED; }
+:root[data-theme='dark'] .acento-teal { --a-soft: #163566; --a-bd: #135772; --a-ic: #0D9488; --a-fg: #4DB0A8; }
+:root[data-theme='dark'] .acento-amber { --a-soft: #422E49; --a-bd: #794931; --a-ic: #D97706; --a-fg: #E19034; }
+:root[data-theme='dark'] .acento-orange { --a-soft: #46284A; --a-bd: #813934; --a-ic: #EA580C; --a-fg: #EF7E43; }
+:root[data-theme='dark'] .acento-red { --a-soft: #431D50; --a-bd: #7A2041; --a-ic: #E03B3B; --a-fg: #E87676; }
+:root[data-theme='dark'] .acento-violet { --a-soft: #2E217C; --a-bd: #4A2AA5; --a-ic: #955EF1; --a-fg: #B189F6; }
+:root[data-theme='dark'] .acento-slate { --a-soft: #292E66; --a-bd: #3E4774; --a-ic: #738297; --a-fg: #939EAE; }
+:root[data-theme='dark'] .acento-green { --a-soft: #183858; --a-bd: #175F53; --a-ic: #16A34A; --a-fg: #4BB873; }
 
 
-/* Encabezados degradados (Presupuesto consolidado): índigo profundo → azul índigo, derivados de la paleta B */
-:root { --grad-a: #2B2D86; --grad-b: #3A3FA6; --grad-c: #4F63D8; }
-:root[data-theme='dark'] { --grad-a: #1A1B4D; --grad-b: #2A2D78; --grad-c: #3B4BB0; }
+/* Encabezados degradados (Presupuesto consolidado): de Midnight/Deep Indigo a Electric Indigo, con la misma familia que la paleta --aur-* */
+:root { --grad-a: #1f2078; --grad-b: #4a45d6; --grad-c: #6b5ce7; }
+:root[data-theme='dark'] { --grad-a: #14165a; --grad-b: #2a2d9a; --grad-c: #5b4fd6; }
 
 /* Etiquetas y superficies con el color de un elemento (--k); el texto se mezcla con el del tema para mantener contraste */
 .chip-k { --k: var(--muted); display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%; border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); background: color-mix(in srgb, var(--k) 12%, var(--surface)); color: color-mix(in srgb, var(--k) 40%, var(--fg)); padding: 0.125rem 0.6rem; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; white-space: nowrap; }
 .tinte-k { --k: var(--muted); background: color-mix(in srgb, var(--k) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 30%, transparent); color: color-mix(in srgb, var(--k) 65%, var(--fg)); }
+
+/* Cifras financieras: números tabulares y alineados (importes, KPI, tablas) */
+.num { font-variant-numeric: tabular-nums lining-nums; }
 
 /* Los disparadores globales de «Registrar gasto» se ocultan mientras un diálogo bloquea la pantalla. */
 body[data-scroll-locked] .fab-gasto { display: none; }
@@ -169,3 +312,155 @@ body[data-scroll-locked] .fab-gasto { display: none; }
 @keyframes aparecer { from { opacity: 0; transform: translateY(-3px); } }
 .paso-cascada { animation: aparecer 0.16s ease-out; }
 @media (prefers-reduced-motion: reduce) { .paso-cascada { animation: none; } }
+
+/* ---- Pantallas de acceso: escena «Aurora Fintech» ----
+   Un solo escenario continuo: fondo aurora, texto de marca, clúster de tarjetas decorativas y la tarjeta de acceso.
+   PALETA (única fuente: los colores del login salen de estos tokens --aur-*; el resto son derivados con color-mix):
+     Midnight Navy #0F1045 · Deep Indigo #181A5C · Slate Indigo #293064 · Electric Indigo #5D58F0 · Aurora Violet #8B5CF6
+     Soft Lavender #D6C4FE · Ice Blue #67D9F5 · Cloud White #F5F5FF
+   Cada tema define sus variables --esc-*; los halos y degradados son capas de fondo (nunca se aplican sobre textos ni gráficos). */
+.login-escena {
+
+  --esc-texto: var(--aur-medianoche);
+  --esc-suave: #4f5280;
+  --esc-pista: color-mix(in srgb, var(--aur-electrico) 15%, transparent);
+  --esc-barra: linear-gradient(90deg, var(--aur-electrico), var(--aur-violeta));
+  --esc-linea: var(--aur-electrico);
+  --esc-tarjeta: color-mix(in srgb, white 86%, transparent);
+  --esc-tarjeta-borde: color-mix(in srgb, var(--aur-electrico) 17%, transparent);
+  --esc-sombra: 0 40px 80px -42px color-mix(in srgb, var(--aur-electrico) 55%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --esc-sombra-suave: 0 24px 46px -28px color-mix(in srgb, var(--aur-electrico) 45%, transparent);
+  --esc-cristal: color-mix(in srgb, white 82%, transparent);
+  --esc-cristal-borde: color-mix(in srgb, var(--aur-electrico) 15%, transparent);
+  --esc-eco: color-mix(in srgb, var(--aur-lavanda) 45%, transparent);
+  --esc-icono-bg: color-mix(in srgb, var(--aur-electrico) 12%, transparent);
+  --esc-icono-borde: color-mix(in srgb, var(--aur-electrico) 22%, transparent);
+  --esc-icono: var(--aur-electrico);
+  --esc-chip-bg: color-mix(in srgb, var(--aur-electrico) 10%, transparent);
+  --esc-chip-borde: color-mix(in srgb, var(--aur-electrico) 24%, transparent);
+  --esc-chip: #4a41c2;
+  --esc-titulo: linear-gradient(90deg, var(--aur-electrico), var(--aur-violeta) 62%, #a855f7);
+  --esc-globo-bg: #ffffff;
+  --esc-globo-fg: #3b3699;
+  --esc-campo: color-mix(in srgb, var(--aur-electrico) 6%, transparent);
+  --esc-campo-borde: color-mix(in srgb, var(--aur-electrico) 26%, transparent);
+  --esc-social-bg: #ffffff;
+  color: var(--esc-texto);
+  background:
+    radial-gradient(52% 46% at 88% 4%, color-mix(in srgb, var(--aur-violeta) 36%, transparent), transparent 70%),
+    radial-gradient(46% 42% at 6% 96%, color-mix(in srgb, var(--aur-electrico) 28%, transparent), transparent 70%),
+    radial-gradient(34% 30% at 52% 48%, color-mix(in srgb, var(--aur-lavanda) 55%, transparent), transparent 72%),
+    linear-gradient(135deg, var(--aur-nube), color-mix(in srgb, var(--aur-nube) 85%, var(--aur-lavanda)) 55%, var(--aur-nube));
+}
+:root[data-theme='dark'] .login-escena {
+  --esc-texto: var(--aur-nube);
+  --esc-suave: #b9bce8;
+  --esc-pista: rgb(255 255 255 / 0.14);
+  --esc-barra: linear-gradient(90deg, var(--aur-electrico), var(--aur-lavanda));
+  --esc-linea: var(--aur-lavanda);
+  --esc-tarjeta: color-mix(in srgb, var(--aur-indigo) 62%, transparent);
+  --esc-tarjeta-borde: rgb(255 255 255 / 0.13);
+  --esc-sombra: 0 40px 80px -40px rgb(0 0 30 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --esc-sombra-suave: 0 26px 50px -28px rgb(0 0 30 / 0.8);
+  --esc-cristal: color-mix(in srgb, var(--aur-pizarra) 55%, transparent);
+  --esc-cristal-borde: rgb(255 255 255 / 0.14);
+  --esc-eco: color-mix(in srgb, var(--aur-violeta) 22%, transparent);
+  --esc-icono-bg: color-mix(in srgb, var(--aur-electrico) 24%, transparent);
+  --esc-icono-borde: color-mix(in srgb, var(--aur-lavanda) 26%, transparent);
+  --esc-icono: var(--aur-lavanda);
+  --esc-chip-bg: color-mix(in srgb, var(--aur-electrico) 20%, transparent);
+  --esc-chip-borde: color-mix(in srgb, var(--aur-lavanda) 28%, transparent);
+  --esc-chip: var(--aur-lavanda);
+  --esc-titulo: linear-gradient(90deg, #a5b4fc, var(--aur-lavanda) 58%, #ead9ff);
+  --esc-globo-bg: color-mix(in srgb, var(--aur-pizarra) 92%, transparent);
+  --esc-globo-fg: var(--aur-lavanda);
+  --esc-campo: rgb(255 255 255 / 0.06);
+  --esc-campo-borde: rgb(255 255 255 / 0.17);
+  --esc-social-bg: rgb(255 255 255 / 0.06);
+  background:
+    radial-gradient(56% 58% at 6% 0%, color-mix(in srgb, var(--aur-electrico) 46%, transparent), transparent 70%),
+    radial-gradient(44% 48% at 52% 102%, color-mix(in srgb, var(--aur-electrico) 40%, transparent), transparent 70%),
+    radial-gradient(40% 44% at 100% 22%, color-mix(in srgb, var(--aur-violeta) 40%, transparent), transparent 70%),
+    linear-gradient(160deg, var(--aur-medianoche), var(--aur-indigo) 55%, #1a1060);
+}
+
+.esc-tarjeta {
+  color: var(--esc-texto);
+  background: var(--esc-tarjeta);
+  border: 1px solid var(--esc-tarjeta-borde);
+  box-shadow: var(--esc-sombra);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+
+/* Capas DECORATIVAS de las tarjetas del clúster: vidrio y «eco» viven detrás del contenido; el contenido no se transforma ni se desenfoca nunca */
+.esc-vidrio {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.25em;
+  background: var(--esc-cristal);
+  border: 1px solid var(--esc-cristal-borde);
+  box-shadow: var(--esc-sombra-suave);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+.esc-eco {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.25em;
+  background: var(--esc-eco);
+  border: 1px solid var(--esc-cristal-borde);
+  transform: translate(0.55em, 0.7em) rotate(-2.4deg);
+  opacity: 0.8;
+  pointer-events: none;
+}
+.esc-eco-der { transform: translate(-0.5em, 0.75em) rotate(2.2deg); }
+.esc-icono { background: var(--esc-icono-bg); border: 1px solid var(--esc-icono-borde); color: var(--esc-icono); }
+.esc-chip { background: var(--esc-chip-bg); border: 1px solid var(--esc-chip-borde); color: var(--esc-chip); }
+.esc-titulo { background: var(--esc-titulo); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.esc-globo { background: var(--esc-globo-bg); color: var(--esc-globo-fg); border: 1px solid var(--esc-cristal-borde); box-shadow: var(--esc-sombra-suave); }
+
+/* Campos y botones sociales de la tarjeta de acceso */
+.login-escena .campo-login {
+  height: 3rem;
+  border-radius: 0.85rem;
+  color: var(--esc-texto);
+  background: var(--esc-campo);
+  border: 1px solid var(--esc-campo-borde);
+  transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+}
+.login-escena .campo-login::placeholder { color: var(--esc-suave); opacity: 0.8; }
+.login-escena .campo-login:hover { border-color: var(--esc-icono-borde); }
+.login-escena .campo-login:focus-visible { border-color: var(--esc-linea); box-shadow: 0 0 0 3px color-mix(in srgb, var(--esc-linea) 30%, transparent); outline: none; }
+.login-escena .campo-login[aria-invalid='true'] { border-color: var(--bad); }
+.esc-social { color: var(--esc-texto); background: var(--esc-social-bg); border: 1px solid var(--esc-campo-borde); border-radius: 0.85rem; }
+
+/* Movimiento: solo las capas decorativas se animan (con la propiedad `translate`, que no toca el `transform` de inclinación); el texto y los gráficos
+   quedan quietos y nítidos. Nada se anima con prefers-reduced-motion. */
+@keyframes esc-flota { from { translate: 0 0; } to { translate: 0 -0.45em; } }
+@keyframes esc-crece { from { transform: scaleX(0.25); opacity: 0.4; } to { transform: scaleX(1); opacity: 1; } }
+@keyframes esc-aparece { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.esc-flota { animation: esc-flota 7s ease-in-out infinite alternate; }
+.esc-barra { transform-origin: left; animation: esc-crece 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.esc-entrada { animation: esc-aparece 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .esc-flota, .esc-barra, .esc-entrada { animation: none; }
+}
+
+/* ---- Aplicación instalada (PWA, ventana independiente): sin rebote de «tirar para recargar», que perdería un formulario a medias ---- */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  body { -webkit-tap-highlight-color: transparent; }
+}
+
+/* ---- ThemeSwitch (único control de tema): pista, perilla y estados con los tokens del tema ---- */
+.theme-switch {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--pri) 22%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--pri) 38%, var(--line));
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.08);
+  transition: background-color 150ms, border-color 150ms;
+}
+.theme-switch:hover { border-color: var(--pri); }
+.theme-switch:focus-visible { outline: 3px solid var(--pri); outline-offset: 2px; }
+.theme-switch-perilla { background: var(--aur-nube); color: var(--aur-indigo); box-shadow: 0 1px 3px rgb(15 16 69 / 0.35); }
+@media (prefers-reduced-motion: reduce) { .theme-switch { transition: none; } }

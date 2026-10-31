@@ -4,7 +4,11 @@ import { QueryClient } from '@tanstack/react-query'
  * Consultas: fábrica del cliente y claves/invalidaciones compartidas.
  * Cada sesión usa su propio QueryClient (ver app/ConsultasPorUsuario): los datos de un usuario nunca llegan a la caché de otro.
  */
-export const crearQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } })
+/**
+ * Las consultas se pausan sin red (se ve lo último cargado, con el aviso de conexión). Las ESCRITURAS no: con `networkMode: 'always'` fallan al
+ * instante con su mensaje habitual en vez de quedar en cola y enviarse solas al volver la red (nunca se aparenta un guardado sin confirmación).
+ */
+export const crearQueryClient = () => new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false }, mutations: { networkMode: 'always' } } })
 
 /** Claves de datos propios de la persona o del hogar: incluyen la identidad aunque el cliente ya sea por sesión (defensa en profundidad). */
 export const claves = {

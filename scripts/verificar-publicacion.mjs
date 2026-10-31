@@ -27,6 +27,15 @@ const apuntaALocal = /127\.0\.0\.1:54321|localhost:54321/.test(contenido)
 if (process.argv.includes('--produccion')) ok(!apuntaALocal, 'dist/ no apunta a Supabase local (construido con las variables de producción)')
 else console.log(`- dist/ ${apuntaALocal ? 'apunta a Supabase local (compilación local; para publicar, construye con las variables de producción y usa --produccion)' : 'no apunta a Supabase local'}`)
 
+// 2b. PWA: Service Worker sellado por el build, manifiesto coherente e iconos presentes
+const sw = existsSync('dist/sw.js') ? readFileSync('dist/sw.js', 'utf8') : ''
+ok(/const VERSION = "[0-9a-f]{10}"/.test(sw) && !sw.includes("'__BUILD_ID__'") && !sw.includes('/*__PRECACHE__*/ []'), 'dist/sw.js está sellado con su versión y su lista de precarga')
+let manifiesto = {}
+try { manifiesto = JSON.parse(readFileSync('dist/manifest.webmanifest', 'utf8')) } catch { /* se informa abajo */ }
+ok(manifiesto.name === 'Control Financiero' && manifiesto.display === 'standalone' && Array.isArray(manifiesto.icons) && manifiesto.icons.length >= 3, 'dist/manifest.webmanifest: nombre, modo independiente e iconos')
+ok((manifiesto.icons ?? []).every((i) => existsSync('dist' + i.src.split('?')[0])) && existsSync('dist/offline.html') && existsSync('dist/apple-touch-icon.png'), 'los iconos del manifiesto, apple-touch-icon y offline.html existen en dist/')
+ok(/for = "\/sw\.js"[\s\S]*?no-cache/.test(readFileSync('netlify.toml', 'utf8')), 'netlify.toml sirve sw.js sin caché')
+
 // 3. Migraciones: versiones únicas y ordenadas; sin datos de demostración ni fixtures de pruebas en el esquema
 const migraciones = readdirSync('supabase/migrations').filter((f) => f.endsWith('.sql')).sort()
 const versiones = migraciones.map((f) => f.split('_')[0])

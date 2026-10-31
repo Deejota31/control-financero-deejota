@@ -15,5 +15,5 @@
     "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "vite.config.ts", "playwright.config.ts", "e2e"]
+  "include": ["src", "vite.config.ts", "playwright.config.ts", "playwright.pwa.config.ts", "e2e", "e2e-pwa"]
 }

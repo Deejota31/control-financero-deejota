@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Control Financiero",
+  "short_name": "Control Financiero",
+  "description": "Organiza tus gastos, planifica tus presupuestos y toma mejores decisiones sobre tu dinero desde un solo lugar.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f0fd",
+  "theme_color": "#f1f0fd",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png?v=4", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png?v=4", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png?v=4", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-maskable-512.png?v=4", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Gastos", "short_name": "Gastos", "url": "/gastos", "icons": [{ "src": "/icon-192.png?v=4", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Fondos", "short_name": "Fondos", "url": "/fondos", "icons": [{ "src": "/icon-192.png?v=4", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

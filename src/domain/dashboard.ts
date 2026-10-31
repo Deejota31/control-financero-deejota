@@ -114,7 +114,3 @@ export function agruparPor(gastos: GastoBasico[], clave: 'ambito_id' | 'categori
   return [...m.values()].sort((a, b) => b.total - a.total)
 }
 
-/** Gasto por categoría dentro de un conjunto de gastos, para comparar períodos. */
-export function totalesPorClave(gastos: GastoBasico[], clave: 'categoria_id' | 'subcategoria_id'): Map<string, number> {
-  return new Map(agruparPor(gastos, clave).map((a) => [a.id, a.total]))
-}

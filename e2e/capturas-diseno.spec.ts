@@ -21,7 +21,7 @@ test.describe('Capturas de diseño: Gastos', () => {
       await page.setViewportSize({ width: 1440, height: 900 })
       await iniciarSesion(page)
       const actual = await page.locator('html').getAttribute('data-theme')
-      if ((tema === 'oscuro') !== (actual === 'dark')) await page.getByRole('button', { name: /Cambiar a tema/ }).click()
+      if ((tema === 'oscuro') !== (actual === 'dark')) await page.getByRole('switch', { name: /Cambiar a tema/ }).filter({ visible: true }).click()
       await page.getByRole('link', { name: 'Gastos' }).first().click()
       await expect(page.getByRole('table')).toBeVisible()
       await page.waitForLoadState('networkidle')
@@ -42,7 +42,7 @@ test.describe('Capturas de diseño: Gastos', () => {
       if (tema === 'oscuro') {
         await Promise.all([
           page.waitForResponse((r) => r.url().includes('/rest/v1/profiles') && r.request().method() === 'PATCH'),
-          page.getByRole('button', { name: 'Cambiar a tema claro' }).click(),
+          page.getByRole('switch', { name: 'Cambiar a tema claro' }).filter({ visible: true }).click(),
         ])
       }
     })

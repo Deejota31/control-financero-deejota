@@ -26,6 +26,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema === 'oscuro' ? 'dark' : 'light')
+    // La barra del navegador/PWA sigue el tema elegido (no solo el del sistema)
+    const color = tema === 'oscuro' ? '#0f1045' : '#f1f0fd'
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', color))
   }, [tema])
 
   const setTema = useCallback((t: Tema) => {

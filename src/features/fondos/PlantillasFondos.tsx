@@ -290,7 +290,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
       ) : (
         <GrupoAcciones clave={JSON.stringify([texto, estado, prefs.agrupar, prefs.orden, mes])}>
         <div className="flex flex-col gap-2">
-          <div className="hidden grid-cols-[3rem_minmax(0,1.3fr)_minmax(0,1.2fr)_8rem_5.5rem_7.5rem_2.25rem] gap-x-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted @min-[52rem]:grid" aria-hidden="true">
+          <div className="hidden grid-cols-[3rem_minmax(0,1.3fr)_minmax(0,1.2fr)_8rem_5.5rem_7.5rem_2.25rem] gap-x-3 px-[11px] text-[11px] font-semibold uppercase tracking-wider text-muted @min-[52rem]:grid" aria-hidden="true">
             <span /><span>Plantilla</span><span>Cobertura</span><span className="text-right">Importe</span><span className="text-center">Prioridad</span><span>Estado</span><span />
           </div>
           {secciones.map((sec) => {
@@ -336,7 +336,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
                       {motivo && !aplicado && <p className={cn('truncate text-[11px] font-medium', elegida ? 'text-bad' : 'text-warn')}>{motivo}</p>}
                     </div>
                   </div>
-                  <div className="col-start-3 row-start-1 @min-[52rem]:col-start-8">{boton ?? <MenuDeAcciones nombre={p.name} etiquetaBoton={`Más acciones de la plantilla ${p.name}`} acciones={accionesDe(x, { motivo, aplicado: Boolean(aplicado), hayDif })} />}</div>
+                  <div className="col-start-3 row-start-1 @min-[52rem]:col-start-7">{boton ?? <MenuDeAcciones nombre={p.name} etiquetaBoton={`Más acciones de la plantilla ${p.name}`} acciones={accionesDe(x, { motivo, aplicado: Boolean(aplicado), hayDif })} />}</div>
                   <div className="col-span-3 min-w-0 @min-[52rem]:col-span-1 @min-[52rem]:col-start-3 @min-[52rem]:row-start-1"><CeldaCobertura c={coberturaDe(x, catalogo)} nombre={p.name} /></div>
                   {aplicado ? (
                     <>

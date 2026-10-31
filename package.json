@@ -20,7 +20,8 @@
     "verify:security": "node scripts/verificar-seguridad.mjs",
     "test:all": "npm run check && npm run db:test && npm run test:e2e && npm run verify:seed && npm run verify:security",
     "verify:install": "node scripts/verificar-instalacion.mjs",
-    "verify:release": "node scripts/verificar-publicacion.mjs"
+    "verify:release": "node scripts/verificar-publicacion.mjs",
+    "test:pwa": "playwright test -c playwright.pwa.config.ts"
   },
   "repository": {
     "type": "git",

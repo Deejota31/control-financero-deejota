@@ -7,8 +7,8 @@ const password = process.env.E2E_USER_PASSWORD
 async function iniciarSesion(page: Page) {
   await page.goto('/acceso')
   await page.getByLabel('Correo').fill(email!)
-  await page.getByLabel('Contraseña').fill(password!)
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByLabel('Contraseña', { exact: true }).fill(password!)
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click()
   await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toHaveAttribute('aria-current', 'page')
 }
 
@@ -22,7 +22,7 @@ test.describe('rutas y errores sin sesión', () => {
 
   test('valida campos requeridos', async ({ page }) => {
     await page.goto('/acceso')
-    await page.getByRole('button', { name: 'Entrar' }).click()
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click()
     await expect(page.getByText('Ingresa tu correo.')).toBeVisible()
     await expect(page.getByText('Ingresa tu contraseña.')).toBeVisible()
   })
@@ -30,8 +30,8 @@ test.describe('rutas y errores sin sesión', () => {
   test('rechaza credenciales incorrectas y orienta al usuario', async ({ page }) => {
     await page.goto('/acceso')
     await page.getByLabel('Correo').fill('nadie@gastodeejota.local')
-    await page.getByLabel('Contraseña').fill('incorrecta-123')
-    await page.getByRole('button', { name: 'Entrar' }).click()
+    await page.getByLabel('Contraseña', { exact: true }).fill('incorrecta-123')
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click()
     const alerta = page.getByRole('alert')
     await expect(alerta).toContainText('Correo o contraseña incorrectos.')
     await expect(alerta).toContainText('npm run db:reset')
@@ -42,8 +42,8 @@ test.describe('rutas y errores sin sesión', () => {
     await page.route('**/auth/v1/token**', (route) => route.abort('connectionrefused'))
     await page.goto('/acceso')
     await page.getByLabel('Correo').fill('a@b.co')
-    await page.getByLabel('Contraseña').fill('cualquiera123')
-    await page.getByRole('button', { name: 'Entrar' }).click()
+    await page.getByLabel('Contraseña', { exact: true }).fill('cualquiera123')
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click()
     await expect(page.getByRole('alert')).toContainText('No se pudo conectar con el servidor.')
   })
 
@@ -120,17 +120,17 @@ test.describe('con el usuario demo local', () => {
     const html = page.locator('html')
     await page.waitForLoadState('networkidle') // el perfil ya aplicó su tema
     // Parte siempre del tema claro, sea cual sea el estado guardado en el perfil
-    if ((await html.getAttribute('data-theme')) === 'dark') await page.getByRole('button', { name: 'Cambiar a tema claro' }).click()
+    if ((await html.getAttribute('data-theme')) === 'dark') await page.getByRole('switch', { name: 'Cambiar a tema claro' }).filter({ visible: true }).click()
     await expect(html).toHaveAttribute('data-theme', 'light')
-    await page.getByRole('button', { name: 'Cambiar a tema oscuro' }).click()
+    await page.getByRole('switch', { name: 'Cambiar a tema oscuro' }).filter({ visible: true }).click()
     await expect(html).toHaveAttribute('data-theme', 'dark')
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(15, 15, 28)')
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(15, 16, 69)')
     await page.reload()
     await expect(html).toHaveAttribute('data-theme', 'dark')
 
-    await page.getByRole('button', { name: 'Cambiar a tema claro' }).click()
+    await page.getByRole('switch', { name: 'Cambiar a tema claro' }).filter({ visible: true }).click()
     await expect(html).toHaveAttribute('data-theme', 'light')
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(246, 246, 250)')
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(241, 240, 253)')
   })
 
   test('la validación de contraseña nueva funciona en Configuración', async ({ page }) => {

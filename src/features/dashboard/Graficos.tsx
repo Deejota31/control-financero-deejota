@@ -5,7 +5,7 @@ import type { PuntoDiario } from '@/domain/dashboard'
 import { cn } from '@/lib/cn'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles, formatSolesCorto } from '@/lib/format'
 
-const EJE = { fill: 'var(--muted)', fontSize: 12 }
+const EJE = { fill: 'var(--chart-axis)', fontSize: 12 }
 
 export type PuntoGrafico = PuntoDiario & { cantidad: number }
 
@@ -85,13 +85,13 @@ export function GraficoAcumulado({ serie, formato, dia, onDia, mostrarIdeal, res
     <div role="img" aria-label={resumen} className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={serie} margin={{ top: 8, right: 12, bottom: 0, left: 0 }} onClick={(s) => { const f = diaDeEstado(s, serie); if (f) onDia(f) }} style={{ cursor: 'pointer' }}>
-          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} />
           <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} serie={serie} variante="acumulado" />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
-          <Area type="monotone" dataKey="acumulado" stroke="var(--c1)" strokeWidth={2.5} fill="var(--c1)" fillOpacity={0.12} connectNulls={false} dot={false} activeDot={{ r: 6, stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} name="Gasto acumulado" />
+          <Area type="monotone" dataKey="acumulado" stroke="var(--chart-series-1)" strokeWidth={2.5} fill="var(--chart-series-1)" fillOpacity={0.12} connectNulls={false} dot={false} activeDot={{ r: 6, stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} name="Gasto acumulado" />
           {mostrarIdeal && <Line type="linear" dataKey="ideal" stroke="var(--muted)" strokeWidth={2} strokeDasharray="1 5" strokeLinecap="round" dot={false} activeDot={false} isAnimationActive={false} name="Ritmo ideal" />}
-          <Line type="linear" dataKey="proyeccion" stroke="var(--c2)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Proyección de cierre" />
+          <Line type="linear" dataKey="proyeccion" stroke="var(--chart-series-5)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Proyección de cierre" />
           {dia && <ReferenceLine x={dia} stroke="var(--pri)" strokeWidth={2} label={{ value: tickDia(dia), position: 'top', fill: 'var(--pri)', fontSize: 11 }} />}
         </ComposedChart>
       </ResponsiveContainer>
@@ -104,7 +104,7 @@ export function GraficoDiario({ serie, formato, dia, onDia }: Omit<GraficoTempor
     <div role="img" aria-label="Gasto por día del período. Selecciona una barra para filtrar por ese día." className="h-36 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={serie} margin={{ top: 4, right: 12, bottom: 0, left: 0 }} onClick={(s) => { const f = diaDeEstado(s, serie); if (f) onDia(f) }} style={{ cursor: 'pointer' }}>
-          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} tickCount={3} />
           <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={false} serie={serie} variante="diario" />} cursor={{ fill: 'var(--surface-2)' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
@@ -115,7 +115,7 @@ export function GraficoDiario({ serie, formato, dia, onDia }: Omit<GraficoTempor
             shape={(p: unknown) => {
               const props = p as { x: number; y: number; width: number; height: number; payload: PuntoGrafico }
               const seleccionada = dia === props.payload.fecha
-              return <Rectangle {...props} radius={[3, 3, 0, 0]} fill={seleccionada ? 'var(--pri)' : 'var(--c1)'} fillOpacity={dia && !seleccionada ? 0.35 : 1} />
+              return <Rectangle {...props} radius={[3, 3, 0, 0]} fill={seleccionada ? 'var(--chart-highlight)' : 'var(--chart-series-1)'} fillOpacity={dia && !seleccionada ? 0.35 : 1} />
             }}
           />
           {dia && <ReferenceLine x={dia} stroke="var(--pri)" strokeWidth={2} strokeDasharray="3 3" />}

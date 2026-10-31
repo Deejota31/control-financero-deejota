@@ -11,7 +11,7 @@ const ok = (cond, msg) => {
   if (!cond) fallos.push(msg)
 }
 
-const versionados = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean)
+const versionados = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter((f) => f && existsSync(f))
 
 // 1. Archivos sensibles no versionados
 const sensibles = versionados.filter((f) => /(^|\/)\.env(\.|$)/.test(f) && f !== '.env.example')
@@ -24,9 +24,9 @@ const patrones = [
   [/sb_secret_[A-Za-z0-9_-]{10,}/, 'clave sb_secret'],
   [/eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/, 'token JWT'],
 ]
-const aRevisar = versionados.filter((f) => /^(src|supabase\/migrations|scripts|index\.html|vite\.config\.ts|e2e\/(?!configuracion\.spec))/.test(f) && !f.endsWith('verificar-seguridad.mjs') && /\.(ts|tsx|js|mjs|sql|html|json)$/.test(f))
+const aRevisar = versionados.filter((f) => /^(src|supabase\/migrations|scripts|index\.html|vite\.config\.ts|e2e\/(?!configuracion\.spec))/.test(f) && !['seguridad', 'publicacion', 'instalacion'].some((n) => f.endsWith('verificar-' + n + '.mjs')) && /\.(ts|tsx|js|mjs|sql|html|json)$/.test(f))
 const hallazgos = []
-for (const f of aRevisar) {
+for (const f of aRevisar.filter((x) => existsSync(x))) {
   const t = readFileSync(f, 'utf8')
   for (const [re, nombre] of patrones) if (re.test(t)) hallazgos.push(`${f} (${nombre})`)
 }

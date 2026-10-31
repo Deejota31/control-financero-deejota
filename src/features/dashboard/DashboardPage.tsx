@@ -205,8 +205,8 @@ export function DashboardPage() {
             </div>
             <GraficoAcumulado serie={serie} formato={formato} dia={filtros.dia || null} onDia={(f) => seleccionar('dia', f)} mostrarIdeal={!hayFiltrosSerie && presupuesto !== null} resumen={resumenGrafico} />
             <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-muted">
-              <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-[var(--c1)]" /> Gasto acumulado</span>
-              {proyeccion !== null && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'var(--c2)' }} /> Proyección de cierre</span>}
+              <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-[var(--chart-series-1)]" /> Gasto acumulado</span>
+              {proyeccion !== null && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'var(--chart-series-5)' }} /> Proyección de cierre</span>}
               {!hayFiltrosSerie && presupuesto !== null && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dotted" style={{ borderColor: 'var(--muted)' }} /> Ritmo ideal</span>}
             </div>
             <div className="border-t border-line pt-3">
@@ -271,7 +271,7 @@ export function DashboardPage() {
                   {top.map((t) => {
                     const item = t.primero
                     const padreCat = topModo === 'categorias' ? (item as typeof catalogo.categorias[number] | undefined) : catalogo.categorias.find((c) => c.id === (item as typeof catalogo.subcategorias[number] | undefined)?.categoria_id)
-                    const color = padreCat?.color_css ?? '#3A3FA6'
+                    const color = padreCat?.color_css ?? 'var(--chart-series-1)'
                     const elegidos = idsDe(topModo === 'categorias' ? filtros.categoria : filtros.subcategoria)
                     const sel = t.ids.some((id) => elegidos.includes(id))
                     const grupoValor = (topModo === 'categorias' ? gruposCat : gruposSub).find((g) => g.ids.some((id) => t.ids.includes(id)))?.valor ?? unirIds(t.ids)

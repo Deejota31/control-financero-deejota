@@ -35,7 +35,6 @@ export interface ResumenPlan {
 }
 
 export const ETIQUETA_ESTADO: Record<EstadoPlan, string> = { pending: 'Pendiente', in_progress: 'En progreso', completed: 'Completada' }
-export const ETIQUETA_ETAPA: Record<EtapaPlan, string> = { pending: 'Pendiente', done: 'Confirmada', skipped: 'Omitida' }
 
 export function useResumenPlan(mes: string) {
   return useQuery({
