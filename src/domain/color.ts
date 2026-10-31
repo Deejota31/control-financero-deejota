@@ -49,7 +49,10 @@ export const TOKEN_HEX: Record<string, string> = {
 /** Nombres de los colores heredados de antes (tokens), para no mostrarlos como «Personalizado». */
 const NOMBRE_TOKEN: Record<string, string> = { '#3a3fa6': 'Índigo clásico', '#e0622f': 'Naranja', '#1e8a8a': 'Verde azulado', '#a8478f': 'Magenta', '#8a8a2e': 'Oliva', '#b4411f': 'Terracota', '#58587a': 'Gris pizarra' }
 
-export type Rgb = [number, number, number]
+/** Identificador estable de un color de la paleta: minúsculas, sin tildes ni espacios. */
+export const idDeColor = (nombre: string): string => nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+
+export type Rgb =[number, number, number]
 export type Tema = 'claro' | 'oscuro'
 
 const HEX = /^#[0-9A-F]{6}$/
@@ -113,7 +116,7 @@ function ajustar(rgb: Rgb, fondo: Rgb, minimo: number, haciaOscuro: boolean): Rg
 }
 
 /** Superficies de la aplicación sobre las que se calculan los tonos. */
-const BASE: Record<Tema, Rgb> = { claro: [255, 255, 255], oscuro: [24, 24, 41] }
+const BASE: Record<Tema, Rgb> = { claro: [255, 255, 255], oscuro: [24, 26, 92] }
 
 export interface Tonos { suave: string; borde: string; icono: string; texto: string; contrasteTexto: number; contrasteIcono: number }
 

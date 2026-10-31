@@ -1,4 +1,4 @@
-# Gasto Deejota
+# Control Financiero
 
 Control de gastos personales y familiares. React + TypeScript + Vite + Tailwind + Supabase.
 
@@ -59,6 +59,7 @@ Tras cambiar el esquema: `npm run db:types` regenera `src/lib/database.types.ts`
 | `npm run db:types` | Regenera los tipos TypeScript desde el esquema |
 | `npm run verify:seed` | Comprueba que la base local está vacía, que la cuenta de acceso funciona y que no quedan rastros de pruebas. **Solo para una base recién creada: no lo ejecutes sobre una base con datos reales** |
 | `npm run verify:security` | Comprueba ausencia de secretos versionados, que las migraciones no crean usuarios ni datos demo y que el build de producción no incrusta URLs locales |
+| `npm run test:pwa` | Pruebas de la PWA sobre la build de producción (instalabilidad, Service Worker, sin conexión, actualización). Compila y sirve `dist/`; no se ejecuta a la vez que `test:e2e` |
 | `npm run verify:install` | Instala TODAS las migraciones en una base desechable del contenedor local, revisa RLS/permisos y ejecuta pgTAP. No toca la base de desarrollo |
 | `npm run verify:release` | Controles previos a publicar: typecheck, lint, pruebas, build, contenido de `dist/`, migraciones, repositorio y Auth (`-- --instalacion` añade la prueba de instalación; `-- --produccion` exige un `dist/` construido con variables de producción) |
 | `npm run test:all` | Typecheck, lint, Vitest, pgTAP, E2E (incluye axe), verificación del seed y de seguridad |
@@ -77,4 +78,5 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 - [Accesibilidad](docs/accesibilidad.md)
 - [Reglas de asignación de fondos](docs/reglas-fondos.md)
 - [Decisiones técnicas](docs/decisiones.md)
+- [Instalar como aplicación (PWA)](docs/pwa.md)
 - [Preparación para publicar](docs/despliegue.md) (qué se publica, migraciones, Auth; pendiente de tu aprobación)

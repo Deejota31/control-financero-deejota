@@ -47,7 +47,7 @@ test.describe('Revisión visual y de accesibilidad', () => {
       await page.setViewportSize({ width: 1440, height: 900 })
       await iniciarSesion(page)
       const actual = await page.locator('html').getAttribute('data-theme')
-      if ((tema === 'oscuro') !== (actual === 'dark')) await page.getByRole('button', { name: /Cambiar a tema/ }).click()
+      if ((tema === 'oscuro') !== (actual === 'dark')) await page.getByRole('switch', { name: /Cambiar a tema/ }).filter({ visible: true }).click()
       for (const r of RUTAS) {
         await page.getByRole('link', { name: r.nombre === 'dashboard' ? 'Dashboard' : r.nombre === 'salud' ? 'Salud financiera' : new RegExp(`^${r.nombre === 'configuracion' ? 'Configuración' : r.nombre === 'catalogo' ? 'Catálogo' : r.nombre === 'gastos' ? 'Gastos' : 'Fondos'}$`) }).first().click()
         await expect(page.getByText(r.espera, { exact: false }).first()).toBeVisible()
@@ -59,7 +59,7 @@ test.describe('Revisión visual y de accesibilidad', () => {
       if (tema === 'oscuro') {
         await Promise.all([
           page.waitForResponse((r) => r.url().includes('/rest/v1/profiles') && r.request().method() === 'PATCH'),
-          page.getByRole('button', { name: 'Cambiar a tema claro' }).click(),
+          page.getByRole('switch', { name: 'Cambiar a tema claro' }).filter({ visible: true }).click(),
         ])
       }
       expect(errores).toEqual([])

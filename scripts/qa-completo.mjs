@@ -12,6 +12,7 @@ const PASOS = [
   ['npm run db:test (SQL)', 'npm run db:test'],
   ['npm run verify:security', 'npm run verify:security'],
   ['playwright test (E2E, toda la suite)', 'npx playwright test --reporter=list,json'],
+  ['playwright test (PWA, build de producción)', 'npm run test:pwa -- --reporter=list'],
 ]
 const registro = []
 for (const [nombre, cmd] of PASOS) {

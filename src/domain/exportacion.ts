@@ -1,12 +1,13 @@
 import { aCsv } from '@/lib/csv'
+import { MARCA } from '@/lib/marca'
 
 export const VERSION_RESPALDO = 1
 
 export type TipoArchivo = 'gastos' | 'respaldo'
 
-/** Nombres acordados: gasto-deejota-gastos-YYYY-MM-DD.csv y gasto-deejota-respaldo-YYYY-MM-DD.json */
+/** Nombres de las descargas: control-financiero-gastos-YYYY-MM-DD.csv y control-financiero-respaldo-YYYY-MM-DD.json */
 export function nombreArchivo(tipo: TipoArchivo, fechaIso: string): string {
-  return tipo === 'gastos' ? `gasto-deejota-gastos-${fechaIso}.csv` : `gasto-deejota-respaldo-${fechaIso}.json`
+  return tipo === 'gastos' ? `${MARCA.archivo}-gastos-${fechaIso}.csv` : `${MARCA.archivo}-respaldo-${fechaIso}.json`
 }
 
 export interface GastoFila {
@@ -99,7 +100,7 @@ export interface DatosRespaldo {
 
 export function construirRespaldo(d: DatosRespaldo, ahoraIso: string) {
   return {
-    aplicacion: 'Gasto Deejota',
+    aplicacion: MARCA.nombre,
     version_esquema: VERSION_RESPALDO,
     exportado_en: ahoraIso,
     nota: 'Copia de tus datos. No incluye contraseñas, tokens, sesiones, claves ni archivos de comprobantes.',

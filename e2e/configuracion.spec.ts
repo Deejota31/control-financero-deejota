@@ -217,7 +217,7 @@ test.describe('Configuración', () => {
 
     const exportar = async () => {
       const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Exportar CSV' }).click()])
-      expect(d.suggestedFilename()).toMatch(/^gasto-deejota-gastos-\d{4}-\d{2}-\d{2}\.csv$/)
+      expect(d.suggestedFilename()).toMatch(/^control-financiero-gastos-\d{4}-\d{2}-\d{2}\.csv$/)
       const bruto = await readFile((await d.path())!, 'utf8')
       expect(bruto.charCodeAt(0)).toBe(0xfeff) // UTF-8 con BOM para Excel
       return { bruto, filas: filasCsv(bruto.slice(1)) }
@@ -262,10 +262,10 @@ test.describe('Configuración', () => {
 
     await page.getByRole('button', { name: 'Descargar respaldo' }).click()
     const [d] = await Promise.all([page.waitForEvent('download'), page.getByRole('alertdialog').getByRole('button', { name: 'Descargar respaldo' }).click()])
-    expect(d.suggestedFilename()).toMatch(/^gasto-deejota-respaldo-\d{4}-\d{2}-\d{2}\.json$/)
+    expect(d.suggestedFilename()).toMatch(/^control-financiero-respaldo-\d{4}-\d{2}-\d{2}\.json$/)
     const texto = await readFile((await d.path())!, 'utf8')
     const json = JSON.parse(texto)
-    expect(json.aplicacion).toBe('Gasto Deejota')
+    expect(json.aplicacion).toBe('Control Financiero')
     expect(json.version_esquema).toBe(1)
     expect(Date.parse(json.exportado_en)).not.toBeNaN()
     expect(Object.keys(json)).toEqual(expect.arrayContaining(['perfil', 'hogar', 'catalogo', 'fondos', 'periodos', 'gastos', 'imputaciones', 'plantillas']))

@@ -1,4 +1,6 @@
 import { LogOut, Plus } from 'lucide-react'
+import { MARCA } from '@/lib/marca'
+import { useTituloPagina } from '@/lib/useTituloPagina'
 import { Suspense, useEffect, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -8,10 +10,13 @@ import { useAuth } from '@/features/auth/AuthProvider'
 import { useHogar } from '@/features/dashboard/useDashboard'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { useTema } from '@/features/tema/ThemeProvider'
-import { ThemeToggle } from '@/features/tema/ThemeToggle'
+import { ThemeSwitch } from '@/features/tema/ThemeSwitch'
 import { procesarLimpieza } from '@/features/gastos/comprobantes'
 import { RegistroGastoProvider, useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { InvitacionPlanificacion } from '@/features/planificacion/InvitacionPlanificacion'
+import { AvisoConexion } from '@/features/pwa/AvisoConexion'
+import { AvisoInstalacion } from '@/features/pwa/AvisoInstalacion'
+import { useActualizacionApp } from '@/features/pwa/useActualizacionApp'
 import { PlanificacionProvider } from '@/features/planificacion/PlanificacionProvider'
 import { BarraLateral } from './BarraLateral'
 import { MODULOS, type Modulo } from './modulos'
@@ -51,6 +56,8 @@ function Estructura() {
   }, [])
 
   const actual = MODULOS.find((m) => (m.path === '/' ? pathname === '/' : pathname.startsWith(m.path)))
+  useTituloPagina(actual?.label) // «Gastos | Control Financiero»
+  useActualizacionApp() // avisa de versiones nuevas; nunca recarga sola
   const nombre = perfil.data?.display_name || user?.email || ''
 
   async function cerrarSesion() {
@@ -74,11 +81,11 @@ function Estructura() {
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-between gap-3 border-b border-line bg-surface px-4 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <h1 className="truncate font-display text-lg font-bold">{actual?.label ?? 'Gasto Deejota'}</h1>
+            <h1 className="truncate font-display text-lg font-bold">{actual?.label ?? MARCA.nombre}</h1>
             {hogar.data?.is_demo && <span className="shrink-0 rounded-md bg-acc-soft px-2 py-0.5 text-xs font-semibold text-warn" title="Los datos de este hogar son de demostración">Datos DEMO</span>}
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <ThemeSwitch />
             <button
               type="button"
               onClick={cerrarSesion}
@@ -92,6 +99,7 @@ function Estructura() {
           </div>
         </header>
         <main id="contenido" tabIndex={-1} className="px-4 py-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-6 lg:pb-24">
+          <AvisoInstalacion />
           <InvitacionPlanificacion />
           <Suspense fallback={<div role="status" aria-label="Cargando módulo" className="flex flex-col gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /></div>}>
             <Outlet />
@@ -99,6 +107,7 @@ function Estructura() {
         </main>
       </div>
 
+      <AvisoConexion />
       <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_3.5rem_repeat(3,minmax(0,1fr))] min-[360px]:grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
         {MODULOS.slice(0, 3).map((m) => <EnlaceInferior key={m.path} modulo={m} />)}
         <button type="button" onClick={abrir} aria-label="Registrar gasto" className="fab-gasto relative -top-4 mx-auto grid size-14 place-items-center rounded-full bg-pri text-pri-fg shadow-pop ring-4 ring-surface">

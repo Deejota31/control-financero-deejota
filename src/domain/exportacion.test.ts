@@ -12,8 +12,8 @@ const base = {
 
 describe('exportación', () => {
   it('nombra los archivos con la fecha', () => {
-    expect(nombreArchivo('gastos', '2026-10-25')).toBe('gasto-deejota-gastos-2026-10-25.csv')
-    expect(nombreArchivo('respaldo', '2026-10-25')).toBe('gasto-deejota-respaldo-2026-10-25.json')
+    expect(nombreArchivo('gastos', '2026-10-25')).toBe('control-financiero-gastos-2026-10-25.csv')
+    expect(nombreArchivo('respaldo', '2026-10-25')).toBe('control-financiero-respaldo-2026-10-25.json')
   })
 
   it('CSV con nombres legibles, importe inequívoco y fondos imputados', () => {

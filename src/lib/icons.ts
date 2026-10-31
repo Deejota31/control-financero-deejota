@@ -16,7 +16,10 @@ export function nombreIcono(key: string | null | undefined): string {
   return ICONOS_CATALOGO.find((i) => i.id === k)?.nombre ?? (k === 'tag' ? 'Etiqueta' : k === 'circle-ellipsis' ? 'Otros' : 'Ícono')
 }
 
-/** Tokens de color admitidos (coinciden con `is_valid_color`). Cada uno es una variable CSS de la paleta. */
+/**
+ * Tokens de color admitidos (coinciden con `is_valid_color`). `c1…c5` solo existen para que los datos guardados antes de la paleta de 36 conserven su color;
+ * lo nuevo se guarda como HEX libre. `pri`, `acc` y `muted` siguen el tema.
+ */
 export const COLOR_TOKENS = ['c1', 'c2', 'c3', 'c4', 'c5', 'pri', 'acc', 'muted'] as const
 export type ColorToken = (typeof COLOR_TOKENS)[number]
 

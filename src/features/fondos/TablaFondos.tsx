@@ -114,10 +114,10 @@ function Uso({ f }: { f: FilaFondo }) {
     return <span className={cn('text-xs', consumido > 0 ? 'font-semibold text-bad' : 'text-muted')}>{consumido > 0 ? 'Sin presupuesto · sobregasto' : 'Sin presupuesto'}</span>
   }
   const fondo = estado === 'negativo'
-    ? 'linear-gradient(90deg,#E0553F,#C62F2F)'
+    ? 'var(--barra-exceso)'
     : estado === 'agotado' || estado === 'casi'
-      ? 'linear-gradient(90deg, color-mix(in srgb, var(--warn) 65%, #fff), var(--warn))'
-      : 'linear-gradient(90deg, color-mix(in srgb, var(--k) 70%, #fff), var(--k))'
+      ? 'linear-gradient(90deg, var(--barra-aviso-a), var(--barra-aviso-b))'
+      : 'linear-gradient(90deg, color-mix(in srgb, var(--k) 70%, white), var(--k))'
   return (
     <span className="flex items-center gap-2">
       <span className="h-2 min-w-6 flex-1 overflow-hidden rounded-full bg-surface-2 ring-1 ring-inset ring-line" role="progressbar" aria-label={`Consumo de ${f.nombre}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(pct))}>

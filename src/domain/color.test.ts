@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PALETA, armonizar, colorEfectivo, hexARgb, hsvARgb, normalizarHex, rgbAHex, rgbAHsv, tonos } from './color'
+import { PALETA, armonizar, colorEfectivo, hexARgb, hsvARgb, idDeColor, normalizarHex, rgbAHex, rgbAHsv, tonos } from './color'
 
 describe('color', () => {
   it('HEX y RGB se mantienen sincronizados (#5B5BD6 ↔ 91, 91, 214)', () => {
@@ -60,5 +60,13 @@ describe('paleta ampliada', () => {
     expect(new Set(PALETA.map((c) => c.hex)).size).toBe(36)
     expect(new Set(PALETA.map((c) => c.nombre)).size).toBe(36)
     expect(new Set(PALETA.map((c) => c.familia)).size).toBe(6)
+  })
+})
+
+describe('identificadores estables', () => {
+  it('cada color tiene un id único y legible', () => {
+    expect(new Set(PALETA.map((c) => idDeColor(c.nombre))).size).toBe(36)
+    expect(idDeColor('Índigo')).toBe('indigo')
+    expect(idDeColor('Rojos y rosas')).toBe('rojos-y-rosas')
   })
 })

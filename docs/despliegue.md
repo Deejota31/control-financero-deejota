@@ -59,6 +59,10 @@ Comando de build: `npm run build` · carpeta de salida: `dist` · Node 22. `netl
 - Datos: Supabase realiza copias diarias según el plan. Además, **Configuración → Exportar mis datos (JSON)** descarga una copia propia. Haz una exportación antes de cada migración importante.
 - Antes de `db push` en producción: probar la migración con `npm run verify:install` y, si hay datos que preservar, sobre una **copia** de la base. `supabase db reset` borra la base local: no lo uses sobre una base con datos útiles.
 
+## 5b. Aplicación instalable (PWA)
+
+`netlify.toml` ya sirve `sw.js`, el manifiesto y `index.html` sin caché (así cada despliegue llega a quien instaló la app) y `/assets` con caché inmutable. Tras desplegar, comprueba que `https://<tu-sitio>/sw.js` responde con `Cache-Control: no-cache` y que el navegador ofrece instalar. Cómo instalar en Android/iPhone y qué hace sin conexión: [pwa.md](pwa.md).
+
 ## 6. Configuración de Auth en el proyecto remoto (resumen)
 
 - Email habilitado, registro público **desactivado**, `Site URL` y *Redirect URLs* con la URL final, SMTP propio (sección 2). La configuración local equivalente está en `supabase/config.toml` (`[auth]`); el proyecto remoto se configura en el panel, no con `db push`.
