@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { agruparPor, diasEnRango, proyeccionCierre, rangoAnterior, serieDiaria, total, variacion, type GastoBasico } from './dashboard'
+import { agruparPor, diasEnRango, proyeccionCierre, rangoAnterior, rangoComparable, ritmoIdeal, serieDiaria, total, variacion, type GastoBasico } from './dashboard'
 
 const g = (fecha: string, monto: number, ambito = 'a', cat = 'c', sub: string | null = null): GastoBasico => ({ expense_date: fecha, amount: monto, ambito_id: ambito, categoria_id: cat, subcategoria_id: sub })
 
@@ -69,5 +69,84 @@ describe('agruparPor', () => {
   })
   it('ignora gastos sin subcategoría', () => {
     expect(agruparPor([g('2026-10-01', 10)], 'subcategoria_id')).toEqual([])
+  })
+})
+
+describe('rango comparable (mes en curso contra el mismo tramo anterior)', () => {
+  it('un mes en curso compara del día 1 al día de corte con el mismo tramo del mes anterior', () => {
+    const c = rangoComparable('2026-11-01', '2026-11-30', '2026-11-04')
+    expect(c).toEqual({ corte: '2026-11-04', anterior: { desde: '2026-10-01', hasta: '2026-10-04' }, parcial: true, comparable: true })
+  })
+  it('el tramo anterior se acota a su último día (el 30 de marzo frente a febrero compara con el 28)', () => {
+    expect(rangoComparable('2027-03-01', '2027-03-31', '2027-03-30').anterior).toEqual({ desde: '2027-02-01', hasta: '2027-02-28' })
+    expect(rangoComparable('2028-03-01', '2028-03-31', '2028-03-30').anterior).toEqual({ desde: '2028-02-01', hasta: '2028-02-29' })
+  })
+  it('un mes ya terminado compara período completo con período completo', () => {
+    expect(rangoComparable('2026-10-01', '2026-10-31', '2026-11-04')).toEqual({ corte: '2026-10-31', anterior: { desde: '2026-09-01', hasta: '2026-09-30' }, parcial: false, comparable: true })
+    expect(rangoComparable('2026-11-01', '2026-11-30', '2026-11-30').parcial).toBe(false) // el último día ya cuenta como mes completo
+  })
+  it('un mes futuro no se compara', () => {
+    expect(rangoComparable('2026-12-01', '2026-12-31', '2026-11-04').comparable).toBe(false)
+  })
+  it('un rango libre en curso compara los mismos días anteriores', () => {
+    expect(rangoComparable('2026-11-10', '2026-11-20', '2026-11-12')).toEqual({ corte: '2026-11-12', anterior: { desde: '2026-11-07', hasta: '2026-11-09' }, parcial: true, comparable: true })
+  })
+})
+
+describe('ritmo ideal del presupuesto', () => {
+  it('noviembre, presupuesto S/ 3 680: día 1 ≈ 122.67, día 15 = 1 840 y día 30 = 3 680 exactos', () => {
+    expect(ritmoIdeal(3680, 1, 30)).toBe(122.67)
+    expect(ritmoIdeal(3680, 15, 30)).toBe(1840)
+    expect(ritmoIdeal(3680, 30, 30)).toBe(3680)
+  })
+  it.each([28, 29, 30, 31])('en un mes de %i días la línea termina exactamente en el presupuesto y nunca decrece', (dias) => {
+    const presupuesto = 3333.33
+    const linea = Array.from({ length: dias }, (_, i) => ritmoIdeal(presupuesto, i + 1, dias))
+    expect(linea.at(-1)).toBe(presupuesto)
+    expect(linea.every((v, i) => i === 0 || v >= linea[i - 1])).toBe(true)
+  })
+  it('la serie diaria usa ese ritmo y empieza el acumulado en cero antes del primer gasto', () => {
+    const s = serieDiaria([], '2026-11-01', '2026-11-30', '2026-11-04', 3680)
+    expect(s.at(-1)!.ideal).toBe(3680)
+    expect(s[0].ideal).toBe(122.67)
+    expect(s[0].acumulado).toBe(0)
+  })
+  it('un presupuesto cero da una línea en cero (sin dividir por cero)', () => {
+    const s = serieDiaria([], '2026-11-01', '2026-11-30', '2026-11-04', 0)
+    expect(s.every((p) => p.ideal === 0)).toBe(true)
+  })
+})
+
+describe('serie con proyección inyectada', () => {
+  const gastos = [g('2026-11-01', 100), g('2026-11-02', 50)]
+  it('la línea de proyección arranca en el último acumulado real y termina en el cierre indicado, sin saltos', () => {
+    const s = serieDiaria(gastos, '2026-11-01', '2026-11-10', '2026-11-04', null, 400)
+    expect(s[3].acumulado).toBe(150)
+    expect(s[3].proyeccion).toBe(150) // mismo punto: conexión continua
+    expect(s.at(-1)!.proyeccion).toBe(400)
+    const p = s.map((x) => x.proyeccion).filter((x): x is number => x !== null)
+    expect(p.every((v, i) => i === 0 || v >= p[i - 1])).toBe(true)
+    expect(s[2].proyeccion).toBeNull() // antes del último día real no hay proyección
+  })
+  it('con cierre null no se dibuja proyección aunque haya gasto', () => {
+    expect(serieDiaria(gastos, '2026-11-01', '2026-11-10', '2026-11-04', null, null).every((p) => p.proyeccion === null)).toBe(true)
+  })
+  it('sin gasto posterior a hoy en la serie: nunca se incluyen movimientos futuros en el acumulado real', () => {
+    const s = serieDiaria([...gastos, g('2026-11-08', 999)], '2026-11-01', '2026-11-10', '2026-11-04', null, null)
+    expect(s[3].acumulado).toBe(150)
+    expect(s[7].acumulado).toBeNull()
+  })
+})
+
+describe('precisión monetaria', () => {
+  it('agruparPor suma en céntimos exactos', () => {
+    const gs = Array.from({ length: 10 }, () => g('2026-11-01', 0.1, 'amb'))
+    expect(agruparPor(gs, 'ambito_id')).toEqual([{ id: 'amb', total: 1, cantidad: 10 }])
+  })
+  it('la variación nunca es infinita: base cero o negativa devuelve null', () => {
+    expect(variacion(500, 0)).toBeNull()
+    expect(variacion(0, 0)).toBeNull()
+    expect(variacion(500, -3)).toBeNull()
+    expect(variacion(0, 100)).toBe(-100)
   })
 })

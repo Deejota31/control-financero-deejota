@@ -92,13 +92,21 @@ test.describe('Plantillas mensuales', () => {
     await fila.getByLabel(`Importe de ${nombre}`).fill('45,5')
     await expect(fila).not.toContainText('Revisar importe')
     await expect(lote.getByText(/1 gasto por S\/ 45\.50/).first()).toBeVisible()
-    // Mes anterior (30 días): el día 31 se ajusta al 30
-    await lote.getByRole('button', { name: /anterior/i }).first().click()
+    // Se retrocede hasta el mes anterior más reciente de menos de 31 días (la prueba no depende del mes en que se ejecute): el día 31 se ajusta a su último día
+    let mes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    let pasos = 0
+    do { mes = new Date(mes.getFullYear(), mes.getMonth() - 1, 1); pasos++ } while (new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate() >= 31)
+    const ultimo = new Date(mes.getFullYear(), mes.getMonth() + 1, 0).getDate()
+    const esperada = `${String(ultimo).padStart(2, '0')}/${String(mes.getMonth() + 1).padStart(2, '0')}/${mes.getFullYear()}`
     const confirmar = page.getByRole('alertdialog', { name: '¿Cambiar de mes?' })
-    await expect(confirmar).toBeVisible() // hay ajustes sin registrar
-    await confirmar.getByRole('button', { name: 'Cambiar de mes' }).click()
+    for (let i = 0; i < pasos; i++) {
+      await lote.getByRole('button', { name: /anterior/i }).first().click()
+      if (i === 0) await expect(confirmar).toBeVisible() // hay ajustes sin registrar
+      if (await confirmar.isVisible().catch(() => false)) await confirmar.getByRole('button', { name: 'Cambiar de mes' }).click()
+      await expect(confirmar).toHaveCount(0)
+    }
     const fila2 = lote.getByRole('listitem').filter({ hasText: nombre })
-    await expect(fila2.getByText('30/09/2026')).toBeVisible()
+    await expect(fila2.getByText(esperada)).toBeVisible()
     await page.keyboard.press('Escape')
     await eliminar(page, nombre)
   })

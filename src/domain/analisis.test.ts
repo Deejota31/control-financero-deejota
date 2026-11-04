@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filtrar, perfil, ranking, seisMeses, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
+import { filtrar, perfil, ranking, seisMeses, textoVariacion, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
 
 const SIN: FiltrosAnalisis = { ambito: '', categoria: '', subcategoria: '', medio: '', tipo: '', dia: '' }
 const f = (o: Partial<FilaAnalisis> & { monto: number }): FilaAnalisis => ({ ambito_id: 'A1', categoria_id: 'C1', subcategoria_id: null, medio_id: 'M1', tipo: 'variable', cantidad: 1, ...o })
@@ -71,5 +71,49 @@ describe('perfil', () => {
     expect(p.ejes[0].pct).toBe(60)
     expect(p.ejes[0].ref).toBe(50)
     expect(p.max).toBe(60)
+  })
+})
+
+describe('tendencia: base histórica y contexto', () => {
+  const ctx = { desde: '2026-11-01', hasta: '2026-11-30', hoy: '2026-11-04' }
+  const actual = [f({ monto: 955, fecha: '2026-11-03' })]
+
+  it('los meses sin ningún gasto del hogar no cuentan como cero: la base se divide entre los meses observados', () => {
+    // El hogar empezó en octubre: solo hay un mes con datos. Dividir entre 5 daría una base 5 veces menor y un porcentaje 5 veces mayor.
+    const historico = [f({ monto: 300, mes: '2026-10-01' }), f({ monto: 5000, mes: '2026-10-01', categoria_id: 'C9' })]
+    const it = ranking(actual, historico, 'categoria', SIN, ctx).items[0]
+    expect(it.mesesBase).toBe(1)
+    expect(it.referencia).toBeCloseTo(300 * (4 / 30), 2) // promedio de 1 mes, prorrateado a 4 de 30 días
+    expect(it.baseCorta).toBe(true)
+    expect(it.variacionAbs).toBeCloseTo(955 - 40, 2)
+  })
+
+  it('un mes observado en que el grupo no gastó sí cuenta como cero', () => {
+    const historico = [f({ monto: 300, mes: '2026-08-01' }), f({ monto: 10, mes: '2026-09-01', categoria_id: 'C9' }), f({ monto: 10, mes: '2026-10-01', categoria_id: 'C9' })]
+    const it = ranking(actual, historico, 'categoria', SIN, { ...ctx, hoy: '2026-11-30' }).items[0]
+    expect(it.mesesBase).toBe(3) // ago, sep y oct tienen gasto del hogar
+    expect(it.referencia).toBe(100) // (300 + 0 + 0) / 3
+    expect(it.baseCorta).toBe(false)
+  })
+
+  it('sin historial no hay referencia, variación ni porcentaje inventado', () => {
+    const it = ranking(actual, [], 'categoria', SIN, ctx).items[0]
+    expect(it).toMatchObject({ referencia: null, variacion: null, variacionAbs: null, mesesBase: 0 })
+  })
+
+  it('el texto de variación es exacto hasta 1000 % y por encima solo indica que la base es minúscula', () => {
+    expect(textoVariacion(0.256)).toBe('▲ 26 %')
+    expect(textoVariacion(-0.5)).toBe('▼ 50 %')
+    expect(textoVariacion(0)).toBe('= 0 %')
+    expect(textoVariacion(10)).toBe('▲ 1000 %')
+    expect(textoVariacion(39.64)).toBe('▲ >1000 %')
+  })
+
+  it('la variación porcentual nunca se confunde con la participación', () => {
+    // Un incremento de 300 % no significa que el grupo sea el 300 % del gasto: participación (≤ 100 %) y variación son campos distintos.
+    const historico = [f({ monto: 100, mes: '2026-09-01' }), f({ monto: 100, mes: '2026-10-01' })]
+    const it = ranking([f({ monto: 400, fecha: '2026-11-03' })], historico, 'categoria', SIN, { ...ctx, hoy: '2026-11-30' }).items[0]
+    expect(it.pct).toBe(100)
+    expect(it.variacion).toBe(3)
   })
 })

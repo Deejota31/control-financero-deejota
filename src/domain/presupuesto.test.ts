@@ -83,3 +83,66 @@ describe('geometriaBarra', () => {
     expect(geometriaBarra(null, 50).limitePct).toBe(0)
   })
 })
+
+describe('presupuesto consolidado: caso de control (captura de noviembre)', () => {
+  const nov: EntradaPresupuesto = {
+    presupuesto: 3680, gastoRango: 2358.3, imputado: 2358.3, sinFondo: 0, excedente: 0,
+    fondos: [fondo({ fund_id: 'g', es_general: true, asignado: 1500, consumido: 900 }), fondo({ fund_id: 'h', asignado: 700, consumido: 458.3 }), fondo({ fund_id: 'f', asignado: 1480, consumido: 1000 })],
+    total: 2358.3, cantidad: 18, diasConGasto: 3, desde: '2026-11-01', hasta: '2026-11-30', hoy: '2026-11-04', hayFiltros: false,
+  }
+
+  it('S/ 3 680.00 asignado − S/ 2 358.30 imputado = S/ 1 321.70 disponible y 64.08 % consumido (valores exactos)', () => {
+    const r = resumirPresupuesto(nov)
+    expect(r.asignado).toBe(3680)
+    expect(r.imputado).toBe(2358.3)
+    expect(r.disponible).toBe(1321.7)
+    expect(r.consumoPct).toBe(64.08)
+    expect(r.exceso).toBe(0)
+    expect(r.estado).toBe('ok')
+    expect(r.disponible! + r.imputado).toBeCloseTo(r.asignado!, 10) // asignado = imputado + disponible
+  })
+
+  it('un fondo agotado no crea exceso consolidado si otros fondos tienen saldo', () => {
+    const r = resumirPresupuesto({ ...nov, fondos: [fondo({ fund_id: 'a', asignado: 300, consumido: 300 }), fondo({ fund_id: 'b', asignado: 3380, consumido: 2058.3 })] })
+    expect(r.fondosAgotados).toBe(1)
+    expect(r.exceso).toBe(0)
+    expect(r.disponible).toBe(1321.7)
+  })
+
+  it('el exceso consolidado es max(0, imputado − asignado) y el saldo firmado conserva el sobregiro', () => {
+    const r = resumirPresupuesto({ ...nov, presupuesto: 2000, imputado: 2358.3, gastoRango: 2358.3 })
+    expect(r.disponible).toBe(-358.3) // saldo firmado: no se oculta
+    expect(r.exceso).toBe(358.3)
+    expect(r.estado).toBe('excedido')
+    expect(r.consumoPct).toBe(117.92)
+  })
+
+  it('un fondo específico sobregirado cuyo exceso absorbió el General no genera exceso global', () => {
+    const r = resumirPresupuesto({ ...nov, excedente: 120, fondos: [fondo({ fund_id: 'e', asignado: 300, consumido: 300 }), fondo({ fund_id: 'g', es_general: true, asignado: 3380, consumido: 2058.3 })] })
+    expect(r.fondosConExcedente).toBe(1)
+    expect(r.exceso).toBe(0)
+  })
+
+  it('el gasto sin fondo compatible NO cuenta como imputado ni como disponible consumido', () => {
+    const r = resumirPresupuesto({ ...nov, gastoRango: 2658.3, imputado: 2358.3, sinFondo: 300 })
+    expect(r.gastado).toBe(2658.3)
+    expect(r.imputado).toBe(2358.3)
+    expect(r.sinFondo).toBe(300)
+    expect(r.disponible).toBe(1321.7) // el disponible solo resta lo imputado
+    expect(r.imputado + r.sinFondo).toBeCloseTo(r.gastado, 10)
+  })
+
+  it('presupuesto cero: sin porcentaje artificial; con gasto el estado es excedido', () => {
+    expect(resumirPresupuesto({ ...nov, presupuesto: 0, imputado: 0, gastoRango: 0 }).consumoPct).toBe(0)
+    const r = resumirPresupuesto({ ...nov, presupuesto: 0 })
+    expect(r.consumoPct).toBeNull()
+    expect(r.estado).toBe('excedido')
+    expect(r.exceso).toBe(2358.3)
+  })
+
+  it('suma de 10 fondos de 0.10: sin error de coma flotante en el saldo', () => {
+    const r = resumirPresupuesto({ ...nov, presupuesto: 1, imputado: 0.7, gastoRango: 0.7, fondos: Array.from({ length: 10 }, (_, i) => fondo({ fund_id: String(i), asignado: 0.1, consumido: 0.07 })) })
+    expect(r.disponible).toBe(0.3)
+    expect(r.fondosAgotados).toBe(0)
+  })
+})

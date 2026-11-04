@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Hint } from '@/components/ui/Hint'
 import { TooltipGrafico, TTAlerta, TTBarra, TTCabecera, TTHistorial, TTMetrica, TTPie, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
-import { perfil, ranking, type Dim, type FilaAnalisis, type FiltrosAnalisis } from '@/domain/analisis'
+import { perfil, ranking, textoVariacion, type Dim, type FilaAnalisis, type FiltrosAnalisis } from '@/domain/analisis'
 import type { ClaveFiltro } from '@/domain/filtrosCruzados'
 import { cn } from '@/lib/cn'
 import { formatSoles, formatSolesCorto } from '@/lib/format'
@@ -186,9 +186,11 @@ function Ranking({ r, dim, info, ctx, filtros, seleccionar, cargando, error }: {
                       <TTMetrica etiqueta="Participación" valor={`${it.pct.toFixed(1)} % de ${formatSoles(r.total)}`} />
                       <TTBarra pct={it.pct} color={col} />
                       <TTMetrica etiqueta="Movimientos" valor={String(it.cantidad)} />
-                      <TTMetrica etiqueta="Referencia" valor={it.referencia === null ? 'Sin referencia' : formatSoles(it.referencia)} />
+                      <TTMetrica etiqueta="Base histórica" valor={it.referencia === null ? 'Sin historial para comparar' : `${formatSoles(it.referencia)} · promedio de ${it.mesesBase} ${it.mesesBase === 1 ? 'mes' : 'meses'}${r.parcial ? ' (prorrateado)' : ''}`} />
+                      {it.variacionAbs !== null && <TTMetrica etiqueta="Variación en soles" valor={`${it.variacionAbs > 0 ? '+' : it.variacionAbs < 0 ? '−' : ''}${formatSoles(Math.abs(it.variacionAbs))}`} />}
                     </div>
-                    {it.variacion !== null && <TTAlerta><span>Variación vs referencia</span><span className="num whitespace-nowrap font-semibold">{it.variacion > 0 ? '▲' : it.variacion < 0 ? '▼' : '='} {Math.abs(Math.round(it.variacion * 100))} %</span></TTAlerta>}
+                    {it.variacion !== null && <TTAlerta><span>Variación vs base</span><span className="num whitespace-nowrap font-semibold">{textoVariacion(it.variacion)}</span></TTAlerta>}
+                    {it.variacion !== null && it.baseCorta && <p className="text-[11px] text-muted">Base corta ({it.mesesBase} {it.mesesBase === 1 ? 'mes' : 'meses'} con gasto): léela con cautela, un cambio pequeño en soles se ve enorme en porcentaje.</p>}
                     <TTHistorial titulo="Últimos 6 meses" meses={r.meses.map((m, k) => ({ etiqueta: mesCorto(m), valor: formatSolesCorto(it.serie[k]), actual: k === r.meses.length - 1 }))} />
                     <TTPie>{sel ? 'Clic para quitar el filtro' : 'Clic para filtrar todo el panel'}</TTPie>
                   </TooltipGrafico>}>
@@ -199,7 +201,7 @@ function Ranking({ r, dim, info, ctx, filtros, seleccionar, cargando, error }: {
                     <span className="flex items-center gap-1.5"><Spark v={it.serie} color={col} /><span className="num text-xs font-semibold">{formatSoles(it.monto)}</span></span>
                     <span />
                     <span className="h-1.5 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(2, it.pct)}%`, background: col }} /></span>
-                    <span className="num text-right text-[10px] text-muted">{it.pct.toFixed(1)} %{it.variacion !== null && ` · ${it.variacion > 0 ? '▲' : it.variacion < 0 ? '▼' : '='}${Math.abs(Math.round(it.variacion * 100))}%`}</span>
+                    <span className="num text-right text-[10px] text-muted">{it.pct.toFixed(1)} %{it.variacion !== null && ` · ${textoVariacion(it.variacion)}${it.baseCorta ? ` · base ${it.mesesBase} m.` : ''}`}</span>
                   </button>
                 </Hint>
               </li>

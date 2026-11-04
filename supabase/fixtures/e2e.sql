@@ -111,7 +111,9 @@ begin
     select hid, fu.id, per, fu.default_amount from public.funds fu where fu.period_id = per;
 
     for x in select * from jsonb_array_elements(rows) loop
-      v_date := v_start + ((x ->> 4)::int - 1);
+      -- El mes actual reparte TODAS sus filas entre los días ya transcurridos: así las pruebas tienen el mismo gasto (todos los ámbitos, categorías y medios)
+      -- el día 1 que el día 30, y no dependen de la fecha en que se ejecutan. Los meses anteriores conservan el día de cada fila.
+      v_date := v_start + case when m = 0 then ((x ->> 4)::int - 1) % (current_date - v_start + 1) else (x ->> 4)::int - 1 end;
       continue when v_date > current_date;
       v_amount := round((x ->> 5)::numeric * (1 + ((m * 7 + (x ->> 4)::int) % 5) * 0.04), 2);
       insert into public.expenses (household_id, expense_date, amount, description, ambito_id, categoria_id, subcategoria_id, payment_method_id, expense_type, is_recurring, created_by)

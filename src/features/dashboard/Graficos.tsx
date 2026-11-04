@@ -51,7 +51,7 @@ function TooltipDia({ active, payload, formato, mostrarIdeal, serie, variante }:
   return (
     <TooltipGrafico>
       <TTCabecera titulo={formatFecha(p.fecha, formato)} subtitulo={<span className="first-letter:uppercase">{fechaLarga.split(' ')[0]}</span>} />
-      {p.acumulado !== null ? <TTPrincipal etiqueta="Acumulado" valor={formatSoles(p.acumulado)} /> : p.proyeccion !== null && <TTPrincipal etiqueta="Proyección (estimación)" valor={formatSoles(p.proyeccion)} />}
+      {p.acumulado !== null ? <TTPrincipal etiqueta="Acumulado" valor={formatSoles(p.acumulado)} /> : p.proyeccion !== null && <TTPrincipal etiqueta="Cierre estimado (estimación)" valor={formatSoles(p.proyeccion)} />}
       <div className="flex flex-col gap-1">
         {mostrarIdeal && p.ideal !== null && <TTMetrica etiqueta="Ritmo ideal" valor={formatSoles(p.ideal)} />}
         <TTMetrica etiqueta="Gasto del día" valor={formatSoles(p.gasto)} />
@@ -72,6 +72,17 @@ function diaDeEstado(state: unknown, serie: PuntoGrafico[]): string | null {
 
 const tickDia = (f: string) => String(Number(f.slice(8)))
 
+/**
+ * Marcas del eje de días: 1, 5, 10, 15, 20, 25 y el último día solo si queda a 3 días o más de la anterior (así no se superponen «25» y «28»).
+ * Son fijas (no dependen del ancho): el eje se lee igual en 320 px que en 1920 px, con los mismos días en ambos gráficos.
+ */
+export function marcasDias(serie: { fecha: string }[]): string[] {
+  const n = serie.length
+  const dias = [1, 5, 10, 15, 20, 25].filter((d) => d <= n)
+  if (n - (dias.at(-1) ?? 0) >= 3) dias.push(n)
+  return dias.map((d) => serie[d - 1].fecha)
+}
+
 interface GraficoTemporalProps {
   serie: PuntoGrafico[]
   formato: string
@@ -86,12 +97,12 @@ export function GraficoAcumulado({ serie, formato, dia, onDia, mostrarIdeal, res
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={serie} margin={{ top: 8, right: 12, bottom: 0, left: 0 }} onClick={(s) => { const f = diaDeEstado(s, serie); if (f) onDia(f) }} style={{ cursor: 'pointer' }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
+          <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} ticks={marcasDias(serie)} interval={0} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} />
           <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={mostrarIdeal} serie={serie} variante="acumulado" />} cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
           <Area type="monotone" dataKey="acumulado" stroke="var(--chart-series-1)" strokeWidth={2.5} fill="var(--chart-series-1)" fillOpacity={0.12} connectNulls={false} dot={false} activeDot={{ r: 6, stroke: 'var(--surface)', strokeWidth: 2 }} isAnimationActive={false} name="Gasto acumulado" />
           {mostrarIdeal && <Line type="linear" dataKey="ideal" stroke="var(--muted)" strokeWidth={2} strokeDasharray="1 5" strokeLinecap="round" dot={false} activeDot={false} isAnimationActive={false} name="Ritmo ideal" />}
-          <Line type="linear" dataKey="proyeccion" stroke="var(--chart-series-5)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Proyección de cierre" />
+          <Line type="linear" dataKey="proyeccion" stroke="var(--chart-series-5)" strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={false} isAnimationActive={false} name="Cierre estimado" />
           {dia && <ReferenceLine x={dia} stroke="var(--pri)" strokeWidth={2} label={{ value: tickDia(dia), position: 'top', fill: 'var(--pri)', fontSize: 11 }} />}
         </ComposedChart>
       </ResponsiveContainer>
@@ -105,7 +116,7 @@ export function GraficoDiario({ serie, formato, dia, onDia }: Omit<GraficoTempor
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={serie} margin={{ top: 4, right: 12, bottom: 0, left: 0 }} onClick={(s) => { const f = diaDeEstado(s, serie); if (f) onDia(f) }} style={{ cursor: 'pointer' }}>
           <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} interval="preserveStartEnd" minTickGap={14} />
+          <XAxis dataKey="fecha" tickFormatter={tickDia} tick={EJE} tickLine={false} axisLine={{ stroke: 'var(--line)' }} ticks={marcasDias(serie)} interval={0} />
           <YAxis tickFormatter={formatSolesCorto} tick={EJE} tickLine={false} axisLine={false} width={64} tickCount={3} />
           <Tooltip content={<TooltipDia formato={formato} mostrarIdeal={false} serie={serie} variante="diario" />} cursor={{ fill: 'var(--surface-2)' }} wrapperStyle={{ outline: 'none', zIndex: 30 }} />
           <Bar

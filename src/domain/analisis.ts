@@ -67,13 +67,30 @@ export interface ItemRanking {
   referencia: number | null
   /** (monto − referencia) / referencia; null si no hay referencia (nunca se divide por cero). */
   variacion: number | null
+  /** monto − referencia, en soles; null si no hay referencia. */
+  variacionAbs: number | null
+  /** Meses anteriores con gasto registrado que entran en la referencia (de 0 a 5). Un mes sin ningún gasto del hogar no cuenta como cero. */
+  mesesBase: number
+  /** true si la base histórica es corta (menos de 3 meses): la variación porcentual debe leerse con cautela. */
+  baseCorta: boolean
+}
+
+/** Meses de base a partir de los cuales una variación se considera apoyada en historia suficiente. */
+export const MESES_BASE_MINIMOS = 3
+
+/** Variación para mostrar: exacta hasta ±1000 %; por encima, «>1000 %» (un porcentaje de cuatro cifras sobre una base minúscula engaña más de lo que informa). */
+export function textoVariacion(v: number): string {
+  const p = Math.abs(v) * 100
+  const signo = v > 0 ? '▲' : v < 0 ? '▼' : '='
+  return p > 1000 ? `${signo} >1000 %` : `${signo} ${Math.round(p)} %`
 }
 
 export interface ResultadoRanking { items: ItemRanking[]; total: number; meses: string[]; comparable: boolean; parcial: boolean }
 
 /**
  * Ranking de una dimensión para el rango elegido, con su tendencia de seis meses.
- * Referencia: promedio mensual de los meses ANTERIORES de los seis (ceros incluidos). Si el mes de `hasta` sigue en curso, la referencia se
+ * Referencia: promedio mensual de los meses ANTERIORES de los seis QUE TIENEN GASTO REGISTRADO (un mes en que el hogar aún no usaba la aplicación no es un «mes de cero»;
+ * dividir siempre entre 5 inflaba la variación de los hogares recientes). Un grupo sin gasto en un mes observado sí cuenta como cero. Si el mes de `hasta` sigue en curso, la referencia se
  * prorratea por los días transcurridos para no comparar un mes parcial contra meses completos. Solo se compara cuando el rango es un mes
  * completo o el mes en curso; en otro caso `comparable` es false y no hay variación. Subir o bajar no se interpreta como bueno ni malo.
  */
@@ -88,6 +105,7 @@ export function ranking(actual: FilaAnalisis[], historico: FilaAnalisis[], dim: 
   const comparable = mesCompleto
   const fraccion = parcial ? Number(ctx.hoy.slice(8)) / finDeMes(mesDeHasta) : 1
 
+  const mesesObservados = new Set(historico.filter((x) => Number(x.monto) !== 0).map((x) => x.mes).filter((m): m is string => Boolean(m)))
   const grupos = new Map<string, FilaAnalisis[]>()
   for (const r of act) { const k = clave(r, dim); if (k) (grupos.get(k) ?? grupos.set(k, []).get(k)!).push(r) }
   const total = suma(act.filter((r) => clave(r, dim)))
@@ -95,10 +113,10 @@ export function ranking(actual: FilaAnalisis[], historico: FilaAnalisis[], dim: 
     const monto = suma(filas)
     const propiosHis = his.filter((r) => clave(r, dim) === id)
     const serie = meses.map((m) => suma(propiosHis.filter((r) => r.mes === m)))
-    const previos = serie.slice(0, 5)
-    const prom = previos.reduce((s, v) => s + v, 0) / 5
+    const observados = meses.slice(0, 5).map((m, i) => (mesesObservados.has(m) ? serie[i] : null)).filter((v): v is number => v !== null)
+    const prom = observados.length ? observados.reduce((s, v) => s + v, 0) / observados.length : 0
     const referencia = comparable && prom > 0 ? round2(prom * fraccion) : null
-    return { id, monto, cantidad: filas.reduce((s, r) => s + Number(r.cantidad ?? 0), 0), pct: total > 0 ? (monto / total) * 100 : 0, serie, referencia, variacion: referencia !== null && referencia > 0 ? (monto - referencia) / referencia : null }
+    return { id, monto, cantidad: filas.reduce((s, r) => s + Number(r.cantidad ?? 0), 0), pct: total > 0 ? (monto / total) * 100 : 0, serie, referencia, variacion: referencia !== null && referencia > 0 ? (monto - referencia) / referencia : null, variacionAbs: referencia === null ? null : round2(monto - referencia), mesesBase: observados.length, baseCorta: observados.length < MESES_BASE_MINIMOS }
   }).sort((a, b) => b.monto - a.monto || a.id.localeCompare(b.id))
   return { items, total, meses, comparable, parcial }
 }
