@@ -1,4 +1,8 @@
 import { diasEnRango, round2 } from './dashboard'
+import { aCentimos, deCentimos } from './dinero'
+
+/** Resta exacta de importes (en céntimos): 3 680 − 2 358.30 es 1 321.70, no 1 321.7000000000003. */
+const restar = (a: number, b: number) => deCentimos(aCentimos(a) - aCentimos(b))
 
 /** Fondo tal como lo devuelve `dashboard_panel` (importes ya en número). */
 export interface FondoPanel {
@@ -60,8 +64,9 @@ export interface ResumenPresupuesto {
 export function resumirPresupuesto(e: EntradaPresupuesto): ResumenPresupuesto {
   const asignado = e.presupuesto === null ? null : round2(e.presupuesto)
   const imputado = round2(e.imputado)
-  const disponible = asignado === null ? null : round2(asignado - imputado)
-  const exceso = disponible !== null && disponible < 0 ? round2(-disponible) : 0
+  // Saldo FIRMADO: un sobregiro se ve como saldo negativo, nunca se oculta. El exceso consolidado es max(0, imputado − asignado); un fondo agotado no implica exceso global.
+  const disponible = asignado === null ? null : restar(asignado, imputado)
+  const exceso = disponible !== null && disponible < 0 ? deCentimos(-aCentimos(disponible)) : 0
   const consumoPct = asignado === null ? null : asignado > 0 ? round2((imputado / asignado) * 100) : imputado > 0 ? null : 0
 
   let estado: EstadoBarra
@@ -71,7 +76,7 @@ export function resumirPresupuesto(e: EntradaPresupuesto): ResumenPresupuesto {
   else if ((consumoPct ?? 0) >= 85) estado = 'casi'
   else estado = 'ok'
 
-  const porFondo = e.fondos.map((f) => ({ ...f, disponible: round2(f.asignado - f.consumido) }))
+  const porFondo = e.fondos.map((f) => ({ ...f, disponible: restar(f.asignado, f.consumido) }))
   const agotados = porFondo.filter((f) => f.asignado > 0 && f.disponible === 0)
   const sobregirados = porFondo.filter((f) => f.disponible < 0)
   const conExcedente = e.excedente > 0 ? agotados.filter((f) => !f.es_general).length : 0

@@ -36,6 +36,7 @@ export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, pla
         aria-invalid={invalid || undefined}
         aria-describedby={aria['aria-describedby']}
         aria-label={aria['aria-label']}
+        data-grande={grande || undefined}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => {
           const n = parseImporte(value)

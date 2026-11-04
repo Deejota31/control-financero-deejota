@@ -6,7 +6,7 @@ import { email, iniciarSesion, password } from './helpers'
  * Barrido responsive de la revisión de calidad: cada módulo y los diálogos clave en 11 tamaños. Además de «sin scroll horizontal», se comprueba que ningún
  * control interactivo quede fuera de pantalla ni recortado por un contenedor con overflow oculto (un contenedor que se desplaza no cuenta como recorte).
  */
-const TAMANOS = [[320, 640], [375, 812], [390, 844], [430, 932], [768, 1024], [1024, 768], [1280, 720], [1366, 768], [1440, 900], [1920, 1080], [844, 390]] as const
+const TAMANOS = [[320, 640], [375, 812], [390, 844], [393, 852], [402, 874], [430, 932], [768, 1024], [1024, 768], [1280, 720], [1366, 768], [1440, 900], [1920, 1080], [844, 390]] as const
 const MODULOS = [['/', 'Dashboard'], ['/gastos', 'Gastos'], ['/fondos', 'Fondos'], ['/catalogo', 'Catálogo'], ['/salud', 'Salud financiera'], ['/configuracion', 'Configuración']] as const
 
 /** Lista los defectos de layout visibles en este momento (vacía si todo está bien). Se ejecuta dentro de la página. */

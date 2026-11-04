@@ -79,4 +79,6 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 - [Reglas de asignación de fondos](docs/reglas-fondos.md)
 - [Decisiones técnicas](docs/decisiones.md)
 - [Instalar como aplicación (PWA)](docs/pwa.md)
+- [Métricas del Dashboard: proyección, variación y precisión](docs/proyeccion.md)
+- [Sistema de diseño](docs/sistema-de-diseno.md)
 - [Preparación para publicar](docs/despliegue.md) (qué se publica, migraciones, Auth; pendiente de tu aprobación)

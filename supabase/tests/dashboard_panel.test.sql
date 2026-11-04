@@ -48,6 +48,17 @@ select is((select (j ->> 'dias_con_gasto')::int from r0), 3, 'sin filtros: 3 dí
 select is((select (j -> 'mayor' ->> 'amount')::numeric from r0), 100::numeric, 'el mayor gasto es 100');
 select is((select jsonb_array_length(j -> 'por_ambito') from r0), 2, 'dos ámbitos con gasto');
 
+-- Consistencia cruzada sin filtros: cada desglose suma EXACTAMENTE el total y cuenta cada movimiento una sola vez
+select is((select sum((e ->> 'total')::numeric) from r0, jsonb_array_elements(j -> 'por_ambito') e), (select (j ->> 'total')::numeric from r0), 'regla 1: la suma por ámbito es el total');
+select is((select sum((e ->> 'total')::numeric) from r0, jsonb_array_elements(j -> 'por_categoria') e), (select (j ->> 'total')::numeric from r0), 'regla 2: la suma por categoría es el total');
+select is((select sum((e ->> 'monto')::numeric) from r0, jsonb_array_elements(j -> 'serie') e), (select (j ->> 'total')::numeric from r0), 'la serie diaria suma el total');
+select is((select sum((e ->> 'cantidad')::int) from r0, jsonb_array_elements(j -> 'por_ambito') e)::int, (select (j ->> 'cantidad')::int from r0), 'regla 7: por ámbito cada movimiento cuenta una vez');
+select is((select sum((e ->> 'cantidad')::int) from r0, jsonb_array_elements(j -> 'por_categoria') e)::int, (select (j ->> 'cantidad')::int from r0), 'regla 7: por categoría cada movimiento cuenta una vez');
+select is((select sum((e ->> 'cantidad')::int) from r0, jsonb_array_elements(j -> 'serie') e)::int, (select (j ->> 'cantidad')::int from r0), 'regla 7: en la serie cada movimiento cuenta una vez');
+select is((select (j ->> 'gasto_rango')::numeric from r0), (select (j ->> 'total')::numeric from r0), 'sin filtros el gasto del período es el total');
+select is((select (j ->> 'imputado_rango')::numeric + (j ->> 'sin_fondo')::numeric from r0), (select (j ->> 'gasto_rango')::numeric from r0), 'reglas 5 y 9: imputado + sin fondo compatible = gasto del período (nada se pierde ni se duplica)');
+select ok((select (j ->> 'imputado_rango')::numeric <= (j ->> 'gasto_rango')::numeric from r0), 'lo imputado nunca supera al gasto real');
+
 -- Filtro ámbito = Hogar: KPIs y serie se filtran; la distribución por ámbito NO (muestra todos para poder cambiar la selección)
 create temp table r1 on commit drop as select public.dashboard_panel((select d1 from p), (select d2 from p), (select p1 from p), (select p2 from p), th.i('amb:Hogar')) as j;
 select is((select (j ->> 'total')::numeric from r1), 150::numeric, 'ámbito Hogar: total 150');

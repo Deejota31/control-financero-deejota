@@ -28,6 +28,10 @@ const sumaDona = async (page: Page) => {
   return t.map((x) => dinero(x.match(/S\/ [\d,]+\.\d{2}/)?.[0] ?? '0')).reduce((s, v) => s + v, 0)
 }
 
+/** La estimación de cierre solo existe mientras el mes sigue en curso (el último día ya no queda nada por proyectar). */
+const mesEnCurso = (() => { const h = new Date(); return h.getDate() < new Date(h.getFullYear(), h.getMonth() + 1, 0).getDate() })()
+const ESTIMACION = /Cierre estimado|Proyección: datos insuficientes/
+
 test.describe('Dashboard', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
@@ -38,7 +42,8 @@ test.describe('Dashboard', () => {
     await expect(page.getByText('Datos DEMO')).toBeVisible()
     for (const t of ['Gasto del período', 'Movimientos', 'Variación vs período anterior', 'Mayor gasto']) await expect(kpi(page, t)).toBeVisible()
     for (const t of ['Presupuesto asignado', 'Gastado del período', 'Disponible consolidado', 'Exceso sobre el presupuesto']) await expect(page.getByText(t, { exact: true })).toBeVisible()
-    await expect(page.getByText(/Cierre proyectado \(estimación\)/)).toBeVisible()
+    if (mesEnCurso) await expect(page.getByText(ESTIMACION).first()).toBeVisible()
+    await expect(page.getByText('Cierre proyectado (estimación)')).toHaveCount(0) // la antigua cifra lineal ya no se presenta como estimación
     for (const h of ['Presupuesto consolidado', 'Gasto acumulado', 'Distribución por ámbito', 'Top 5 categorías', 'Perfil de gasto', 'Ranking con tendencia']) {
       await expect(page.getByRole('heading', { name: h })).toBeVisible()
     }
@@ -238,6 +243,7 @@ test.describe('Dashboard', () => {
 
   test('los gráficos temporales muestran un tooltip con fecha, gasto del día, movimientos y acumulado', async ({ page }) => {
     await iniciarSesion(page)
+    await periodo(page, 'Mes anterior') // un mes completo: el punto señalado ya ocurrió sea cual sea el día de hoy
     const acumulado = page.getByRole('img', { name: /^Gasto acumulado de/ })
     await acumulado.scrollIntoViewIfNeeded()
     const c = (await acumulado.boundingBox())!
@@ -262,11 +268,11 @@ test.describe('Dashboard', () => {
     const gastoActual = await valorKpi(page, 'Gasto del período')
     await periodo(page, 'Mes anterior')
     await expect(page).toHaveURL(/desde=/)
-    await expect(page.getByText(/Cierre proyectado/)).toHaveCount(0)
+    await expect(page.getByText(ESTIMACION)).toHaveCount(0) // un mes cerrado no se proyecta
     await expect.poll(() => valorKpi(page, 'Gasto del período')).not.toBe(gastoActual)
     await expect(page.getByText('Variación vs período anterior')).toBeVisible()
     await periodo(page, 'Este mes')
-    await expect(page.getByText(/Cierre proyectado/)).toBeVisible()
+    if (mesEnCurso) await expect(page.getByText(ESTIMACION).first()).toBeVisible()
   })
 
   test('un rango sin gastos muestra un estado vacío y uno inválido explica el problema', async ({ page }) => {
@@ -358,6 +364,7 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
 
   test('el selector de período acepta fechas personalizadas, valida el rango y limpia', async ({ page }) => {
     await iniciarSesion(page)
+    await periodo(page, 'Mes anterior') // los días 10 y 20 del mes anterior ya ocurrieron siempre (el mes actual puede estar recién empezado)
     await page.getByRole('button', { name: /^Período:/ }).click()
     await expect(page.getByRole('button', { name: 'Este mes', exact: true })).toBeVisible()
     await page.getByLabel('Desde', { exact: true }).click()

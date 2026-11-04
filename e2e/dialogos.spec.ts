@@ -33,6 +33,19 @@ async function recortes(dialogo: Locator): Promise<string[]> {
   })
 }
 
+/**
+ * Cierra el diálogo superior con su botón «Cerrar». Esta prueba verifica el borde de foco, no el cierre con Escape: tras recorrer todos los controles, el foco puede
+ * quedar en un campo de edición en línea (donde Escape cancela la edición en lugar de cerrar el diálogo), así que cerrar con un clic es lo determinista.
+ */
+async function cerrarDialogo(page: Page) {
+  const antes = await page.getByRole('dialog').count()
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Cerrar', exact: true }).first().click()
+  // Recorrer los campos puede reformatear importes y marcar el formulario como modificado: entonces se pide confirmar el descarte (comportamiento esperado).
+  const descartar = page.getByRole('alertdialog', { name: '¿Descartar los cambios?' })
+  if (await descartar.waitFor({ state: 'visible', timeout: 1500 }).then(() => true, () => false)) await descartar.getByRole('button', { name: 'Descartar cambios' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(antes - 1)
+}
+
 async function revisar(page: Page, nombre: string) {
   const d = page.getByRole('dialog').last()
   await expect(d).toBeVisible()
@@ -65,10 +78,10 @@ test.describe('Diálogos: el borde de foco no se recorta', () => {
     await page.getByRole('link', { name: 'Gastos' }).first().click()
     await page.getByRole('button', { name: 'Nuevo gasto' }).click()
     await revisar(page, 'Nuevo gasto')
-    await page.keyboard.press('Escape')
+    await cerrarDialogo(page)
     await page.getByRole('button', { name: 'Plantillas' }).click()
     await revisar(page, 'Plantillas')
-    await page.keyboard.press('Escape')
+    await cerrarDialogo(page)
     await page.getByRole('button', { name: 'Registrar mensuales' }).click()
     await revisar(page, 'Registro mensual')
   })

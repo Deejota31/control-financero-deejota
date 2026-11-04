@@ -299,6 +299,17 @@ body {
 .chip-k { --k: var(--muted); display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%; border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--k) 35%, transparent); background: color-mix(in srgb, var(--k) 12%, var(--surface)); color: color-mix(in srgb, var(--k) 40%, var(--fg)); padding: 0.125rem 0.6rem; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; white-space: nowrap; }
 .tinte-k { --k: var(--muted); background: color-mix(in srgb, var(--k) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--k) 30%, transparent); color: color-mix(in srgb, var(--k) 65%, var(--fg)); }
 
+/* iOS Safari amplía la página al enfocar un control editable cuya letra computada sea menor de 16 px (y a veces no vuelve al tamaño original). En vez de bloquear
+   el zoom con maximum-scale/user-scalable=no (que quita la accesibilidad), los controles táctiles usan 16 px como mínimo. Va sin capa para ganar a las utilidades de
+   Tailwind (text-sm, text-xs). `max()` conserva los campos que ya son más grandes (data-grande). En escritorio los controles mantienen su tamaño. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='button'], [type='submit'], [type='reset'], [type='color'], [type='image'], [type='hidden'], [data-grande]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Cifras financieras: números tabulares y alineados (importes, KPI, tablas) */
 .num { font-variant-numeric: tabular-nums lining-nums; }
 
