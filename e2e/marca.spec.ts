@@ -366,7 +366,7 @@ test.describe('Aplicación con sesión', () => {
     test.setTimeout(120_000)
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
-    for (const [ruta, seccion] of [['/', 'Dashboard'], ['/gastos', 'Gastos'], ['/fondos', 'Fondos'], ['/catalogo', 'Catálogo'], ['/salud', 'Salud financiera'], ['/configuracion', 'Configuración']] as const) {
+    for (const [ruta, seccion] of [['/', 'Dashboard'], ['/gastos', 'Gastos'], ['/fondos', 'Fondos'], ['/catalogo', 'Catálogo'], ['/configuracion', 'Configuración']] as const) {
       await page.goto(ruta)
       await expect(page.getByRole('heading', { level: 1, name: seccion })).toBeVisible()
       await expect(page).toHaveTitle(`${seccion} | Control Financiero`)

@@ -1,6 +1,6 @@
 /**
- * Cálculos de los gráficos de análisis del Dashboard. Son funciones puras: reciben filas agregadas (RPC `dashboard_analisis`) y los mismos
- * filtros cruzados del panel, así ranking y perfil comparten reglas y números con los KPIs.
+ * Cálculos del ranking con tendencia del Dashboard. Son funciones puras: reciben filas agregadas (RPC `dashboard_analisis`) y los mismos
+ * filtros cruzados del panel, así el ranking comparte reglas y números con los KPIs.
  */
 import { idsDe } from './idsFiltro'
 
@@ -30,7 +30,7 @@ export interface FiltrosAnalisis {
 const CAMPO: Record<Dim, 'ambito_id' | 'categoria_id' | 'subcategoria_id' | 'medio_id'> = { ambito: 'ambito_id', categoria: 'categoria_id', subcategoria: 'subcategoria_id', medio: 'medio_id' }
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/** Filtros que una dimensión ignora para seguir mostrando sus alternativas (mismas reglas que la dona y el Top del panel). */
+/** Filtros que una dimensión ignora para seguir mostrando sus alternativas (mismas reglas que la dona del panel). */
 export function propios(dim: Dim): (keyof FiltrosAnalisis)[] {
   return dim === 'categoria' ? ['categoria', 'subcategoria'] : [dim]
 }
@@ -119,24 +119,4 @@ export function ranking(actual: FilaAnalisis[], historico: FilaAnalisis[], dim: 
     return { id, monto, cantidad: filas.reduce((s, r) => s + Number(r.cantidad ?? 0), 0), pct: total > 0 ? (monto / total) * 100 : 0, serie, referencia, variacion: referencia !== null && referencia > 0 ? (monto - referencia) / referencia : null, variacionAbs: referencia === null ? null : round2(monto - referencia), mesesBase: observados.length, baseCorta: observados.length < MESES_BASE_MINIMOS }
   }).sort((a, b) => b.monto - a.monto || a.id.localeCompare(b.id))
   return { items, total, meses, comparable, parcial }
-}
-
-export interface EjePerfil { id: string; pct: number; ref: number | null }
-export interface Perfil { ejes: EjePerfil[]; max: number }
-
-/**
- * Perfil de gasto: participación (%) de los `n` mayores grupos en el rango, frente a su participación histórica (promedio de los meses
- * anteriores de los seis). Los ejes (grupos) y la escala (hasta el siguiente múltiplo de 10 %) son estables mientras no cambie el conjunto.
- */
-export function perfil(r: ResultadoRanking, historico: FilaAnalisis[], dim: Dim, f: FiltrosAnalisis, n = 6): Perfil {
-  const top = r.items.slice(0, n)
-  const his = filtrar(historico, f, propios(dim))
-  const previos = r.meses.slice(0, 5)
-  const totalesMes = previos.map((m) => suma(his.filter((x) => x.mes === m && clave(x, dim))))
-  const ejes = top.map((it): EjePerfil => {
-    const cuotas = previos.map((m, i) => (totalesMes[i] > 0 ? (suma(his.filter((x) => x.mes === m && clave(x, dim) === it.id)) / totalesMes[i]) * 100 : null)).filter((v): v is number => v !== null)
-    return { id: it.id, pct: it.pct, ref: cuotas.length && r.comparable ? cuotas.reduce((s, v) => s + v, 0) / cuotas.length : null }
-  })
-  const mayor = Math.max(10, ...ejes.flatMap((e) => [e.pct, e.ref ?? 0]))
-  return { ejes, max: Math.ceil(mayor / 10) * 10 }
 }

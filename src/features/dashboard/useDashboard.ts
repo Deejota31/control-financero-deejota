@@ -4,7 +4,6 @@ import { idsDe } from '@/domain/idsFiltro'
 import type { FondoPanel } from '@/domain/presupuesto'
 import { claves } from '@/lib/consultas'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 
 export interface AgrupadoSql {
@@ -24,8 +23,6 @@ export interface PanelDashboard {
   cantidad_prev: number
   serie: { fecha: string; monto: number; cantidad: number }[]
   por_ambito: AgrupadoSql[]
-  por_categoria: AgrupadoSql[]
-  por_subcategoria: AgrupadoSql[]
   /** Presupuesto, gasto del rango y fondos: no dependen de los filtros cruzados. */
   presupuesto: number | null
   gasto_rango: number
@@ -63,24 +60,6 @@ export function useDashboardPanel(f: FiltrosDashboard, prev: { desde: string; ha
         .abortSignal(signal)
       if (error) throw error
       return data as unknown as PanelDashboard
-    },
-  })
-}
-
-/** Períodos que toca el rango, con sus presupuestos por fondo e imputaciones (lectura completa, sin truncar). */
-export function usePresupuestoRango(desde: string, hasta: string) {
-  return useQuery({
-    queryKey: ['dashboard', 'presupuesto', desde, hasta],
-    queryFn: async ({ signal }) => {
-      const p = await supabase.from('budget_periods').select('*').lte('start_date', hasta).gte('end_date', desde).abortSignal(signal)
-      if (p.error) throw p.error
-      const ids = p.data.map((x) => x.id)
-      if (ids.length === 0) return { periodos: p.data, presupuestos: [], asignaciones: [] }
-      const [presupuestos, asignaciones] = await Promise.all([
-        leerTodo((d, h) => supabase.from('fund_period_budgets').select('*', { count: 'exact' }).in('period_id', ids).order('id').range(d, h).abortSignal(signal)),
-        leerTodo((d, h) => supabase.from('expense_fund_allocations').select('*', { count: 'exact' }).in('period_id', ids).order('id').range(d, h).abortSignal(signal)),
-      ])
-      return { periodos: p.data, presupuestos, asignaciones }
     },
   })
 }

@@ -43,3 +43,4 @@ Cada color tiene un id estable (`idDeColor`), un HEX base y variantes derivadas 
 - `--c1…--c5` existen **solo** para que los datos guardados con esos colores se sigan viendo igual.
 - Cifras financieras con `.num` (números tabulares). Texto nítido: sin `transform`/`filter` sobre capas con contenido; los efectos van en capas decorativas.
 - Respeta `prefers-reduced-motion`: toda transición lleva `motion-reduce`.
+- Medidas de la barra inferior y del botón flotante «Registrar gasto»: variables de `index.css` (`--alto-barra`, `--tam-fab`, `--sep-fab`, `--margen-fab`, `--margen-final` y las derivadas `--y-fab`, `--x-fab`, `--espacio-final`, `--espacio-libre`). Cualquier elemento fijo o con relleno al final de la página las lee en vez de escribir sus propios números; el área segura se suma ahí una sola vez.

@@ -2,12 +2,12 @@ import { readFile } from 'node:fs/promises'
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { elegirEnGasto, email, iniciarSesion, password, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, enlaceModulo, iniciarSesion, password, vigilarConsola } from './helpers'
 
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
 
 async function irA(page: Page, seccion: string) {
-  await page.getByRole('link', { name: 'Configuración' }).first().click()
+  await enlaceModulo(page, 'Configuración').first().click()
   await page.getByRole('tab', { name: new RegExp(`^${seccion}`) }).click()
 }
 
@@ -49,7 +49,7 @@ test.describe('Configuración', () => {
   test('tiene cinco secciones con navegación interna y datos de cuenta de solo lectura', async ({ page }) => {
     const errores = vigilarConsola(page)
     await iniciarSesion(page)
-    await page.getByRole('link', { name: 'Configuración' }).first().click()
+    await enlaceModulo(page, 'Configuración').first().click()
     const nav = page.getByRole('tablist', { name: 'Secciones de configuración' })
     await expect(nav.getByRole('tab')).toHaveCount(5)
     for (const [tab, h] of [['Perfil y preferencias', 'Perfil y preferencias'], ['Hogar', 'Hogar'], ['Exportar datos', 'Exportar datos'], ['Cuenta y seguridad', 'Cuenta y seguridad'], ['Actividad reciente', 'Actividad reciente']]) {

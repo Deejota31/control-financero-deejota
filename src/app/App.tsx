@@ -18,7 +18,6 @@ const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').th
 const FondosPage = lazy(() => import('@/features/fondos/FondosPage').then((m) => ({ default: m.FondosPage })))
 const GastosPage = lazy(() => import('@/features/gastos/GastosPage').then((m) => ({ default: m.GastosPage })))
 const ConfiguracionPage = lazy(() => import('@/features/perfil/ConfiguracionPage').then((m) => ({ default: m.ConfiguracionPage })))
-const SaludPage = lazy(() => import('@/features/salud/SaludPage').then((m) => ({ default: m.SaludPage })))
 
 function Notificaciones() {
   const { tema } = useTema()
@@ -46,7 +45,6 @@ export function App() {
                   <Route path="gastos" element={<GastosPage />} />
                   <Route path="fondos" element={<FondosPage />} />
                   <Route path="catalogo" element={<CatalogoPage />} />
-                  <Route path="salud" element={<SaludPage />} />
                   <Route path="configuracion" element={<ConfiguracionPage />} />
                 </Route>
               </Route>

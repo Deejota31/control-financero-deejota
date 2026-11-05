@@ -1,5 +1,5 @@
 /**
- * Estado único de filtros del Dashboard y reglas de selección cruzada (dona, barras, acumulado, Top 5).
+ * Estado único de filtros del Dashboard y reglas de selección cruzada (dona, barras, acumulado, ranking).
  * Es una función pura: la interfaz la usa dentro de un hook ligado a la URL.
  */
 import { idsDe, unirIds } from './idsFiltro'

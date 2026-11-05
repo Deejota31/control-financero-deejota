@@ -28,7 +28,7 @@ Ver [reglas-fondos.md](reglas-fondos.md). Códigos de error propios `GD001`…`G
 
 ## Frontend
 
-`src/features/*` por módulo (auth, catálogo, fondos, gastos, plantillas, planificación, periodos, dashboard, salud, perfil), `src/domain` con lógica pura probada (incluye meses y períodos, registro desde plantillas, gesto de acciones) (compatibilidad de fondos, series y proyección, tendencias), `src/components/ui` con componentes accesibles (selector con búsqueda, calendario, importe con prefijo `S/`, diálogos). Datos con TanStack Query: consultas con cancelación al cambiar filtros, invalidación coherente tras cada operación (`lib/consultas.ts`: dominios por operación); sin actualizaciones optimistas en operaciones financieras (la imputación depende del servidor).
+`src/features/*` por módulo (auth, catálogo, fondos, gastos, plantillas, planificación, periodos, dashboard, perfil), `src/domain` con lógica pura probada (incluye meses y períodos, registro desde plantillas, gesto de acciones) (compatibilidad de fondos, series y proyección, tendencias), `src/components/ui` con componentes accesibles (selector con búsqueda, calendario, importe con prefijo `S/`, diálogos). Datos con TanStack Query: consultas con cancelación al cambiar filtros, invalidación coherente tras cada operación (`lib/consultas.ts`: dominios por operación); sin actualizaciones optimistas en operaciones financieras (la imputación depende del servidor).
 
 **Sesión y caché:** `app/ConsultasPorUsuario` crea un `QueryClient` por identidad de usuario y lo vacía al cambiar de sesión o cerrarla, de modo que los datos de una persona nunca se muestran a la siguiente en el mismo navegador (ni siquiera consultas con `staleTime`). Las claves de hogar y perfil incluyen además el id de usuario.
 

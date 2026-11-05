@@ -2,7 +2,7 @@
 
 Control de gastos personales y familiares. React + TypeScript + Vite + Tailwind + Supabase.
 
-Módulos: Dashboard · Gastos · Fondos presupuestales (por mes) · Catálogo · Salud financiera · Planificación mensual · Configuración (acceso, sesión y perfil).
+Módulos: Dashboard · Gastos · Fondos presupuestales (por mes) · Catálogo · Planificación mensual · Configuración (acceso, sesión y perfil).
 
 ## Requisitos
 

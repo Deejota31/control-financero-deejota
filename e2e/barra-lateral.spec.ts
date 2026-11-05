@@ -1,12 +1,12 @@
 import { expect, test } from './fixtures'
 import { email, iniciarSesion, password, vigilarConsola } from './helpers'
 
-const RUTAS: [string, string][] = [['/', 'Dashboard'], ['/gastos', 'Gastos'], ['/fondos', 'Fondos'], ['/catalogo', 'Catálogo'], ['/salud', 'Salud financiera'], ['/configuracion', 'Configuración']]
+const RUTAS: [string, string][] = [['/', 'Dashboard'], ['/gastos', 'Gastos'], ['/fondos', 'Fondos'], ['/catalogo', 'Catálogo'], ['/configuracion', 'Configuración']]
 
 test.describe('Barra lateral: expandida y compacta', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
-  test('alterna entre modos por clic y teclado en los seis módulos, sin dejar márgenes vacíos', async ({ page }) => {
+  test('alterna entre modos por clic y teclado en los cinco módulos, sin dejar márgenes vacíos', async ({ page }) => {
     const errores = vigilarConsola(page)
     await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)

@@ -1,7 +1,7 @@
 import { type Page } from '@playwright/test'
 import { E2E_UID, sqlLocal } from './db'
 import { expect, test } from './fixtures'
-import { elegirEnGasto, email, iniciarSesion, password, vigilarConsola } from './helpers'
+import { elegirEnGasto, email, enlaceModulo, iniciarSesion, password, vigilarConsola } from './helpers'
 
 const dinero = (t: string | null) => Number((t ?? '').replace(/[^\d.-]/g, ''))
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
@@ -44,21 +44,16 @@ test.describe('Dashboard', () => {
     for (const t of ['Presupuesto asignado', 'Gastado del período', 'Disponible consolidado', 'Exceso sobre el presupuesto']) await expect(page.getByText(t, { exact: true })).toBeVisible()
     if (mesEnCurso) await expect(page.getByText(ESTIMACION).first()).toBeVisible()
     await expect(page.getByText('Cierre proyectado (estimación)')).toHaveCount(0) // la antigua cifra lineal ya no se presenta como estimación
-    for (const h of ['Presupuesto consolidado', 'Gasto acumulado', 'Distribución por ámbito', 'Top 5 categorías', 'Perfil de gasto', 'Ranking con tendencia']) {
+    for (const h of ['Presupuesto consolidado', 'Gasto acumulado', 'Distribución por ámbito', 'Ranking con tendencia']) {
       await expect(page.getByRole('heading', { name: h })).toBeVisible()
     }
+    // Los gráficos retirados no existen en ninguna forma
+    await expect(page.getByRole('heading', { name: /^Top 5|^Perfil de gasto/ })).toHaveCount(0)
+    await expect(page.getByText(/Top 5|Perfil de gasto/)).toHaveCount(0)
     await expect(page.locator('.recharts-surface').first()).toBeVisible()
     await expect(kpi(page, 'Gasto del período')).toContainText(`${sqlCantidad()} movimientos`)
     expect(await valorKpi(page, 'Gasto del período')).toBeCloseTo(sqlTotal(), 2)
     expect(errores).toEqual([])
-  })
-
-  test('alterna el Top 5 entre categorías y subcategorías', async ({ page }) => {
-    await iniciarSesion(page)
-    await page.getByRole('button', { name: 'Subcategorías', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Top 5 subcategorías' })).toBeVisible()
-    await page.getByRole('button', { name: 'Categorías', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Top 5 categorías' })).toBeVisible()
   })
 
   test('seleccionar un ámbito en la dona filtra KPIs, gráficos y gastos; volver a seleccionarlo lo quita', async ({ page }) => {
@@ -112,45 +107,73 @@ test.describe('Dashboard', () => {
     expect(await valorKpi(page, 'Gasto del período')).toBeCloseTo(sqlTotal(), 2)
   })
 
-  test('Top 5 categorías: una barra por nombre con la suma de todos los ámbitos', async ({ page }) => {
+  test('Ranking con tendencia: cinco filas por categoría con el importe y el porcentaje exactos del período', async ({ page }) => {
     await iniciarSesion(page)
-    const filas = page.getByRole('region', { name: /^Top 5/ }).getByRole('button', { name: /mov\./ })
+    const filas = page.getByRole('list', { name: 'Ranking' }).getByRole('button')
     await expect(filas.first()).toBeVisible()
-    const esperado = sqlLocal(`select c.name || '|' || sum(e.amount) || '|' || count(*) from public.expenses e join public.categorias c on c.id = e.categoria_id where e.household_id = ${HID} and e.status = 'active' and e.expense_date between '${INI}' and '${FIN}' group by lower(trim(c.name)), c.name order by sum(e.amount) desc, c.name limit 5`)
-    const filasSql = esperado.split('\n').map((l) => l.split('|'))
-    const n = await filas.count()
-    expect(n).toBe(filasSql.length)
-    const nombres: string[] = []
-    for (let i = 0; i < n; i++) {
+    const esperado = sqlLocal(`select c.name || '|' || sum(e.amount) from public.expenses e join public.categorias c on c.id = e.categoria_id where e.household_id = ${HID} and e.status = 'active' and e.expense_date between '${INI}' and '${FIN}' group by c.id, c.name order by sum(e.amount) desc, c.id::text limit 5`)
+      .split('\n').map((l) => l.split('|'))
+    const total = sqlTotal()
+    await expect(filas).toHaveCount(esperado.length)
+    for (const [i, [nombre, monto]] of esperado.entries()) {
       const texto = (await filas.nth(i).innerText()).replace(/\s+/g, ' ')
-      nombres.push(texto)
-      const [nombre, total, cant] = filasSql[i]
-      expect(texto, `barra ${i + 1}`).toContain(nombre)
+      expect(texto, `fila ${i + 1}`).toContain(nombre)
       const importe = Number(texto.match(/S\/\s*([\d.,]+)/)![1].replace(/,/g, ''))
-      expect(importe).toBeCloseTo(Number(total), 2)
-      expect(texto).toContain(`${cant} mov.`)
+      expect(importe, `importe de ${nombre}`).toBeCloseTo(Number(monto), 2)
+      const pct = Number(texto.match(/S\/\s*[\d.,]+\s+([\d.]+) %/)![1])
+      expect(pct, `porcentaje de ${nombre}`).toBeCloseTo((Number(monto) / total) * 100, 1)
     }
-    // ninguna categoría aparece dos veces
-    const soloNombres = nombres.map((x) => x.split(' ')[0])
-    expect(new Set(soloNombres).size).toBe(soloNombres.length)
   })
 
-  test('seleccionar una categoría del Top 5 filtra la dona y los KPIs sin reducir el propio Top 5', async ({ page }) => {
+  test('seleccionar una categoría del Ranking filtra la dona y los KPIs sin reducir el propio Ranking', async ({ page }) => {
     await iniciarSesion(page)
-    const filas = page.getByRole('region', { name: /^Top 5/ }).getByRole('button', { name: /mov\./ })
+    const filas = page.getByRole('list', { name: 'Ranking' }).getByRole('button')
     await expect(filas.first()).toBeVisible()
     const total = await filas.count()
     await filas.first().click()
     await expect(page.getByRole('combobox', { name: 'Categoría', exact: true })).not.toHaveText('Categoría')
     await expect(page).toHaveURL(/categoria=/)
     const cat = new URL(page.url()).searchParams.get('categoria')!
-    // La barra es el grupo por nombre: puede llevar varios IDs (la misma categoría en distintos ámbitos).
     const esperado = sqlTotal(`and categoria_id in (${cat.split(',').map((i) => `'${i}'`).join(',')})`)
     await expect.poll(() => valorKpi(page, 'Gasto con filtros actuales')).toBeCloseTo(esperado, 2)
     // la dona muestra solo lo de esa categoría y suma lo mismo que el KPI
     await expect.poll(() => sumaDona(page)).toBeCloseTo(esperado, 1)
     expect(await filas.count()).toBe(total)
     await expect(filas.first()).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('los filtros globales recalculan a la vez la dona y el Ranking, con el mismo total que SQL', async ({ page }) => {
+    await iniciarSesion(page)
+    const ranking = page.getByRole('region', { name: 'Ranking con tendencia' })
+    await expect(ranking.getByRole('list', { name: 'Ranking' })).toBeVisible()
+    const sinFiltro = await sumaDona(page)
+    await page.getByRole('combobox', { name: 'Medio de pago', exact: true }).click()
+    await page.getByRole('option', { name: 'Yape', exact: true }).click()
+    const esperado = sqlTotal(`and payment_method_id = (select id from public.medios_pago where household_id = ${HID} and name = 'Yape')`)
+    expect(esperado).toBeLessThan(sinFiltro) // el filtro realmente reduce el conjunto
+    await expect.poll(() => sumaDona(page)).toBeCloseTo(esperado, 1)
+    // El pie del Ranking declara el total sobre el que calcula los porcentajes: es el del filtro
+    const totalRanking = async () => dinero((await ranking.getByText(/^% sobre el total del ranking/).textContent())!.match(/S\/\s*[\d.,]+/)![0])
+    await expect.poll(totalRanking).toBeCloseTo(esperado, 1)
+    // El ámbito elegido en la dona también llega al Ranking
+    await filaAmbito(page, 'Personal').click()
+    const personal = sqlTotal(`and ambito_id = '${idAmbito('Personal')}' and payment_method_id = (select id from public.medios_pago where household_id = ${HID} and name = 'Yape')`)
+    await expect.poll(totalRanking).toBeCloseTo(personal, 1)
+    // Limpiar filtros devuelve ambos al conjunto completo
+    await page.getByRole('button', { name: 'Limpiar filtros' }).click()
+    await expect.poll(() => sumaDona(page)).toBeCloseTo(sinFiltro, 1)
+    await expect.poll(totalRanking).toBeCloseTo(sqlTotal(), 1)
+  })
+
+  test('sin gasto con los filtros, la dona y el Ranking lo dicen sin tarjetas vacías ni errores', async ({ page }) => {
+    const errores = vigilarConsola(page)
+    await iniciarSesion(page)
+    // Un período sin movimientos con un ámbito elegido: el panel sigue mostrando las dos tarjetas, cada una con su aviso
+    await page.goto(`/?desde=2020-01-01&hasta=2020-01-31&ambito=${idAmbito('Hogar')}`)
+    await expect(page.getByRole('region', { name: 'Distribución por ámbito' }).getByText('No hay gasto con estos filtros.')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Ranking con tendencia' }).getByText('Sin gastos con estos filtros.')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1)
+    expect(errores).toEqual([])
   })
 
   test('los filtros se combinan (Y lógico), se quitan por chip y "Limpiar filtros" conserva el período', async ({ page }) => {
@@ -302,7 +325,7 @@ test.describe('Dashboard', () => {
     await d.getByLabel('Descripción', { exact: true }).fill('E2E dashboard')
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(page.getByText('Gasto guardado.')).toBeVisible()
-    await page.getByRole('link', { name: 'Dashboard' }).first().click()
+    await enlaceModulo(page, 'Dashboard').first().click()
     await expect.poll(() => valorKpi(page, 'Gasto del período')).toBeCloseTo(antes + 10, 2)
 
     await page.getByRole('link', { name: 'Gastos' }).first().click()
@@ -310,7 +333,7 @@ test.describe('Dashboard', () => {
     await page.getByRole('button', { name: 'Anular E2E dashboard' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Anular' }).click()
     await expect(page.getByText('1 gasto anulado.')).toBeVisible()
-    await page.getByRole('link', { name: 'Dashboard' }).first().click()
+    await enlaceModulo(page, 'Dashboard').first().click()
     await expect.poll(() => valorKpi(page, 'Gasto del período')).toBeCloseTo(antes, 2)
   })
 
@@ -365,6 +388,9 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
   test('el selector de período acepta fechas personalizadas, valida el rango y limpia', async ({ page }) => {
     await iniciarSesion(page)
     await periodo(page, 'Mes anterior') // los días 10 y 20 del mes anterior ya ocurrieron siempre (el mes actual puede estar recién empezado)
+    // Se espera a lo que se ve, no a la URL: la navegación confirma la URL antes de pintar el nuevo período. Si el selector se reabre en esa ventana, los calendarios
+    // abren en el mes actual y la prueba elegiría días futuros. El mes anterior está cerrado; el actual, abierto.
+    await expect(page.getByRole('button', { name: /^Período:/ })).not.toContainText('Período abierto')
     await page.getByRole('button', { name: /^Período:/ }).click()
     await expect(page.getByRole('button', { name: 'Este mes', exact: true })).toBeVisible()
     await page.getByLabel('Desde', { exact: true }).click()
@@ -386,7 +412,7 @@ test.describe('Dashboard: barra de filtros e indicadores', () => {
     await expect(page).not.toHaveURL(/desde=/)
   })
 
-  test('Ámbito, Categoría y Subcategoría se filtran entre sí y el Top 5 sigue conectado', async ({ page }) => {
+  test('Ámbito, Categoría y Subcategoría se filtran entre sí y el KPI sigue conectado', async ({ page }) => {
     await iniciarSesion(page)
     await page.getByRole('combobox', { name: 'Ámbito', exact: true }).click()
     await page.getByRole('option', { name: 'Hogar', exact: true }).click()

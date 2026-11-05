@@ -8,7 +8,6 @@ const RUTAS = [
   { ruta: '/gastos', nombre: 'gastos', espera: 'Movimientos' },
   { ruta: '/fondos', nombre: 'fondos', espera: 'Presupuesto asignado' },
   { ruta: '/catalogo', nombre: 'catalogo', espera: 'Ámbitos' },
-  { ruta: '/salud', nombre: 'salud', espera: '¿Cuánto presupuesto queda?' },
   { ruta: '/configuracion', nombre: 'configuracion', espera: 'Perfil y preferencias' },
 ] as const
 
@@ -49,7 +48,7 @@ test.describe('Revisión visual y de accesibilidad', () => {
       const actual = await page.locator('html').getAttribute('data-theme')
       if ((tema === 'oscuro') !== (actual === 'dark')) await page.getByRole('switch', { name: /Cambiar a tema/ }).filter({ visible: true }).click()
       for (const r of RUTAS) {
-        await page.getByRole('link', { name: r.nombre === 'dashboard' ? 'Dashboard' : r.nombre === 'salud' ? 'Salud financiera' : new RegExp(`^${r.nombre === 'configuracion' ? 'Configuración' : r.nombre === 'catalogo' ? 'Catálogo' : r.nombre === 'gastos' ? 'Gastos' : 'Fondos'}$`) }).first().click()
+        await page.getByRole('link', { name: r.nombre === 'dashboard' ? 'Dashboard' : new RegExp(`^${r.nombre === 'configuracion' ? 'Configuración' : r.nombre === 'catalogo' ? 'Catálogo' : r.nombre === 'gastos' ? 'Gastos' : 'Fondos'}$`) }).first().click()
         await expect(page.getByText(r.espera, { exact: false }).first()).toBeVisible()
         await page.waitForLoadState('networkidle')
         await revisar(page, 1440, r.nombre)

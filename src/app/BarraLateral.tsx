@@ -26,7 +26,7 @@ export function BarraLateral({ compacta, onAlternar, nombre, correo }: Props) {
   const etiquetaToggle = compacta ? 'Expandir la barra lateral' : 'Contraer la barra lateral'
 
   return (
-    <aside id="barra-lateral" aria-label="Barra lateral" className="sticky top-0 hidden h-screen flex-col overflow-hidden border-r border-line bg-surface lg:flex">
+    <aside id="barra-lateral" aria-label="Barra lateral" className="sticky top-0 hidden h-dvh flex-col overflow-hidden border-r border-line bg-surface lg:flex">
       {/* Cabecera de altura fija: el isotipo no se mueve al contraer; solo el nombre se desvanece y la barra lo recorta. */}
       <div className="flex h-16 shrink-0 items-center gap-2.5 overflow-hidden pl-5 pr-3">
         <Isotipo tono="aurora" tamano={32} titulo={compacta ? MARCA.nombre : undefined} />

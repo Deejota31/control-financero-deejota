@@ -4,7 +4,7 @@ import { email, iniciarSesion, password } from './helpers'
 
 /**
  * Comportamiento de iPhone (Safari / PWA) que se puede comprobar en el navegador de pruebas con emulación táctil: sin zoom automático al enfocar campos,
- * filtros pegajosos alineados, dona centrada, barra inferior simétrica y modales utilizables con poca altura (teclado abierto).
+ * filtros pegajosos alineados, dona centrada y modales utilizables con poca altura (teclado abierto).
  * LIMITACIÓN: esto es Chromium emulando un iPhone, no Safari real. El zoom de iOS y el cierre del teclado deben comprobarse en un dispositivo físico.
  */
 const IPHONE = {
@@ -65,7 +65,7 @@ test.describe('iPhone: sesión iniciada', () => {
 
   test('ningún campo editable de las pantallas principales tiene menos de 16 px', async ({ page }) => {
     await iniciarSesion(page)
-    for (const ruta of ['/', '/gastos', '/fondos', '/catalogo', '/salud', '/configuracion?seccion=perfil', '/configuracion?seccion=hogar', '/configuracion?seccion=cuenta']) {
+    for (const ruta of ['/', '/gastos', '/fondos', '/catalogo', '/configuracion?seccion=perfil', '/configuracion?seccion=hogar', '/configuracion?seccion=cuenta']) {
       await page.goto(ruta)
       await page.waitForLoadState('networkidle')
       expect(await editablesPequenos(page), `campos pequeños en ${ruta}`).toEqual([])
@@ -199,17 +199,6 @@ test.describe('iPhone: sesión iniciada', () => {
     }
     expect(textos[0]).toEqual(textos[1])
     expect(textos[0].slice(0, 6)).toEqual(['1', '5', '10', '15', '20', '25'])
-  })
-
-  test('barra inferior: el botón central está exactamente centrado y los iconos son simétricos', async ({ page }) => {
-    await iniciarSesion(page)
-    const nav = page.locator('nav[aria-label="Módulos"]').last()
-    await expect(nav).toBeVisible()
-    const centros = await nav.locator('a, button').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => { const r = e.getBoundingClientRect(); return r.left + r.width / 2 }))
-    expect(centros).toHaveLength(7) // 3 + botón central + 3
-    const ancho = 390
-    expect(Math.abs(centros[3] - ancho / 2)).toBeLessThanOrEqual(1)
-    for (let i = 0; i < 3; i++) expect(Math.abs(centros[i] - (ancho - centros[6 - i]))).toBeLessThanOrEqual(1)
   })
 
   test('el Dashboard del mes en curso compara el mismo tramo del mes anterior y no muestra una proyección sin sustento', async ({ page }) => {

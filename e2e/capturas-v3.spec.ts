@@ -10,7 +10,7 @@ const DIR = process.env.CAPTURAS_DIR
 const FASE = process.env.CAPTURAS_FASE ?? 'antes'
 const HID = `(select household_id from public.profiles where user_id = '${E2E_UID}')`
 const TAMANOS = [[1440, 900], [390, 844]] as const
-const PAGINAS = [['dashboard', '/'], ['gastos', '/gastos'], ['fondos', '/fondos'], ['catalogo', '/catalogo'], ['salud', '/salud'], ['configuracion', '/configuracion']] as const
+const PAGINAS = [['dashboard', '/'], ['gastos', '/gastos'], ['fondos', '/fondos'], ['catalogo', '/catalogo'], ['configuracion', '/configuracion']] as const
 
 test.describe('Capturas del rediseño global', () => {
   test.skip(!DIR || !email || !password, 'Define CAPTURAS_DIR y las credenciales E2E')

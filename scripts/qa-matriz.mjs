@@ -40,7 +40,7 @@ const seg = (ms) => (ms / 1000).toFixed(1) + ' s'
 /** Requisitos de la revisión → archivos de prueba que los cubren (el estado sale de los resultados de esos archivos). */
 const REQUISITOS = [
   ['R1', 'Acceso y sesión', ['auth.spec', 'recuperacion.spec']],
-  ['R2', 'Navegación general y preferencias', ['navegacion.spec', 'barra-lateral.spec', 'arranque.spec']],
+  ['R2', 'Navegación general y preferencias', ['navegacion.spec', 'barra-lateral.spec', 'barra-inferior.spec', 'arranque.spec']],
   ['R3', 'Catálogo', ['catalogo.spec', 'iconos.spec']],
   ['R4', 'Fondos (página y tabla)', ['fondos.spec', 'detalle-fondo.spec', 'fondos-tabla.spec', 'reglas-ui.spec']],
   ['R5', 'Copia de fondos', ['planificacion.spec']],
@@ -49,10 +49,9 @@ const REQUISITOS = [
   ['R8', 'Listado de Gastos', ['gastos.spec', 'filtros.spec', 'volumen.spec', 'gastos-diseno.spec']],
   ['R9', 'Plantillas y registro mensual', ['plantillas.spec']],
   ['R10', 'Dashboard y gráficos', ['dashboard.spec', 'analisis.spec']],
-  ['R11', 'Salud financiera', ['salud.spec']],
   ['R12', 'Configuración', ['configuracion.spec']],
   ['R13', 'Independencia mensual y datos', ['planificacion.spec', 'integracion.spec', 'volumen.spec']],
-  ['R14', 'Responsive y diseño', ['qa-responsive.spec', 'responsive.spec', 'modales.spec', 'visual.spec', 'fondos-tabla.spec']],
+  ['R14', 'Responsive y diseño', ['qa-responsive.spec', 'responsive.spec', 'barra-inferior.spec', 'modales.spec', 'visual.spec', 'fondos-tabla.spec']],
   ['R15', 'Accesibilidad y casos límite', ['a11y.spec', 'teclado.spec', 'recuperacion.spec']],
 ]
 

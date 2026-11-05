@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures'
 import { elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
-const RUTAS = ['/', '/gastos', '/fondos', '/catalogo', '/salud', '/configuracion']
+const RUTAS = ['/', '/gastos', '/fondos', '/catalogo', '/configuracion']
 
 test.describe('Navegación y registro global de gastos', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
@@ -52,48 +52,18 @@ test.describe('Navegación y registro global de gastos', () => {
     await expect(filas).toContainText('S/ 12.50')
   })
 
-  test('móvil: seis módulos, + central, áreas táctiles de 44 px y contenido sobre la barra', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
+  test('«Salud financiera» ya no existe: ni en la navegación ni como ruta (/salud vuelve al Dashboard, como cualquier ruta desconocida)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
     await iniciarSesion(page)
-    const nav = page.getByRole('navigation', { name: 'Módulos' }).filter({ has: page.getByRole('button', { name: 'Registrar gasto' }) })
-    await expect(nav).toBeVisible()
-    for (const n of ['Dashboard', 'Gastos', 'Fondos', 'Catálogo', 'Salud financiera', 'Configuración']) {
-      const l = nav.getByRole('link', { name: n })
-      await expect(l).toBeVisible()
-      const b = (await l.boundingBox())!
-      expect(b.height, n).toBeGreaterThanOrEqual(44)
-      expect(b.width, n).toBeGreaterThanOrEqual(44)
+    await expect(page.getByRole('link', { name: /Salud financiera/ })).toHaveCount(0)
+    for (const ruta of ['/salud', '/salud?mes=2026-01-01']) {
+      await page.goto(ruta)
+      await expect(page).toHaveURL(/\/$/)
+      await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+      await expect(page.getByText('¿Cuánto presupuesto queda?')).toHaveCount(0)
     }
-    const mas = nav.getByRole('button', { name: 'Registrar gasto' })
-    const bm = (await mas.boundingBox())!
-    expect(bm.width).toBeGreaterThanOrEqual(44)
-    // Tres a un lado, tres al otro
-    const xs = await Promise.all(['Dashboard', 'Gastos', 'Fondos', 'Catálogo', 'Salud financiera', 'Configuración'].map(async (n) => (await nav.getByRole('link', { name: n }).boundingBox())!.x))
-    expect(Math.max(...xs.slice(0, 3))).toBeLessThan(bm.x)
-    expect(Math.min(...xs.slice(3))).toBeGreaterThan(bm.x)
-    // El botón flotante de escritorio no se duplica
-    await expect(page.locator('button.fab-gasto:visible')).toHaveCount(1)
-    for (const r of RUTAS) {
-      await page.goto(r)
-      await page.waitForLoadState('networkidle')
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-      await page.waitForTimeout(250)
-      const sobra = await page.evaluate(() => {
-        const nav = document.querySelector('nav.fixed')!.getBoundingClientRect()
-        // Solo cuenta lo realmente visible: un elemento recortado por un contenedor (overflow) no se pinta bajo la barra.
-        const ult = Array.from(document.querySelectorAll('#contenido *')).filter((e) => {
-          const r = e.getBoundingClientRect()
-          if (r.height === 0 || r.bottom > innerHeight) return false
-          const x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2)), y = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2))
-          const top = document.elementFromPoint(x, y)
-          return top === e || e.contains(top)
-        }).map((e) => e.getBoundingClientRect().bottom)
-        return Math.max(0, ...ult) - nav.top
-      })
-      expect(sobra, `contenido bajo la barra en ${r}`).toBeLessThanOrEqual(1)
-    }
-    await mas.click()
-    await expect(page.getByRole('dialog', { name: 'Nuevo gasto' })).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByRole('navigation', { name: 'Módulos' }).getByRole('link')).toHaveCount(5)
   })
 
   test('tablet y escritorio estrecho: barra inferior a 768 px y barra lateral compacta a 1024 px', async ({ page }) => {
