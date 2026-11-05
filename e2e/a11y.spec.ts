@@ -33,7 +33,6 @@ const PAGINAS = [
   { ruta: '/gastos', nombre: 'Gastos', espera: 'Movimientos' },
   { ruta: '/fondos', nombre: 'Fondos', espera: 'Presupuesto asignado' },
   { ruta: '/catalogo', nombre: 'Catálogo', espera: 'Ámbitos' },
-  { ruta: '/salud', nombre: 'Salud financiera', espera: '¿Cuánto presupuesto queda?' },
   { ruta: '/configuracion', nombre: 'Configuración: perfil', espera: 'Formato de fecha' },
   { ruta: '/configuracion?seccion=hogar', nombre: 'Configuración: hogar', espera: 'Nombre del hogar' },
   { ruta: '/configuracion?seccion=exportar', nombre: 'Configuración: exportar', espera: 'Gastos en CSV' },

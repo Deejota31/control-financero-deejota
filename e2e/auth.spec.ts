@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test'
 import { expect, test } from './fixtures'
+import { enlaceModulo } from './helpers'
 
 const email = process.env.E2E_USER_EMAIL
 const password = process.env.E2E_USER_PASSWORD
@@ -9,7 +10,7 @@ async function iniciarSesion(page: Page) {
   await page.getByLabel('Correo').fill(email!)
   await page.getByLabel('Contraseña', { exact: true }).fill(password!)
   await page.getByRole('button', { name: 'Iniciar sesión' }).click()
-  await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toHaveAttribute('aria-current', 'page')
+  await expect(enlaceModulo(page, 'Dashboard').first()).toHaveAttribute('aria-current', 'page')
 }
 
 test.describe('rutas y errores sin sesión', () => {
@@ -76,7 +77,7 @@ test.describe('con el usuario demo local', () => {
     await page.getByRole('link', { name: 'Gastos' }).first().click()
     await expect(page).toHaveURL(/\/gastos$/)
     await expect(page.getByRole('link', { name: 'Gastos' }).first()).toHaveAttribute('aria-current', 'page')
-    await expect(page.getByRole('link', { name: 'Dashboard' }).first()).not.toHaveAttribute('aria-current', 'page')
+    await expect(enlaceModulo(page, 'Dashboard').first()).not.toHaveAttribute('aria-current', 'page')
 
     await page.reload()
     await expect(page).toHaveURL(/\/gastos$/)
@@ -96,7 +97,7 @@ test.describe('con el usuario demo local', () => {
 
   test('guarda el perfil en Supabase y lo recupera tras recargar', async ({ page }) => {
     await iniciarSesion(page)
-    await page.getByRole('link', { name: 'Configuración' }).first().click()
+    await enlaceModulo(page, 'Configuración').first().click()
     const nombre = page.getByLabel('Nombre', { exact: true })
     await expect(nombre).toBeVisible()
     await nombre.fill('Perfil Prueba E2E')
@@ -135,7 +136,7 @@ test.describe('con el usuario demo local', () => {
 
   test('la validación de contraseña nueva funciona en Configuración', async ({ page }) => {
     await iniciarSesion(page)
-    await page.getByRole('link', { name: 'Configuración' }).first().click()
+    await enlaceModulo(page, 'Configuración').first().click()
     await page.getByRole('tab', { name: /^Cuenta y seguridad/ }).click()
     await page.getByLabel('Contraseña nueva').fill('corta')
     await page.getByLabel('Repite la contraseña').fill('otra')

@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
 import { Button } from '@/components/ui/Button'
 import { Combobox } from '@/components/ui/Combobox'
-import { Hint } from '@/components/ui/Hint'
-import { TooltipGrafico, TTBarra, TTCabecera, TTMetrica, TTPrincipal } from '@/components/ui/TooltipGrafico'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { diasEnRango, esMesCompleto, rangoComparable, serieDiaria, variacion } from '@/domain/dashboard'
@@ -15,13 +13,14 @@ import { resumirPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles } from '@/lib/format'
-import { agruparPorNombre, consolidarPorNombre, idsDe, unirIds, valorDeGrupo } from '@/domain/idsFiltro'
+import { agruparPorNombre, idsDe, valorDeGrupo } from '@/domain/idsFiltro'
 import { opciones, opcionesAgrupadas, useCatalogo } from '@/features/catalogo/useCatalogo'
-import { AnalisisDashboard } from './Analisis'
 import { useRegistroGasto } from '@/features/gastos/RegistroGasto'
 import { usePerfil } from '@/features/perfil/usePerfil'
 import { Dona, GraficoAcumulado, GraficoDiario, type PuntoGrafico, type SegmentoDona } from './Graficos'
 import { PresupuestoConsolidado } from './PresupuestoConsolidado'
+import { RankingTendencia } from './Ranking'
+import { Tarjeta } from './Tarjeta'
 import { BarraFiltros, CeldaFiltro } from '@/components/ui/BarraFiltros'
 import { FiltroFecha } from '@/components/ui/FiltroFecha'
 import { useHoy } from '@/features/fondos/useHoy'
@@ -30,24 +29,6 @@ import { useProyeccion } from './useProyeccion'
 import { useFiltrosDashboard } from './useFiltrosDashboard'
 
 const TIPOS = [{ value: 'fixed', label: 'Fijo', icon: 'repeat' }, { value: 'variable', label: 'Variable', icon: 'tag' }]
-
-function Tarjeta({ titulo, descripcion, derecha, children, className, filtrada }: { titulo: string; descripcion?: string; derecha?: React.ReactNode; children: React.ReactNode; className?: string; filtrada?: boolean }) {
-  return (
-    <section aria-label={titulo} className={cn('flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-5', className)}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-display text-base font-bold">{titulo}</h2>
-            {filtrada && <Pill tone="pri">Filtrado</Pill>}
-          </div>
-          {descripcion && <p className="text-xs text-muted">{descripcion}</p>}
-        </div>
-        {derecha}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 /** Indicador con acento: tinte muy suave, ícono en superficie coloreada y el importe como protagonista. */
 function Kpi({ etiqueta, valor, nota, tono, icono, acento }: { etiqueta: string; valor: string; nota: string; tono?: 'ok' | 'bad'; icono: ComponentType<{ className?: string }>; acento: Acento }) {
@@ -77,7 +58,6 @@ export function DashboardPage() {
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const panelQ = useDashboardPanel(filtros, ant, valido)
 
-  const [topModo, setTopModo] = useState<'categorias' | 'subcategorias'>('categorias')
   const [hoverAmbito, setHoverAmbito] = useState<string | null>(null)
 
   const cargando = panelQ.isPending || catalogo.isPending
@@ -133,12 +113,6 @@ export function DashboardPage() {
     const amb = catalogo.ambitos.find((x) => x.id === a.id)
     return { id: a.id, nombre: amb?.name ?? 'Ámbito', valor: a.total, cantidad: a.cantidad, fill: colorVar(amb?.color_css) }
   })
-  const listaTop = topModo === 'categorias' ? panel?.por_categoria : panel?.por_subcategoria
-  // Una barra por nombre: lo que se llama igual en distintos ámbitos se suma (solo presentación; los registros no cambian).
-  const catalogoTop: { id: string; name: string; icon_key: string }[] = topModo === 'categorias' ? catalogo.categorias : catalogo.subcategorias
-  const top = useMemo(() => consolidarPorNombre(listaTop ?? [], catalogoTop).slice(0, 5), [listaTop, catalogoTop])
-  const totalTop = useMemo(() => (listaTop ?? []).reduce((s, t) => s + Number(t.total), 0), [listaTop])
-
   const irAGastos = () => navigate(`/gastos?${paramsGastos(filtros)}`)
 
 
@@ -246,9 +220,10 @@ export function DashboardPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Tarjeta titulo="Distribución por ámbito" filtrada={Boolean(filtros.categoria || filtros.subcategoria || filtros.medio || filtros.tipo || filtros.dia)} descripcion={`${etiquetaPeriodo} · selecciona un ámbito para filtrar todo el panel`}>
               {porAmbito.length === 0 ? <p className="text-sm text-muted">No hay gasto con estos filtros.</p> : (
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="flex min-w-48 grow basis-48 justify-center"><Dona datos={segmentos} total={totalAmbitos} seleccionado={filtros.ambito || null} onSeleccion={(id) => seleccionar('ambito', id)} hoverExterno={hoverAmbito} /></div>
-                  <ul className="flex min-w-48 flex-1 flex-col gap-1.5" aria-label="Ámbitos">
+                <div className="my-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+                  {/* La dona mide lo que mide (12 rem) y no se estira; la leyenda se queda con el resto y, si no cabe a su lado con 14 rem, baja debajo de ella. */}
+                  <div className="flex shrink-0 justify-center"><Dona datos={segmentos} total={totalAmbitos} seleccionado={filtros.ambito || null} onSeleccion={(id) => seleccionar('ambito', id)} hoverExterno={hoverAmbito} /></div>
+                  <ul className="flex min-w-56 flex-1 basis-56 flex-col gap-1.5" aria-label="Ámbitos">
                     {porAmbito.map((a) => {
                       const amb = catalogo.ambitos.find((x) => x.id === a.id)
                       const sel = filtros.ambito === a.id
@@ -265,7 +240,7 @@ export function DashboardPage() {
                             className={cn('flex w-full items-center gap-2 rounded-lg border border-transparent p-1.5 text-left sm:gap-3 transition-colors hover:bg-surface-2', sel && 'border-pri bg-pri-soft', filtros.ambito && !sel && 'opacity-60')}
                           >
                             <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={amb?.icon_key} color={amb?.color_css} /></span>
-                            <span className="min-w-0 flex-1"><span className="block truncate font-medium">{amb?.name}</span><span className="block text-xs text-muted">{a.cantidad} {a.cantidad === 1 ? 'movimiento' : 'movimientos'}</span></span>
+                            <span className="min-w-0 flex-1"><span className="block truncate font-medium">{amb?.name}</span><span className="block truncate text-xs text-muted">{a.cantidad} {a.cantidad === 1 ? 'movimiento' : 'movimientos'}</span></span>
                             <span className="text-right"><span className="num block font-medium">{formatSoles(a.total)}</span><span className="num block text-xs text-muted">{totalAmbitos > 0 ? ((a.total / totalAmbitos) * 100).toFixed(1) : '0.0'}%</span></span>
                           </button>
                         </li>
@@ -276,68 +251,8 @@ export function DashboardPage() {
               )}
             </Tarjeta>
 
-            <Tarjeta
-              titulo={`Top 5 ${topModo === 'categorias' ? 'categorías' : 'subcategorías'}`}
-              filtrada={Boolean(filtros.ambito || filtros.medio || filtros.tipo || filtros.dia)}
-              descripcion={`${etiquetaPeriodo} · selecciona una para filtrar todo el panel`}
-              derecha={
-                <div role="group" aria-label="Agrupar por" className="inline-flex rounded-lg bg-surface-2 p-0.5 text-sm font-semibold">
-                  {(['categorias', 'subcategorias'] as const).map((m) => (
-                    <button key={m} type="button" aria-pressed={topModo === m} onClick={() => setTopModo(m)} className={cn('rounded-md px-3 py-1 transition-colors', topModo === m ? 'bg-surface text-pri shadow-sm' : 'text-muted')}>{m === 'categorias' ? 'Categorías' : 'Subcategorías'}</button>
-                  ))}
-                </div>
-              }
-            >
-              {top.length === 0 ? <p className="text-sm text-muted">No hay gasto {topModo === 'subcategorias' ? 'con subcategoría ' : ''}con estos filtros.</p> : (
-                <ul className="flex flex-col gap-1.5">
-                  {top.map((t) => {
-                    const item = t.primero
-                    const padreCat = topModo === 'categorias' ? (item as typeof catalogo.categorias[number] | undefined) : catalogo.categorias.find((c) => c.id === (item as typeof catalogo.subcategorias[number] | undefined)?.categoria_id)
-                    const color = padreCat?.color_css ?? 'var(--chart-series-1)'
-                    const elegidos = idsDe(topModo === 'categorias' ? filtros.categoria : filtros.subcategoria)
-                    const sel = t.ids.some((id) => elegidos.includes(id))
-                    const grupoValor = (topModo === 'categorias' ? gruposCat : gruposSub).find((g) => g.ids.some((id) => t.ids.includes(id)))?.valor ?? unirIds(t.ids)
-                    const hayEleccion = topModo === 'categorias' ? Boolean(filtros.categoria) : Boolean(filtros.subcategoria)
-                    // Una categoría consolidada no pertenece a un solo ámbito: sin subtítulo. Una subcategoría lo conserva solo si todas sus filas cuelgan de la misma categoría.
-                    const padres = new Set(topModo === 'subcategorias' ? t.ids.map((id) => catalogo.subcategorias.find((s) => s.id === id)?.categoria_id) : [])
-                    const subtitulo = topModo === 'subcategorias' && padres.size === 1 ? padreCat?.name : undefined
-                    return (
-                      <li key={unirIds(t.ids)}>
-                        <Hint
-                          side="top"
-                          contenido={
-                            <TooltipGrafico>
-                              <TTCabecera icono={<ItemIcon name={item?.icon_key} color={color} />} titulo={t.nombre} subtitulo={subtitulo} />
-                              <TTPrincipal etiqueta="Importe" valor={formatSoles(t.total)} />
-                              <div className="flex flex-col gap-1">
-                                <TTMetrica etiqueta="Del gasto mostrado" valor={`${totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'} %`} />
-                                <TTBarra pct={totalTop > 0 ? (t.total / totalTop) * 100 : 0} color={color} />
-                                <TTMetrica etiqueta="Movimientos" valor={t.cantidad} />
-                              </div>
-                            </TooltipGrafico>
-                          }
-                        >
-                          <button
-                            type="button"
-                            aria-pressed={sel}
-                            onClick={() => seleccionar(topModo === 'categorias' ? 'categoria' : 'subcategoria', grupoValor)}
-                            className={cn('flex w-full items-center gap-2 rounded-lg border border-transparent p-1.5 text-left sm:gap-3 transition-colors hover:bg-surface-2', sel && 'border-pri bg-pri-soft', hayEleccion && !sel && 'opacity-60')}
-                          >
-                            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-surface-2"><ItemIcon name={item?.icon_key} color={color} /></span>
-                            <span className="w-[4.5rem] shrink-0 sm:w-32"><span className="block truncate font-medium">{t.nombre}</span>{subtitulo && <span className="block truncate text-xs text-muted">{subtitulo}</span>}</span>
-                            <span className="h-3 min-w-6 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full" style={{ width: `${(t.total / top[0].total) * 100}%`, background: `linear-gradient(90deg, color-mix(in srgb, ${colorVar(color)} 55%, transparent), ${colorVar(color)})` }} /></span>
-                            <span className="w-[4.75rem] shrink-0 text-right sm:w-28"><span className="num block font-medium">{formatSoles(t.total)}</span><span className="num block text-xs text-muted">{totalTop > 0 ? ((t.total / totalTop) * 100).toFixed(1) : '0.0'}% · {t.cantidad} mov.</span></span>
-                          </button>
-                        </Hint>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </Tarjeta>
+            <RankingTendencia catalogo={catalogo} filtros={filtros} hoy={hoyZona} seleccionar={seleccionar} />
           </div>
-
-          <AnalisisDashboard catalogo={catalogo} filtros={filtros} hoy={hoyZona} seleccionar={seleccionar} />
         </div>
       )}
     </div>

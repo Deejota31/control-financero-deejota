@@ -69,7 +69,7 @@ function Estructura() {
 
   return (
     <div
-      className="min-h-screen lg:grid lg:[grid-template-columns:var(--ancho-barra)_minmax(0,1fr)] lg:transition-[grid-template-columns] lg:duration-200 lg:ease-out motion-reduce:lg:transition-none"
+      className="min-h-dvh lg:grid lg:[grid-template-columns:var(--ancho-barra)_minmax(0,1fr)] lg:transition-[grid-template-columns] lg:duration-200 lg:ease-out motion-reduce:lg:transition-none"
       style={{ '--ancho-barra': compacta ? '4.5rem' : '15rem' } as CSSProperties}
     >
       <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-pri focus:px-3 focus:py-2 focus:text-pri-fg">
@@ -98,7 +98,7 @@ function Estructura() {
             </button>
           </div>
         </header>
-        <main id="contenido" tabIndex={-1} className="px-4 py-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-6 lg:pb-24">
+        <main id="contenido" tabIndex={-1} className={cn('px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6', actual?.finLibre ? 'pb-(--espacio-libre)' : 'pb-(--espacio-final)')}>
           <AvisoInstalacion />
           <InvitacionPlanificacion />
           <Suspense fallback={<div role="status" aria-label="Cargando módulo" className="flex flex-col gap-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-48" /><Skeleton className="h-64" /></div>}>
@@ -108,33 +108,39 @@ function Estructura() {
       </div>
 
       <AvisoConexion />
-      <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 grid grid-cols-[repeat(3,minmax(0,1fr))_3.5rem_repeat(3,minmax(0,1fr))] min-[360px]:grid-cols-[repeat(3,minmax(0,1fr))_4.5rem_repeat(3,minmax(0,1fr))] items-end border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
-        {MODULOS.slice(0, 3).map((m) => <EnlaceInferior key={m.path} modulo={m} />)}
-        <button type="button" onClick={abrir} aria-label="Registrar gasto" className="fab-gasto relative -top-4 mx-auto grid size-14 place-items-center rounded-full bg-pri text-pri-fg shadow-pop ring-4 ring-surface">
-          <Plus className="size-7" aria-hidden="true" />
-        </button>
-        {MODULOS.slice(3).map((m) => <EnlaceInferior key={m.path} modulo={m} />)}
+      {/* Barra inferior (hasta 1023 px): exactamente un enlace por módulo, en cinco columnas iguales. El botón «+» no forma parte de la cuadrícula. */}
+      <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 h-[calc(var(--alto-barra)+env(safe-area-inset-bottom,0px))] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
+        <div className="grid h-full grid-cols-5">{MODULOS.map((m) => <EnlaceInferior key={m.path} modulo={m} />)}</div>
       </nav>
 
-      <button type="button" onClick={abrir} className="fab-gasto fixed bottom-6 right-6 z-20 hidden items-center gap-2 rounded-full bg-pri px-5 py-3 text-sm font-semibold text-pri-fg shadow-pop hover:opacity-90 lg:inline-flex">
-        <Plus className="size-5" aria-hidden="true" /> Registrar gasto
+      {/* Acción flotante única de «Registrar gasto»: círculo sobre la zona derecha de la barra (móvil y tablet) y píldora con texto en escritorio. Las medidas salen de index.css. */}
+      <button
+        type="button"
+        onClick={abrir}
+        className={cn(
+          'fab-gasto fixed bottom-(--y-fab) right-(--x-fab) z-20 place-items-center rounded-full bg-pri text-pri-fg shadow-pop transition-transform active:scale-95 motion-reduce:transition-none',
+          tecladoAbierto ? 'hidden' : 'grid size-(--tam-fab) lg:inline-flex lg:w-auto lg:items-center lg:gap-2 lg:px-5 lg:text-sm lg:font-semibold lg:hover:opacity-90',
+        )}
+      >
+        <Plus className="size-7 lg:size-5" aria-hidden="true" />
+        <span className="sr-only lg:not-sr-only">Registrar gasto</span>
       </button>
     </div>
   )
 }
 
-function EnlaceInferior({ modulo: { path, label, corto, icon: Icon } }: { modulo: Modulo }) {
+/** El nombre accesible es el texto visible («Inicio», «Ajustes»): quien dicta «tocar Ajustes» o lee la pantalla oye lo mismo que ve. */
+function EnlaceInferior({ modulo: { path, corto, icon: Icon } }: { modulo: Modulo }) {
   return (
     <NavLink
       to={path}
       end={path === '/'}
-      aria-label={label}
-      className={({ isActive }) => cn('flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0 text-[9.5px] font-medium tracking-tight min-[360px]:px-0.5 min-[360px]:text-[11px] min-[360px]:tracking-normal', isActive ? 'text-pri' : 'text-muted')}
+      className={({ isActive }) => cn('enlace-barra flex h-full min-w-0 flex-col items-center justify-center gap-0.5 text-[0.6875rem] leading-tight font-medium transition-colors min-[400px]:text-xs motion-reduce:transition-none', isActive ? 'text-pri' : 'text-muted hover:text-fg')}
     >
       {({ isActive }) => (
         <>
-          <span className={cn('grid h-7 w-10 place-items-center rounded-full min-[360px]:w-12', isActive && 'bg-pri-soft')}><Icon className="size-5" aria-hidden="true" /></span>
-          <span className={cn('max-w-full', isActive && 'font-bold')}>{corto}</span>
+          <span className={cn('grid h-7 w-12 place-items-center rounded-full transition-colors motion-reduce:transition-none', isActive && 'bg-pri-soft')}><Icon className="size-5" aria-hidden="true" /></span>
+          <span className={cn('max-w-full whitespace-nowrap', isActive && 'font-bold')}>{corto}</span>
         </>
       )}
     </NavLink>
@@ -142,15 +148,16 @@ function EnlaceInferior({ modulo: { path, label, corto, icon: Icon } }: { modulo
 }
 
 /**
- * Detecta el teclado virtual (el viewport visual se encoge respecto al de la página). Con el teclado abierto la barra inferior se oculta
- * para no invadir el formulario que se está editando.
+ * Detecta el teclado virtual (el viewport visual se encoge respecto al de la página). Con el teclado abierto la barra inferior y el botón
+ * «Registrar gasto» se ocultan para no invadir el formulario que se está editando. El zoom de pellizco también encoge el viewport visual,
+ * pero no es un teclado: se compensa con la escala para que quien amplía la pantalla no pierda la navegación.
  */
 function useTecladoVirtual(): boolean {
   const [abierto, setAbierto] = useState(false)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const medir = () => setAbierto(window.innerHeight - vv.height > 140 && window.matchMedia('(max-width: 1023px)').matches)
+    const medir = () => setAbierto(window.innerHeight - vv.height * vv.scale > 140 && window.matchMedia('(max-width: 1023px)').matches)
     vv.addEventListener('resize', medir)
     return () => vv.removeEventListener('resize', medir)
   }, [])

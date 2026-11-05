@@ -10,7 +10,7 @@ interface Registro {
 const Ctx = createContext<Registro | null>(null)
 
 /**
- * Un único formulario de gasto para toda la app autenticada. Guardar invalida gastos, fondos, dashboard y salud (ver `useGastoMutaciones`),
+ * Un único formulario de gasto para toda la app autenticada. Guardar invalida gastos, fondos y dashboard (ver `useGastoMutaciones`),
  * así que la pantalla de origen se actualiza sin navegar.
  */
 export function RegistroGastoProvider({ children }: { children: ReactNode }) {

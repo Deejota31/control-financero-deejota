@@ -20,8 +20,8 @@ export const claves = {
 export const DOMINIOS = {
   fondos: ['fondos', 'gastos', 'periodo', 'dashboard', 'planificacion'],
   plantillasFondos: ['plantillas-fondos', 'fondos', 'periodo', 'dashboard', 'planificacion', 'gastos'],
-  gastos: ['gastos', 'fondos', 'dashboard', 'salud', 'plantillas'],
-  plantillasGastos: ['plantillas', 'gastos', 'fondos', 'dashboard', 'salud'],
+  gastos: ['gastos', 'fondos', 'dashboard', 'plantillas'],
+  plantillasGastos: ['plantillas', 'gastos', 'fondos', 'dashboard'],
 } as const
 
 export function invalidar(qc: QueryClient, dominios: readonly string[]) {

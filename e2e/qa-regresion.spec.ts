@@ -68,8 +68,9 @@ test.describe('Revisión de calidad: regresiones', () => {
     await iniciarSesion(page)
     const nav = page.getByRole('navigation', { name: 'Módulos' })
     await expect(nav).toBeVisible()
-    for (const [nombre, texto] of [['Dashboard', 'Inicio'], ['Gastos', 'Gastos'], ['Fondos', 'Fondos'], ['Catálogo', 'Catálogo'], ['Salud financiera', 'Salud'], ['Configuración', 'Ajustes']] as const) {
-      const enlace = nav.getByRole('link', { name: nombre })
+    for (const texto of ['Inicio', 'Gastos', 'Fondos', 'Catálogo', 'Ajustes']) {
+      const nombre = texto
+      const enlace = nav.getByRole('link', { name: texto, exact: true })
       const caja = (await enlace.boundingBox())!
       expect(caja.height, `${nombre}: zona táctil`).toBeGreaterThanOrEqual(44)
       const etiqueta = enlace.getByText(texto, { exact: true })

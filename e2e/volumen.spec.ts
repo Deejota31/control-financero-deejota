@@ -73,7 +73,7 @@ test.describe('Volumen: totales exactos con más gastos que el límite anterior'
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
   test.setTimeout(240_000)
 
-  test('Dashboard, Gastos, Fondos y Salud incluyen todos los registros', async ({ page }) => {
+  test('Dashboard, Gastos y Fondos incluyen todos los registros', async ({ page }) => {
     cargarMasivos()
     const esperado = totalesSql()
     expect(esperado.cantidad).toBeGreaterThan(5000)
@@ -123,11 +123,5 @@ test.describe('Volumen: totales exactos con más gastos que el límite anterior'
     await page.goto('/fondos')
     const consumido = page.getByLabel('Resumen del período').locator('div').filter({ has: page.getByText('Consumido', { exact: true }) }).last()
     await expect.poll(async () => dinero(await consumido.locator('span').nth(1).textContent())).toBeCloseTo(esperado.total, 1)
-
-    // Salud financiera: lee todo el historial sin truncar
-    await page.goto('/salud')
-    const gastado = page.getByLabel('¿Cuánto presupuesto queda?').locator('div').filter({ has: page.getByText('Gastado', { exact: true }) }).last()
-    await expect.poll(async () => dinero(await gastado.locator('span').nth(1).textContent())).toBeCloseTo(esperado.total, 1)
-    await expect(gastado).toContainText(`${esperado.cantidad} movimientos`)
   })
 })

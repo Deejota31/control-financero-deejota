@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { filtrar, perfil, ranking, seisMeses, textoVariacion, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
+import { filtrar, ranking, seisMeses, textoVariacion, type FilaAnalisis, type FiltrosAnalisis } from './analisis'
 
 const SIN: FiltrosAnalisis = { ambito: '', categoria: '', subcategoria: '', medio: '', tipo: '', dia: '' }
 const f = (o: Partial<FilaAnalisis> & { monto: number }): FilaAnalisis => ({ ambito_id: 'A1', categoria_id: 'C1', subcategoria_id: null, medio_id: 'M1', tipo: 'variable', cantidad: 1, ...o })
@@ -57,20 +57,6 @@ describe('ranking', () => {
     expect(r.items.map((i) => i.id).sort()).toEqual(['C1', 'C2'])
     const s = ranking(actual, historico, 'categoria', { ...SIN, medio: 'otro' }, ctx)
     expect(s.items).toHaveLength(0)
-  })
-})
-
-describe('perfil', () => {
-  it('usa los mayores grupos, una escala de 10 en 10 y la referencia histórica', () => {
-    const ctx = { desde: '2026-10-01', hasta: '2026-10-31', hoy: '2026-11-05' }
-    const actual = [f({ monto: 60, fecha: '2026-10-03' }), f({ monto: 40, fecha: '2026-10-04', categoria_id: 'C2' })]
-    const historico = ['2026-09-01', '2026-08-01'].flatMap((mes) => [f({ monto: 50, mes }), f({ monto: 50, mes, categoria_id: 'C2' })])
-    const r = ranking(actual, historico, 'categoria', SIN, ctx)
-    const p = perfil(r, historico, 'categoria', SIN)
-    expect(p.ejes.map((e) => e.id)).toEqual(['C1', 'C2'])
-    expect(p.ejes[0].pct).toBe(60)
-    expect(p.ejes[0].ref).toBe(50)
-    expect(p.max).toBe(60)
   })
 })
 

@@ -313,6 +313,30 @@ body {
 /* Cifras financieras: números tabulares y alineados (importes, KPI, tablas) */
 .num { font-variant-numeric: tabular-nums lining-nums; }
 
+/* Barra de módulos inferior (hasta 1023 px) y botón flotante «Registrar gasto»: una sola fuente de medidas. La barra, el botón, el hueco al final del
+   contenido y los avisos fijos leen estas variables, así que ninguna página necesita su propio número. Con poca altura (móvil en horizontal) todo se
+   compacta; desde 1024 px no hay barra inferior y el botón pasa a ser la píldora de escritorio. Las áreas seguras se suman aquí, una sola vez. */
+:root {
+  --alto-barra: 3.5rem;
+  --tam-fab: 3.5rem;
+  --sep-fab: 0.75rem; /* entre el botón y la barra */
+  --margen-fab: 1rem; /* al borde derecho */
+  --y-fab: calc(var(--alto-barra) + env(safe-area-inset-bottom, 0px) + var(--sep-fab)); /* borde inferior del botón */
+  --x-fab: calc(var(--margen-fab) + env(safe-area-inset-right, 0px)); /* borde derecho del botón */
+  --espacio-final: calc(var(--y-fab) + var(--tam-fab) + var(--sep-fab)); /* hueco que el contenido reserva al final del scroll para que el botón no tape su último elemento */
+  --margen-final: 1.5rem; /* aire bajo el último contenido cuando nada queda bajo el botón */
+  --espacio-libre: calc(var(--alto-barra) + env(safe-area-inset-bottom, 0px) + var(--margen-final)); /* final del scroll sin reserva para el botón: la barra (si la hay) y el margen */
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  :root { --alto-barra: 3rem; --tam-fab: 3.25rem; --sep-fab: 0.5rem; }
+}
+@media (min-width: 1024px) {
+  :root { --alto-barra: 0px; --tam-fab: 2.75rem; --sep-fab: 1.5rem; --margen-fab: 1.5rem; --espacio-final: 6rem; }
+}
+
+/* El anillo de foco de los enlaces de la barra va por dentro: el de fuera quedaría recortado por el borde inferior de la pantalla. */
+.enlace-barra:focus-visible { outline-offset: -4px; border-radius: 0.75rem; }
+
 /* Los disparadores globales de «Registrar gasto» se ocultan mientras un diálogo bloquea la pantalla. */
 body[data-scroll-locked] .fab-gasto { display: none; }
 

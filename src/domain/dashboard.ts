@@ -1,7 +1,7 @@
 import { addDays, addMonths, differenceInCalendarDays, endOfMonth, format, parse } from 'date-fns'
 import { aCentimos, deCentimos, redondear } from './dinero'
 
-/** Funciones puras del Dashboard y Salud financiera. Las fechas son cadenas ISO (yyyy-MM-dd). Todo importe se suma en céntimos enteros (ver `dinero.ts`). */
+/** Funciones puras del Dashboard. Las fechas son cadenas ISO (yyyy-MM-dd). Todo importe se suma en céntimos enteros (ver `dinero.ts`). */
 
 const d = (iso: string) => parse(iso, 'yyyy-MM-dd', new Date(2000, 0, 1))
 const iso = (x: Date) => format(x, 'yyyy-MM-dd')
