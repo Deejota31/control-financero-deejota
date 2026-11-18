@@ -108,9 +108,9 @@ function Estructura() {
       </div>
 
       <AvisoConexion />
-      {/* Barra inferior (hasta 1023 px): exactamente un enlace por módulo, en cinco columnas iguales. El botón «+» no forma parte de la cuadrícula. */}
+      {/* Barra inferior: un enlace por módulo; el botón «+» queda fuera de la cuadrícula. */}
       <nav aria-label="Módulos" className={cn('fixed inset-x-0 bottom-0 z-20 h-[calc(var(--alto-barra)+env(safe-area-inset-bottom,0px))] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.18)] lg:hidden', tecladoAbierto && 'hidden')}>
-        <div className="grid h-full grid-cols-5">{MODULOS.map((m) => <EnlaceInferior key={m.path} modulo={m} />)}</div>
+        <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${MODULOS.length}, minmax(0, 1fr))` }}>{MODULOS.map((m) => <EnlaceInferior key={m.path} modulo={m} />)}</div>
       </nav>
 
       {/* Acción flotante única de «Registrar gasto»: círculo sobre la zona derecha de la barra (móvil y tablet) y píldora con texto en escritorio. Las medidas salen de index.css. */}

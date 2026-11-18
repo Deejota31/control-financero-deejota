@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { construirCsvGastos, construirRespaldo, filtrarGastos, nombreArchivo, type GastoFila } from './exportacion'
+import { construirCsvGastos, construirRespaldo, filtrarGastos, nombreArchivo, normalizarRespaldo, type GastoFila } from './exportacion'
 
 const g = (o: Partial<GastoFila>): GastoFila => ({
   id: 'g1', expense_date: '2026-10-05', amount: '12.5', currency: 'PEN', description: 'Almuerzo', ambito_id: 'a1', categoria_id: 'c1', subcategoria_id: null,
@@ -11,6 +11,17 @@ const base = {
 }
 
 describe('exportación', () => {
+  it('exporta USD original y PEN contable conservando las primeras columnas', () => {
+    const csv = construirCsvGastos({ ...base, gastos: [g({ amount: '34.50', original_currency: 'USD', original_amount: '10.00', exchange_rate: '3.45', conversion_method: 'manual', exchange_rate_reference_date: '2026-10-05' })], incluirAnulados: false })
+    expect(csv).toContain('34.50,PEN,Almuerzo')
+    expect(csv).toContain('10.00,USD,3.45,manual,,2026-10-05,34.50')
+  })
+  it('normaliza PEN antiguo sin recalcular y conserva snapshots v2', () => {
+    expect(normalizarRespaldo({ version_esquema: 1, gastos: [{ amount: '100.00', currency: 'PEN' }] }).gastos).toEqual([expect.objectContaining({ original_amount: '100.00', amount: '100.00', original_currency: 'PEN', exchange_rate: '1' })])
+    const datos = { version_esquema: 2, gastos: [{ amount: '34.50', original_amount: '10.00', original_currency: 'USD', exchange_rate: '3.45' }] }
+    expect(normalizarRespaldo(datos)).toEqual(datos)
+    expect(() => normalizarRespaldo({ version_esquema: 1, gastos: [{ amount: 10, currency: 'USD' }] })).toThrow('ambigua')
+  })
   it('nombra los archivos con la fecha', () => {
     expect(nombreArchivo('gastos', '2026-10-25')).toBe('control-financiero-gastos-2026-10-25.csv')
     expect(nombreArchivo('respaldo', '2026-10-25')).toBe('control-financiero-respaldo-2026-10-25.json')
@@ -44,7 +55,7 @@ describe('exportación', () => {
     }, '2026-10-25T00:00:00Z')
     const texto = JSON.stringify({ ...r, nota: '' })
     for (const x of ['u1', 'h/g/a.pdf', 'receipt_path', 'created_by', 'password', 'token']) expect(texto).not.toContain(x)
-    expect(r.version_esquema).toBe(1)
+    expect(r.version_esquema).toBe(2)
     expect(r.gastos[0].tiene_comprobante).toBe(true)
   })
 })

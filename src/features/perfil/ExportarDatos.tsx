@@ -104,7 +104,7 @@ export function ExportarDatos() {
       </div>
 
       <div role="status" aria-live="polite" className="min-h-6 text-sm text-muted">{ocupado ? progreso : ''}</div>
-      <p className="text-xs text-muted">Con muchos registros la lectura se hace por tandas de 1,000 y puede tardar unos segundos; puedes seguir usando la aplicación mientras tanto o cancelar.</p>
+      <p className="text-xs text-muted">La exportación puede tardar. Puedes seguir usando la aplicación o cancelarla.</p>
 
       <ConfirmDialog
         open={confirmarRespaldo}

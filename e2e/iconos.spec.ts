@@ -31,7 +31,6 @@ test.describe('Selector de íconos', () => {
     await expect(bloque(page)).toHaveCount(0) // contraído
     await d.getByLabel('Nombre').fill('Gasolina')
     await expect(iconoSel(page)).toContainText('Combustible') // preselección automática
-    await expect(d.getByText('Sugerido por el nombre')).toBeVisible()
     const sugeridos = d.getByRole('group', { name: 'Íconos sugeridos' })
     await expect(sugeridos.getByRole('button', { name: /Combustible/ })).toBeVisible()
     expect(await sugeridos.getByRole('button').count()).toBeLessThanOrEqual(5)
@@ -54,7 +53,6 @@ test.describe('Selector de íconos', () => {
     await expect(iconoSel(page)).toContainText('Banco')
     await d.getByLabel('Nombre').fill('Estacionamiento') // la sugerencia sería «parking»
     await expect(iconoSel(page)).toContainText('Banco')
-    await expect(d.getByText('Sugerido por el nombre')).toHaveCount(0)
   })
 
   test('la cuadrícula se ajusta a los resultados (máx. ~240 px con scroll interno) y el diálogo nunca crece más que la pantalla', async ({ page }) => {

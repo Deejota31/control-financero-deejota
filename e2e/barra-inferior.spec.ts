@@ -3,10 +3,10 @@ import { expect, test } from './fixtures'
 import { contenidoBajoElBoton, email, iniciarSesion, password, vigilarConsola } from './helpers'
 
 /**
- * Navegación inferior responsive: cinco destinos en cinco columnas iguales y «Registrar gasto» como botón flotante independiente
+ * Navegación inferior responsive: seis destinos en columnas iguales y «Registrar gasto» como botón flotante independiente
  * sobre la zona derecha de la barra (móvil y tablet, hasta 1023 px). Desde 1024 px la navegación es la barra lateral y el botón es una píldora.
  */
-const MODULOS = [['Inicio', '/'], ['Gastos', '/gastos'], ['Fondos', '/fondos'], ['Catálogo', '/catalogo'], ['Ajustes', '/configuracion']] as const
+const MODULOS = [['Inicio', '/'], ['Gastos', '/gastos'], ['Fondos', '/fondos'], ['Eventos', '/eventos'], ['Catálogo', '/catalogo'], ['Ajustes', '/configuracion']] as const
 const NOMBRES = MODULOS.map(([n]) => n)
 const TAMANOS = [[320, 700], [360, 800], [375, 812], [390, 844], [430, 932], [768, 1024], [844, 390]] as const
 
@@ -14,7 +14,7 @@ const barra = (page: Page) => page.locator('nav[aria-label="Módulos"]:visible')
 const fabDe = (page: Page) => page.getByRole('button', { name: 'Registrar gasto' })
 const enlaces = (nav: Locator) => NOMBRES.map((n) => nav.getByRole('link', { name: n, exact: true }))
 
-/** Caja del botón y de los cinco enlaces, para comprobar que no se pisan. */
+/** Caja del botón y de los enlaces, para comprobar que no se pisan. */
 async function cajas(page: Page) {
   const nav = barra(page)
   return {
@@ -49,25 +49,25 @@ function contraste(a: string, b: string): number {
   return (x + 0.05) / (y + 0.05)
 }
 
-test.describe('Barra inferior de cinco secciones y botón «Registrar gasto» flotante', () => {
+test.describe('Barra inferior de seis secciones y botón «Registrar gasto» flotante', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
 
   for (const [w, h] of TAMANOS) {
-    test(`${w}×${h}: cinco columnas iguales, «+» flotante sobre la zona derecha, sin desbordes y con espacio al final de cada página`, async ({ page }) => {
+    test(`${w}×${h}: seis columnas iguales, «+» flotante sobre la zona derecha, sin desbordes y con espacio al final de cada página`, async ({ page }) => {
       test.setTimeout(120_000)
       const errores = vigilarConsola(page)
       await page.setViewportSize({ width: w, height: h })
       await iniciarSesion(page)
       const nav = barra(page)
       await expect(nav).toBeVisible()
-      await expect(nav.getByRole('link')).toHaveText(NOMBRES) // exactamente cinco, en este orden
+      await expect(nav.getByRole('link')).toHaveText(NOMBRES)
       await expect(nav.getByRole('button')).toHaveCount(0) // el «+» no forma parte de la cuadrícula
 
       const c = await cajas(page)
       c.enlaces.forEach((e, i) => {
         const n = NOMBRES[i]
-        expect(Math.abs(e.width - w / 5), `${n}: ancho de columna`).toBeLessThanOrEqual(1)
-        expect(Math.abs(e.x - (i * w) / 5), `${n}: posición de columna`).toBeLessThanOrEqual(1)
+        expect(Math.abs(e.width - w / MODULOS.length), `${n}: ancho de columna`).toBeLessThanOrEqual(1)
+        expect(Math.abs(e.x - (i * w) / MODULOS.length), `${n}: posición de columna`).toBeLessThanOrEqual(1)
         expect(e.width, `${n}: zona táctil`).toBeGreaterThanOrEqual(44)
         expect(e.height, `${n}: zona táctil`).toBeGreaterThanOrEqual(44)
       })
@@ -231,7 +231,7 @@ test.describe('Barra inferior de cinco secciones y botón «Registrar gasto» fl
       await page.setViewportSize({ width: w, height: 768 })
       const visibles = page.locator('nav[aria-label="Módulos"]:visible')
       await expect(visibles, `${w} px`).toHaveCount(1)
-      await expect(visibles.getByRole('link'), `${w} px`).toHaveCount(5)
+      await expect(visibles.getByRole('link'), `${w} px`).toHaveCount(MODULOS.length)
       const lateral = w >= 1024
       await expect(page.locator('aside'), `${w} px`).toBeVisible({ visible: lateral })
       await expect(page.locator('aside nav[aria-label="Módulos"]:visible'), `${w} px`).toHaveCount(lateral ? 1 : 0) // la visible es la lateral solo desde 1024 px

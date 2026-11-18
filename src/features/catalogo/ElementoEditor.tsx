@@ -128,7 +128,7 @@ export function ElementoEditor({ kind, item, hermanos, ambitoId, categoriaId, co
       </Field>
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Icono</span>
-        <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={icono} onChange={(v) => { setOk(false); setIconoManual(true); field.onChange(v) }} sugerencias={sugeridos} color={hexEfectivo} nota={autoSugerido ? 'Sugerido por el nombre; puedes cambiarlo.' : undefined} />} />
+        <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={icono} onChange={(v) => { setOk(false); setIconoManual(true); field.onChange(v) }} sugerencias={sugeridos} color={hexEfectivo} />} />
       </div>
       {cfg.color && (
         <div className="flex flex-col gap-1.5">

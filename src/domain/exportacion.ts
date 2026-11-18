@@ -1,7 +1,7 @@
 import { aCsv } from '@/lib/csv'
 import { MARCA } from '@/lib/marca'
 
-export const VERSION_RESPALDO = 1
+export const VERSION_RESPALDO = 2
 
 export type TipoArchivo = 'gastos' | 'respaldo'
 
@@ -11,6 +11,14 @@ export function nombreArchivo(tipo: TipoArchivo, fechaIso: string): string {
 }
 
 export interface GastoFila {
+  original_currency?: string
+  original_amount?: number | string
+  exchange_rate?: number | string
+  exchange_rate_source?: string | null
+  exchange_rate_reference_date?: string | null
+  conversion_method?: string
+  exchange_rate_fetched_at?: string | null
+  conversion_snapshot_version?: number
   id: string
   expense_date: string
   amount: number | string
@@ -46,6 +54,7 @@ export interface OpcionesCsv {
 export const ENCABEZADOS_CSV = [
   'fecha', 'importe', 'moneda', 'descripcion', 'ambito', 'categoria', 'subcategoria', 'medio_de_pago', 'tipo',
   'recurrente', 'estado', 'notas', 'fondos_imputados', 'tiene_comprobante', 'registrado_en',
+  'importe_original', 'moneda_original', 'tipo_de_cambio', 'metodo_conversion', 'fuente_tipo_cambio', 'fecha_referencia', 'importe_contable_pen', 'cotizacion_consultada_en', 'version_conversion',
 ]
 
 /** Importe sin separador de miles y con punto decimal: no depende de la configuración regional de quien abra el archivo. */
@@ -79,11 +88,31 @@ export function construirCsvGastos(o: OpcionesCsv): string {
       (porGasto.get(g.id) ?? []).map((a) => `${fon.get(a.fund_id) ?? 'Fondo'}: ${importeExport(a.amount)}`).join(' | '),
       g.receipt_path ? 'Sí' : 'No',
       g.created_at,
+      importeExport(g.original_amount ?? g.amount), g.original_currency ?? 'PEN',
+      String(g.exchange_rate ?? 1), g.conversion_method ?? 'none', g.exchange_rate_source ?? '',
+      g.exchange_rate_reference_date ?? '', importeExport(g.amount), g.exchange_rate_fetched_at ?? '', g.conversion_snapshot_version ?? 1,
     ])
   return aCsv(ENCABEZADOS_CSV, filas)
 }
 
 type Fila = Record<string, unknown>
+/** Lee respaldos anteriores sin consultar cotizaciones ni alterar importes históricos.
+ * La importación transaccional a Supabase no existía en la aplicación original. */
+export function normalizarRespaldo(entrada: unknown): Record<string, unknown> {
+  if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) throw new Error('Respaldo inválido.')
+  const r = entrada as Record<string, unknown>
+  if (![1, 2].includes(Number(r.version_esquema)) || !Array.isArray(r.gastos)) throw new Error('Versión de respaldo no compatible.')
+  const gastos = r.gastos.map((fila: unknown) => {
+    if (!fila || typeof fila !== 'object' || Array.isArray(fila)) throw new Error('Gasto inválido en el respaldo.')
+    const g = fila as Fila
+    if (r.version_esquema === 1) {
+      if (g.currency !== undefined && g.currency !== 'PEN') throw new Error('Moneda histórica ambigua: requiere revisión.')
+      return { ...g, original_currency: 'PEN', original_amount: g.amount, exchange_rate: '1', conversion_method: 'none', exchange_rate_source: null, exchange_rate_reference_date: null, exchange_rate_fetched_at: null, conversion_snapshot_version: 1 }
+    }
+    return { ...g }
+  })
+  return { ...r, version_esquema: VERSION_RESPALDO, gastos }
+}
 const sin = (f: Fila, claves: string[]): Fila => Object.fromEntries(Object.entries(f).filter(([k]) => !claves.includes(k)))
 
 /** Campos que nunca salen en un respaldo: autoría (ids de usuario) y rutas internas de archivos. */
@@ -96,6 +125,7 @@ export interface DatosRespaldo {
   fondos: Fila[]; reglas_ambito: Fila[]; reglas_medio: Fila[]
   periodos: Fila[]; presupuestos_fondo: Fila[]
   gastos: Fila[]; imputaciones: Fila[]; plantillas: Fila[]
+  eventos?: Fila[]; conceptos_evento?: Fila[]; compromisos_evento?: Fila[]
 }
 
 export function construirRespaldo(d: DatosRespaldo, ahoraIso: string) {
@@ -111,6 +141,9 @@ export function construirRespaldo(d: DatosRespaldo, ahoraIso: string) {
     periodos: { periodos: d.periodos, presupuestos_fondo: d.presupuestos_fondo },
     gastos: d.gastos.map((g) => ({ ...sin(g, SENSIBLES), tiene_comprobante: Boolean(g.receipt_path) })),
     imputaciones: d.imputaciones,
-    plantillas: d.plantillas,
+    plantillas: d.plantillas.map(g => sin(g, SENSIBLES)),
+    eventos: (d.eventos ?? []).map(g => sin(g, SENSIBLES)),
+    conceptos_evento: (d.conceptos_evento ?? []).map(g => sin(g, SENSIBLES)),
+    compromisos_evento: (d.compromisos_evento ?? []).map(g => sin(g, SENSIBLES)),
   }
 }

@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures'
 import { elegirEnGasto, email, iniciarSesion, password, sufijo, vigilarConsola } from './helpers'
 
-const RUTAS = ['/', '/gastos', '/fondos', '/catalogo', '/configuracion']
+const RUTAS = ['/', '/gastos', '/fondos', '/eventos', '/catalogo', '/configuracion']
 
 test.describe('Navegación y registro global de gastos', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
@@ -63,7 +63,7 @@ test.describe('Navegación y registro global de gastos', () => {
       await expect(page.getByText('¿Cuánto presupuesto queda?')).toHaveCount(0)
     }
     await page.setViewportSize({ width: 390, height: 844 })
-    await expect(page.getByRole('navigation', { name: 'Módulos' }).getByRole('link')).toHaveCount(5)
+    await expect(page.getByRole('navigation', { name: 'Módulos' }).getByRole('link')).toHaveCount(6)
   })
 
   test('tablet y escritorio estrecho: barra inferior a 768 px y barra lateral compacta a 1024 px', async ({ page }) => {

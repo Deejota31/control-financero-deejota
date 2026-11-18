@@ -1,7 +1,23 @@
 import * as Tooltip from '@radix-ui/react-tooltip'
+import * as Popover from '@radix-ui/react-popover'
+import { Info } from 'lucide-react'
 import { isValidElement, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { TooltipGrafico } from './TooltipGrafico'
+
+/** Ayuda bajo demanda: clic, toque o teclado; Escape cierra solo esta capa. */
+export function AyudaInfo({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+  return <Popover.Root>
+    <Popover.Trigger type="button" aria-label={label} className={cn('grid size-9 shrink-0 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-pri focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pri', className)}>
+      <Info className="size-4" aria-hidden="true" />
+    </Popover.Trigger>
+    <Popover.Portal>
+      <Popover.Content aria-label={label} sideOffset={6} collisionPadding={12} align="end" onEscapeKeyDown={(e) => e.stopPropagation()} className="anim-pop z-[100] max-h-[calc(100dvh-2rem)] w-80 max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-lg border border-line bg-surface p-3 text-sm text-fg shadow-pop">
+        {children}
+      </Popover.Content>
+    </Popover.Portal>
+  </Popover.Root>
+}
 
 /** Contenedor global de tooltips (una sola vez, en la raíz de la aplicación). */
 export const HintProvider = ({ children }: { children: ReactNode }) => (

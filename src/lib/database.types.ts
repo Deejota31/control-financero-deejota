@@ -109,6 +109,130 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"description_shared_contexts": {
+                  Row: {
+                    "group_key": string,"household_id": string,"subcategoria_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "group_key": string,"household_id": string,"subcategoria_id": string
+                  }
+                  Update: {
+                    "group_key"?: string,"household_id"?: string,"subcategoria_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "description_shared_contexts_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "description_shared_contexts_subcategoria_id_household_id_fkey"
+      columns: ["subcategoria_id","household_id"]
+isOneToOne: false
+      referencedRelation: "subcategorias"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"event_commitments": {
+                  Row: {
+                    "cancelled_at": string | null,"contracted_amount": number,"conversion_method": string,"conversion_snapshot_version": number,"created_at": string,"currency": string,"due_date": string | null,"event_id": string,"event_item_id": string | null,"exchange_rate": number,"exchange_rate_fetched_at": string | null,"exchange_rate_reference_date": string | null,"exchange_rate_source": string,"household_id": string,"id": string,"name": string,"notes": string,"original_amount": number,"original_currency": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cancelled_at"?: string | null,"contracted_amount": number,"conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"currency"?: string,"due_date"?: string | null,"event_id": string,"event_item_id"?: string | null,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date"?: string | null,"exchange_rate_source"?: string,"household_id": string,"id"?: string,"name": string,"notes"?: string,"original_amount": number,"original_currency"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "cancelled_at"?: string | null,"contracted_amount"?: number,"conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"currency"?: string,"due_date"?: string | null,"event_id"?: string,"event_item_id"?: string | null,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date"?: string | null,"exchange_rate_source"?: string,"household_id"?: string,"id"?: string,"name"?: string,"notes"?: string,"original_amount"?: number,"original_currency"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_commitments_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_item_id_event_id_household_id_fkey"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_item_metrics"
+      referencedColumns: ["id","event_id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_item_id_event_id_household_id_fkey"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_items"
+      referencedColumns: ["id","event_id","household_id"]
+    }
+                  ]
+                },"event_items": {
+                  Row: {
+                    "conversion_method": string,"conversion_snapshot_version": number,"created_at": string,"event_id": string,"exchange_rate": number,"exchange_rate_fetched_at": string | null,"exchange_rate_reference_date": string | null,"exchange_rate_source": string,"household_id": string,"id": string,"name": string,"original_amount": number,"original_currency": string,"planned_amount": number,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"event_id": string,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date"?: string | null,"exchange_rate_source"?: string,"household_id": string,"id"?: string,"name": string,"original_amount": number,"original_currency"?: string,"planned_amount"?: number,"sort_order"?: number
+                  }
+                  Update: {
+                    "conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"event_id"?: string,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date"?: string | null,"exchange_rate_source"?: string,"household_id"?: string,"id"?: string,"name"?: string,"original_amount"?: number,"original_currency"?: string,"planned_amount"?: number,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_items_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_items_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"events": {
+                  Row: {
+                    "archived_at": string | null,"budget": number,"color_token": string,"created_at": string,"currency": string,"description": string,"event_type": string,"household_id": string,"icon_key": string,"id": string,"is_template": boolean,"name": string,"start_date": string | null,"status": string,"target_date": string | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"budget"?: number,"color_token"?: string,"created_at"?: string,"currency"?: string,"description"?: string,"event_type"?: string,"household_id": string,"icon_key"?: string,"id"?: string,"is_template"?: boolean,"name": string,"start_date"?: string | null,"status"?: string,"target_date"?: string | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"budget"?: number,"color_token"?: string,"created_at"?: string,"currency"?: string,"description"?: string,"event_type"?: string,"household_id"?: string,"icon_key"?: string,"id"?: string,"is_template"?: boolean,"name"?: string,"start_date"?: string | null,"status"?: string,"target_date"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "events_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exchange_rate_quotes": {
+                  Row: {
+                    "date_requested": string,"fetched_at": string,"rate": number,"reference_date": string,"source": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "date_requested": string,"fetched_at"?: string,"rate": number,"reference_date": string,"source": string
+                  }
+                  Update: {
+                    "date_requested"?: string,"fetched_at"?: string,"rate"?: number,"reference_date"?: string,"source"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"expense_fund_allocations": {
                   Row: {
                     "allocation_kind": string,"amount": number,"created_at": string,"expense_id": string,"fund_id": string,"household_id": string,"id": string,"period_id": string
@@ -155,14 +279,14 @@ isOneToOne: false
                   ]
                 },"expense_templates": {
                   Row: {
-                    "ambito_id": string,"categoria_id": string,"created_at": string,"day_of_month": number | null,"default_amount": number | null,"default_fund_id": string | null,"description": string,"expense_type": string,"household_id": string,"id": string,"is_active": boolean,"is_amount_variable": boolean,"name": string,"notes": string | null,"payment_method_id": string | null,"recurrence": string,"sort_order": number,"subcategoria_id": string | null,"updated_at": string
+                    "ambito_id": string,"categoria_id": string,"created_at": string,"day_of_month": number | null,"default_amount": number | null,"default_fund_id": string | null,"description": string,"event_id": string | null,"expense_type": string,"household_id": string,"id": string,"is_active": boolean,"is_amount_variable": boolean,"name": string,"notes": string | null,"original_currency": string,"payment_method_id": string | null,"recurrence": string,"sort_order": number,"subcategoria_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ambito_id": string,"categoria_id": string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description": string,"expense_type"?: string,"household_id": string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name": string,"notes"?: string | null,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
+                    "ambito_id": string,"categoria_id": string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description": string,"event_id"?: string | null,"expense_type"?: string,"household_id": string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name": string,"notes"?: string | null,"original_currency"?: string,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "ambito_id"?: string,"categoria_id"?: string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description"?: string,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name"?: string,"notes"?: string | null,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
+                    "ambito_id"?: string,"categoria_id"?: string,"created_at"?: string,"day_of_month"?: number | null,"default_amount"?: number | null,"default_fund_id"?: string | null,"description"?: string,"event_id"?: string | null,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_active"?: boolean,"is_amount_variable"?: boolean,"name"?: string,"notes"?: string | null,"original_currency"?: string,"payment_method_id"?: string | null,"recurrence"?: string,"sort_order"?: number,"subcategoria_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -182,6 +306,18 @@ isOneToOne: false
       columns: ["default_fund_id","household_id"]
 isOneToOne: false
       referencedRelation: "funds"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "expense_templates_event_fk"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "expense_templates_event_fk"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
       referencedColumns: ["id","household_id"]
     },{
       foreignKeyName: "expense_templates_household_id_fkey"
@@ -205,14 +341,14 @@ isOneToOne: false
                   ]
                 },"expenses": {
                   Row: {
-                    "ambito_id": string,"amount": number,"annulled_at": string | null,"annulled_by": string | null,"categoria_id": string,"created_at": string,"created_by": string | null,"currency": string,"description": string,"expense_date": string,"expense_type": string,"household_id": string,"id": string,"is_recurring": boolean,"notes": string | null,"payment_method_id": string,"receipt_path": string | null,"status": string,"subcategoria_id": string | null,"template_id": string | null,"updated_at": string
+                    "ambito_id": string,"amount": number,"annulled_at": string | null,"annulled_by": string | null,"categoria_id": string,"conversion_method": string,"conversion_snapshot_version": number,"created_at": string,"created_by": string | null,"currency": string,"description": string,"event_commitment_id": string | null,"event_id": string | null,"event_item_id": string | null,"exchange_rate": number,"exchange_rate_fetched_at": string | null,"exchange_rate_reference_date": string,"exchange_rate_source": string,"expense_date": string,"expense_type": string,"household_id": string,"id": string,"is_recurring": boolean,"notes": string | null,"original_amount": number,"original_currency": string,"payment_method_id": string,"receipt_path": string | null,"status": string,"subcategoria_id": string | null,"template_id": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ambito_id": string,"amount": number,"annulled_at"?: string | null,"annulled_by"?: string | null,"categoria_id": string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"description": string,"expense_date": string,"expense_type"?: string,"household_id": string,"id"?: string,"is_recurring"?: boolean,"notes"?: string | null,"payment_method_id": string,"receipt_path"?: string | null,"status"?: string,"subcategoria_id"?: string | null,"template_id"?: string | null,"updated_at"?: string
+                    "ambito_id": string,"amount": number,"annulled_at"?: string | null,"annulled_by"?: string | null,"categoria_id": string,"conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"description": string,"event_commitment_id"?: string | null,"event_id"?: string | null,"event_item_id"?: string | null,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date": string,"exchange_rate_source"?: string,"expense_date": string,"expense_type"?: string,"household_id": string,"id"?: string,"is_recurring"?: boolean,"notes"?: string | null,"original_amount": number,"original_currency"?: string,"payment_method_id": string,"receipt_path"?: string | null,"status"?: string,"subcategoria_id"?: string | null,"template_id"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "ambito_id"?: string,"amount"?: number,"annulled_at"?: string | null,"annulled_by"?: string | null,"categoria_id"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"description"?: string,"expense_date"?: string,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_recurring"?: boolean,"notes"?: string | null,"payment_method_id"?: string,"receipt_path"?: string | null,"status"?: string,"subcategoria_id"?: string | null,"template_id"?: string | null,"updated_at"?: string
+                    "ambito_id"?: string,"amount"?: number,"annulled_at"?: string | null,"annulled_by"?: string | null,"categoria_id"?: string,"conversion_method"?: string,"conversion_snapshot_version"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"description"?: string,"event_commitment_id"?: string | null,"event_id"?: string | null,"event_item_id"?: string | null,"exchange_rate"?: number,"exchange_rate_fetched_at"?: string | null,"exchange_rate_reference_date"?: string,"exchange_rate_source"?: string,"expense_date"?: string,"expense_type"?: string,"household_id"?: string,"id"?: string,"is_recurring"?: boolean,"notes"?: string | null,"original_amount"?: number,"original_currency"?: string,"payment_method_id"?: string,"receipt_path"?: string | null,"status"?: string,"subcategoria_id"?: string | null,"template_id"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -227,6 +363,42 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "categorias"
       referencedColumns: ["id","ambito_id"]
+    },{
+      foreignKeyName: "expenses_event_commitment_fk"
+      columns: ["event_commitment_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_commitment_metrics"
+      referencedColumns: ["id","event_id","household_id"]
+    },{
+      foreignKeyName: "expenses_event_commitment_fk"
+      columns: ["event_commitment_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_commitments"
+      referencedColumns: ["id","event_id","household_id"]
+    },{
+      foreignKeyName: "expenses_event_fk"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "expenses_event_fk"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "expenses_event_item_fk"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_item_metrics"
+      referencedColumns: ["id","event_id","household_id"]
+    },{
+      foreignKeyName: "expenses_event_item_fk"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_items"
+      referencedColumns: ["id","event_id","household_id"]
     },{
       foreignKeyName: "expenses_household_id_fkey"
       columns: ["household_id"]
@@ -772,7 +944,73 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "event_commitment_metrics": {
+                  Row: {
+                    "cancelled_at": string | null,"contracted_amount": number,"conversion_method": string,"conversion_snapshot_version": number,"created_at": string,"currency": string,"due_date": string | null,"event_id": string,"event_item_id": string | null,"exchange_rate": number,"exchange_rate_fetched_at": string | null,"exchange_rate_reference_date": string | null,"exchange_rate_source": string,"household_id": string,"id": string,"name": string,"notes": string,"original_amount": number,"original_currency": string,"overpaid": number | null,"paid": number | null,"payment_status": string | null,"pending": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "event_commitments_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_item_id_event_id_household_id_fkey"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_item_metrics"
+      referencedColumns: ["id","event_id","household_id"]
+    },{
+      foreignKeyName: "event_commitments_event_item_id_event_id_household_id_fkey"
+      columns: ["event_item_id","event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_items"
+      referencedColumns: ["id","event_id","household_id"]
+    }
+                  ]
+                },"event_item_metrics": {
+                  Row: {
+                    "conversion_method": string,"conversion_snapshot_version": number,"created_at": string,"event_id": string,"exchange_rate": number,"exchange_rate_fetched_at": string | null,"exchange_rate_reference_date": string | null,"exchange_rate_source": string,"household_id": string,"id": string,"name": string,"original_amount": number,"original_currency": string,"paid": number | null,"pending": number | null,"planned_amount": number,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "event_items_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "event_metrics"
+      referencedColumns: ["id","household_id"]
+    },{
+      foreignKeyName: "event_items_event_id_household_id_fkey"
+      columns: ["event_id","household_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","household_id"]
+    }
+                  ]
+                },"event_metrics": {
+                  Row: {
+                    "archived_at": string | null,"available": number | null,"budget": number,"color_token": string,"created_at": string,"currency": string,"description": string,"event_type": string,"expense_count": number | null,"household_id": string,"icon_key": string,"id": string,"is_template": boolean,"name": string,"paid": number | null,"paid_percent": number | null,"pending": number | null,"planned_total": number | null,"projected": number | null,"projected_available": number | null,"projected_percent": number | null,"start_date": string | null,"status": string,"target_date": string | null,"unplanned": number | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "events_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
             "alloc_signature":
@@ -792,6 +1030,9 @@ isOneToOne: false
                            },
 "catalog_name":
 { Args: { "p_id": string,"p_kind": string }; Returns: string
+                           },
+"clone_event":
+{ Args: { "p_key": string,"p_source": string,"p_values": Json }; Returns: string
                            },
 "close_period":
 { Args: { "p_period": string }; Returns: undefined
@@ -842,11 +1083,19 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"event_analytics":
+{ Args: { "p_event": string }; Returns: {
+              "amount": number,"dimension": string,"label": string,"quantity": number
+            }[]
+                           },
 "expense_report":
 { Args: { "p_expense": string }; Returns: Json
                            },
 "fallo_limpieza":
 { Args: { "p_error": string,"p_ids": (string)[] }; Returns: undefined
+                           },
+"firma_cobertura_descripcion":
+{ Args: { "p_general": boolean,"p_payment": Json,"p_scope": Json }; Returns: Json
                            },
 "fund_admits":
 { Args: { "p_ambito": string,"p_cat": string,"p_fund": string,"p_method": string,"p_sub": string }; Returns: boolean
@@ -860,6 +1109,9 @@ isOneToOne: false
 "fund_period_detail":
 { Args: { "hid": string }; Returns: Json
                            },
+"grupo_descripcion_inicial":
+{ Args: { "categoria": string,"subcategoria": string }; Returns: string
+                           },
 "is_household_member":
 { Args: { "hid": string }; Returns: boolean
                            },
@@ -872,10 +1124,19 @@ isOneToOne: false
 "is_valid_icon":
 { Args: { "k": string }; Returns: boolean
                            },
+"link_event_expenses":
+{ Args: { "p_commitment"?: string,"p_event"?: string,"p_ids": (string)[],"p_item"?: string,"p_replace"?: boolean }; Returns: number
+                           },
 "listar_limpieza":
 { Args: Record<PropertyKey, never>; Returns: {
               "id": string,"path": string
             }[]
+                           },
+"normalizar_descripcion":
+{ Args: { "texto": string }; Returns: string
+                           },
+"normalize_conversion":
+{ Args: { "p": Json }; Returns: Json
                            },
 "open_consumption":
 { Args: { "hid": string }; Returns: Json
@@ -907,6 +1168,9 @@ isOneToOne: false
 "restore_expenses":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
+"save_expense_event":
+{ Args: { "p": Json,"p_id"?: string,"p_key"?: string }; Returns: Json
+                           },
 "save_fund":
 { Args: { "p": Json,"p_dry_run"?: boolean }; Returns: Json
                            },
@@ -925,8 +1189,16 @@ isOneToOne: false
 "storage_household":
 { Args: { "p_name": string }; Returns: string
                            },
+"sugerencias_descripciones":
+{ Args: { "p_busqueda"?: string,"p_contexto": Json,"p_tipo": string }; Returns: {
+              "description": string,"frequency": number,"last_used": string
+            }[]
+                           },
 "update_expense":
 { Args: { "p": Json,"p_id": string }; Returns: Json
+                           },
+"validate_conversion_reference":
+{ Args: { "p": Json }; Returns: undefined
                            }
           }
           Enums: {

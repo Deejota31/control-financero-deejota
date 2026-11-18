@@ -38,7 +38,7 @@ export function EditorColor({ valor, onChange, padre }: Props) {
       )}
       {hereda ? (
         <p className="text-sm text-muted">
-          Usa el color de <b className="text-fg">{padre!.nombre}</b> ({nombreDeColor(padre!.hex)}). Si {padre!.tipo === 'ámbito' ? 'el ámbito' : 'la categoría'} cambia de color, este elemento lo seguirá.
+          Color heredado: {nombreDeColor(padre!.hex)}. Se actualiza con {padre!.nombre}.
         </p>
       ) : (
         <SelectorColor valor={valor.hex} onChange={(hex) => onChange({ hex, modo: 'own' })} />

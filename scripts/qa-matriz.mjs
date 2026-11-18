@@ -45,13 +45,13 @@ const REQUISITOS = [
   ['R4', 'Fondos (página y tabla)', ['fondos.spec', 'detalle-fondo.spec', 'fondos-tabla.spec', 'reglas-ui.spec']],
   ['R5', 'Copia de fondos', ['planificacion.spec']],
   ['R6', 'Planificación mensual', ['planificacion.spec']],
-  ['R7', 'Formulario de gasto y motor financiero', ['gastos.spec', 'comprobantes.spec', 'qa-regresion.spec', 'dialogos.spec']],
+  ['R7', 'Formulario de gasto y motor financiero', ['gastos.spec', 'multimoneda.spec', 'formulario-gasto.spec', 'comprobantes.spec', 'qa-regresion.spec', 'dialogos.spec']],
   ['R8', 'Listado de Gastos', ['gastos.spec', 'filtros.spec', 'volumen.spec', 'gastos-diseno.spec']],
-  ['R9', 'Plantillas y registro mensual', ['plantillas.spec']],
+  ['R9', 'Plantillas y registro mensual', ['plantillas.spec', 'multimoneda.spec']],
   ['R10', 'Dashboard y gráficos', ['dashboard.spec', 'analisis.spec']],
   ['R12', 'Configuración', ['configuracion.spec']],
   ['R13', 'Independencia mensual y datos', ['planificacion.spec', 'integracion.spec', 'volumen.spec']],
-  ['R14', 'Responsive y diseño', ['qa-responsive.spec', 'responsive.spec', 'barra-inferior.spec', 'modales.spec', 'visual.spec', 'fondos-tabla.spec']],
+  ['R14', 'Responsive y diseño', ['qa-responsive.spec', 'responsive.spec', 'barra-inferior.spec', 'modales.spec', 'formulario-gasto.spec', 'visual.spec', 'fondos-tabla.spec']],
   ['R15', 'Accesibilidad y casos límite', ['a11y.spec', 'teclado.spec', 'recuperacion.spec']],
 ]
 

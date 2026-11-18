@@ -1,5 +1,7 @@
+import { ImporteMoneda } from '@/features/moneda/ImporteMoneda'
+import { formatOriginal, type Conversion, type Moneda } from '@/domain/moneda'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Paperclip, X } from 'lucide-react'
+import { ChevronDown, Paperclip, X } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -9,18 +11,21 @@ import { Button } from '@/components/ui/Button'
 import { DatePicker } from '@/components/ui/DatePicker'
 import { Modal } from '@/components/ui/Dialog'
 import { Field, Input } from '@/components/ui/Field'
-import { MoneyInput } from '@/components/ui/MoneyInput'
 import { SelectorChips } from '@/components/ui/SelectorChips'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { fechaEfectiva } from '@/domain/plantillas'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatFecha, formatMes, formatSoles, parseImporte, toIso } from '@/lib/format'
+import { errorImporte, formatFecha, formatSoles, parseImporte, toIso } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import type { Gasto, Plantilla } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { usePerfil } from '@/features/perfil/usePerfil'
+import { DescripcionInteligente } from '@/features/descripciones/DescripcionInteligente'
+import { SelectorEventoGasto } from '@/features/eventos/SelectorEventoGasto'
+import { useOpcionesEventos } from '@/features/eventos/useEventos'
+import { recibeGastos } from '@/features/eventos/modelo'
 import { borrarArchivo, registrarLimpieza } from './comprobantes'
 import { usePlantillaMutaciones, usePlantillas } from './usePlantillas'
 import { useGastoMutaciones, usePrevisualizacion, type PayloadGasto } from './useGastos'
@@ -41,6 +46,7 @@ export type ModoGasto = 'nuevo' | 'editar' | 'clonar' | 'plantilla' | 'plantilla
 const base = z.object({
   expense_date: z.string(),
   amount: z.string(),
+  original_currency: z.enum(['PEN','USD']),
   ambito_id: z.string(),
   categoria_id: z.string(),
   subcategoria_id: z.string(),
@@ -52,6 +58,9 @@ const base = z.object({
   template_name: z.string(),
   day_of_month: z.string(),
   amount_variable: z.boolean(),
+  event_id: z.string(),
+  event_item_id: z.string(),
+  event_commitment_id: z.string(),
 })
 type Values = z.infer<typeof base>
 
@@ -105,8 +114,8 @@ function CampoChips({ etiqueta, contexto, error, children }: { etiqueta: string;
 export function inicialDesdeGasto(g: Gasto): Partial<Values> {
   return {
     template_name: g.description.slice(0, 80), description: g.description, ambito_id: g.ambito_id, categoria_id: g.categoria_id,
-    subcategoria_id: g.subcategoria_id ?? '', payment_method_id: g.payment_method_id, amount: Number(g.amount).toFixed(2),
-    expense_type: g.expense_type as 'fixed' | 'variable', notes: g.notes ?? '',
+    subcategoria_id: g.subcategoria_id ?? '', payment_method_id: g.payment_method_id, amount: Number(g.original_amount ?? g.amount).toFixed(2), original_currency: (g.original_currency ?? 'PEN') as Moneda,
+    expense_type: g.expense_type as 'fixed' | 'variable', notes: g.notes ?? '', event_id: g.event_id ?? '',
   }
 }
 
@@ -121,6 +130,7 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
 }) {
   const catalogo = useCatalogo()
   const perfil = usePerfil()
+  const opcionesEventos = useOpcionesEventos()
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const mut = useGastoMutaciones()
   const mutPlantilla = usePlantillaMutaciones()
@@ -129,7 +139,6 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
   const schema = useMemo(() => crearSchema(esPlantilla), [esPlantilla])
   const [clave] = useState(() => crypto.randomUUID())
   const [idNuevo] = useState(() => crypto.randomUUID())
-  const [descripcionTocada, setTocada] = useState((modo !== 'nuevo' && modo !== 'plantilla') || Boolean(inicial?.description))
   const [archivo, setArchivo] = useState<File | null>(null)
   const [errorArchivo, setErrorArchivo] = useState<string | null>(null)
   const [recibo, setRecibo] = useState<string | null>(modo === 'editar' ? (gasto?.receipt_path ?? null) : null)
@@ -137,13 +146,15 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
   const [enviando, setEnviando] = useState(false)
   const subidoRef = useRef<string | null>(null)
   const formId = useId()
+  const idErrorImporte = useId()
 
   const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm<Values>({
     shouldFocusError: false, // el foco al primer error lo decide enfocarPrimerError: el orden lógico del formulario, no el del registro de campos
     resolver: zodResolver(schema),
     defaultValues: {
       expense_date: gasto?.expense_date ?? inicial?.expense_date ?? (modo === 'desde-plantilla' && plantilla ? fechaEfectiva(plantilla.day_of_month, mes ?? HOY.slice(0, 8) + '01').iso : HOY),
-      amount: gasto ? Number(gasto.amount).toFixed(2) : plantilla?.default_amount ? Number(plantilla.default_amount).toFixed(2) : (inicial?.amount ?? ''),
+      original_currency: (gasto?.original_currency ?? plantilla?.original_currency ?? inicial?.original_currency ?? 'PEN') as Moneda,
+      amount: gasto ? Number(gasto.original_amount ?? gasto.amount).toFixed(2) : plantilla?.default_amount ? Number(plantilla.default_amount).toFixed(2) : (inicial?.amount ?? ''),
       ambito_id: gasto?.ambito_id ?? plantilla?.ambito_id ?? inicial?.ambito_id ?? '',
       categoria_id: gasto?.categoria_id ?? plantilla?.categoria_id ?? inicial?.categoria_id ?? '',
       subcategoria_id: gasto?.subcategoria_id ?? plantilla?.subcategoria_id ?? inicial?.subcategoria_id ?? '',
@@ -155,9 +166,24 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
       template_name: modo === 'plantilla-editar' ? (plantilla?.name ?? '') : (inicial?.template_name ?? ''),
       day_of_month: plantilla?.day_of_month ? String(plantilla.day_of_month) : (inicial?.day_of_month ?? ''),
       amount_variable: plantilla?.is_amount_variable ?? inicial?.amount_variable ?? false,
+      event_id: gasto?.event_id ?? plantilla?.event_id ?? inicial?.event_id ?? '',
+      event_item_id: gasto?.event_item_id ?? inicial?.event_item_id ?? '',
+      event_commitment_id: gasto?.event_commitment_id ?? inicial?.event_commitment_id ?? '',
     },
   })
+  const [conversion,setConversion] = useState<Conversion|null>(null)
+  const [detalles, setDetalles] = useState(() => Boolean(gasto?.notes || (modo === 'editar' && gasto?.receipt_path)))
+  const detallesAbiertos = detalles || Boolean(errors.notes) || Boolean(errorArchivo)
   const v = useWatch({ control })
+  const eventoDeOrigen = gasto?.event_id ?? plantilla?.event_id ?? inicial?.event_id
+  const origenNoDisponible = modo !== 'editar' && modo !== 'plantilla-editar' && eventoDeOrigen && !v.event_id && opcionesEventos.data && !opcionesEventos.data.some((e) => e.id === eventoDeOrigen && recibeGastos(e))
+  useEffect(() => {
+    if (modo === 'editar' || modo === 'plantilla-editar' || !v.event_id || !opcionesEventos.data) return
+    const actual = opcionesEventos.data.find((e) => e.id === v.event_id)
+    if (!actual || !recibeGastos(actual)) {
+      setValue('event_id', ''); setValue('event_item_id', ''); setValue('event_commitment_id', '')
+    }
+  }, [modo, opcionesEventos.data, v.event_id, setValue])
 
   const ambitoSel = catalogo.ambitos.find((x) => x.id === v.ambito_id)
   const categoriaSel = catalogo.categorias.find((x) => x.id === v.categoria_id)
@@ -167,15 +193,15 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
 
   // Previsualización de fondos: solo con datos completos y válidos; con retraso para no saturar al servidor.
   const payloadPrevio = useMemo(() => {
-    const monto = parseImporte(v.amount ?? '')
+    const monto = conversion ? Number(conversion.amount) : null
     if (esPlantilla || !v.expense_date || monto === null || !v.ambito_id || !v.categoria_id || !v.payment_method_id) return null
     return JSON.stringify({
-      editing_id: modo === 'editar' ? gasto?.id : undefined,
+      ...conversion, editing_id: modo === 'editar' ? gasto?.id : undefined,
       expense_date: v.expense_date, amount: monto, description: (v.description || 'x').trim() || 'x',
       ambito_id: v.ambito_id, categoria_id: v.categoria_id, subcategoria_id: v.subcategoria_id || null,
       payment_method_id: v.payment_method_id, expense_type: v.expense_type ?? 'variable', is_recurring: Boolean(v.is_recurring),
     })
-  }, [v.amount, v.expense_date, v.ambito_id, v.categoria_id, v.subcategoria_id, v.payment_method_id, v.description, v.expense_type, v.is_recurring, modo, gasto?.id, esPlantilla])
+  }, [conversion, v.expense_date, v.ambito_id, v.categoria_id, v.subcategoria_id, v.payment_method_id, v.description, v.expense_type, v.is_recurring, modo, gasto?.id, esPlantilla])
   const payloadDebounced = useDebounced(payloadPrevio, 400)
   const previo = usePrevisualizacion(useMemo(() => (payloadDebounced ? (JSON.parse(payloadDebounced) as PayloadGasto) : null), [payloadDebounced]))
   const previoActualizando = payloadPrevio !== payloadDebounced || previo.isFetching
@@ -218,6 +244,8 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
           id: plantilla?.id, orden: orden ?? nPlantillas + 1,
           valores: {
             name: vals.template_name.trim(), description: vals.description.trim(), notes: vals.notes.trim() || null,
+            original_currency: vals.original_currency,
+            event_id: vals.event_id || null,
             default_amount: parseImporte(vals.amount), is_amount_variable: vals.amount_variable,
             ambito_id: vals.ambito_id, categoria_id: vals.categoria_id, subcategoria_id: vals.subcategoria_id || null,
             payment_method_id: vals.payment_method_id || null, default_fund_id: plantilla?.default_fund_id ?? null,
@@ -231,6 +259,7 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
       }
       return
     }
+    if (!conversion) { setErrorEnvio('Completa una conversión válida antes de guardar.'); return }
     setEnviando(true)
     const expenseId = modo === 'editar' ? gasto!.id : idNuevo
     const anterior = modo === 'editar' ? (gasto?.receipt_path ?? null) : null
@@ -251,7 +280,8 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
       }
       const payload: PayloadGasto = {
         expense_date: vals.expense_date,
-        amount: parseImporte(vals.amount)!,
+        ...conversion,
+        amount: Number(conversion.amount),
         description: vals.description.trim(),
         ambito_id: vals.ambito_id,
         categoria_id: vals.categoria_id,
@@ -262,6 +292,7 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
         notes: vals.notes.trim(),
         receipt_path: receipt,
         template_id: modo === 'desde-plantilla' ? (plantilla?.id ?? null) : undefined,
+        event_id: vals.event_id || null, event_item_id: vals.event_item_id || null, event_commitment_id: vals.event_commitment_id || null,
       }
       const reporte =
         modo === 'editar'
@@ -296,10 +327,10 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
   const titulo = { nuevo: 'Nuevo gasto', editar: 'Editar gasto', clonar: 'Clonar gasto', plantilla: 'Nueva plantilla de gasto', 'plantilla-editar': 'Editar plantilla de gasto', 'desde-plantilla': 'Registrar gasto' }[modo]
   const textoGuardar = { nuevo: 'Guardar gasto', editar: 'Guardar cambios', clonar: 'Guardar gasto', plantilla: 'Guardar plantilla', 'plantilla-editar': 'Guardar cambios', 'desde-plantilla': 'Confirmar gasto' }[modo]
   const descripcionModal = ({
-    clonar: 'Copia de un gasto existente: conserva su fecha, y puedes cambiar cualquier dato antes de guardar.',
-    plantilla: 'Una plantilla es una configuración reutilizable: no es un gasto ni afecta a tus fondos hasta que la registres.',
-    'plantilla-editar': 'Los cambios valen para los próximos registros; los gastos ya registrados no se modifican.',
-    'desde-plantilla': `Con la plantilla «${plantilla?.name ?? ''}». Ajusta lo que necesites; no se crea nada hasta confirmar y la plantilla no cambia.`,
+    clonar: 'La copia conserva la fecha del gasto original.',
+    plantilla: 'No afecta a tus fondos hasta registrar el gasto.',
+    'plantilla-editar': 'Se aplica a próximos registros; conserva los gastos existentes.',
+    'desde-plantilla': `Con la plantilla «${plantilla?.name ?? ''}». La plantilla no cambia.`,
   } as Partial<Record<ModoGasto, string>>)[modo]
   const pendiente = enviando || mut.crear.isPending || mut.actualizar.isPending || mutPlantilla.guardar.isPending
   const importePlantilla = parseImporte(v.amount ?? '')
@@ -310,14 +341,14 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
       footer={(cerrar) => (
         <>
           {esPlantilla ? (
-            <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite"><b className="text-fg">{v.template_name?.trim() || 'Sin nombre'}</b> · {v.amount_variable ? 'importe variable' : importePlantilla !== null ? formatSoles(importePlantilla) : 'sin importe'}</p>
-          ) : resumenValido && <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite">Se guardará <b className="num text-fg">{formatSoles(parseImporte(v.amount ?? '') ?? 0)}</b> · {formatFecha(v.expense_date ?? HOY, formato)}{medioSel ? ` · ${medioSel.name}` : ''}</p>}
+            <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite"><b className="text-fg">{v.template_name?.trim() || 'Sin nombre'}</b> · {v.amount_variable ? 'importe variable' : importePlantilla !== null ? formatOriginal(importePlantilla, v.original_currency) : 'sin importe'}</p>
+          ) : resumenValido && <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite">Se guardará <b className="num text-fg">{formatSoles(Number(conversion?.amount ?? 0))}</b> · {formatFecha(v.expense_date ?? HOY, formato)}{medioSel ? ` · ${medioSel.name}` : ''}</p>}
           <Button variant="secondary" onClick={cerrar} disabled={pendiente}>Cancelar</Button>
           <Button type="submit" form={formId} loading={pendiente} disabled={bloqueado}>{pendiente ? 'Guardando…' : textoGuardar}</Button>
         </>
       )}
       description={descripcionModal}>
-      <form id={formId} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <form id={formId} onSubmit={enviar} noValidate className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-x-6">
         <div className="flex min-w-0 flex-col gap-4">
           {errorEnvio && <Alert tone="error">{errorEnvio}</Alert>}
 
@@ -354,11 +385,7 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
                     {() => (
                       <Controller control={control} name="subcategoria_id" render={({ field }) => (
                         <SelectorChips etiqueta="Subcategoría (opcional)" items={subcategorias} value={field.value} limpiable
-                          onChange={(x) => {
-                            field.onChange(x)
-                            const sub = catalogo.subcategorias.find((s) => s.id === x)
-                            if (sub && !descripcionTocada) setValue('description', sub.name, { shouldValidate: true })
-                          }} />
+                          onChange={field.onChange} />
                       )} />
                     )}
                   </CampoChips>
@@ -367,41 +394,43 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
             )}
           </div>
 
-          <Field label="Descripción" error={errors.description?.message} hint="Qué compraste o pagaste. Se propone desde la subcategoría; puedes editarla.">
-            {(p) => <Input {...p} {...register('description', { onChange: () => setTocada(true) })} />}
-          </Field>
-
-          <Field label="Notas (opcional)" error={errors.notes?.message}>
-            {(p) => <textarea {...p} rows={2} {...register('notes')} className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" placeholder="Detalles que no caben en el concepto" />}
+          <Field label="Descripción" error={errors.description?.message}>
+            {(p) => <Controller control={control} name="description" render={({ field }) => (
+              <DescripcionInteligente {...p} name={field.name} ref={field.ref} onBlur={field.onBlur} value={field.value} onValueChange={field.onChange} maxLength={200}
+                contexto={{ tipo: 'expense', ambito_id: v.ambito_id ?? '', categoria_id: v.categoria_id ?? '', subcategoria_id: v.subcategoria_id ?? '' }} />
+            )} />}
           </Field>
 
           {esPlantilla && (
-            <Field label="Nombre de plantilla" error={errors.template_name?.message} hint="Cómo la reconoces en tu biblioteca. No es la descripción del gasto.">
+            <Field label="Nombre de plantilla" error={errors.template_name?.message}>
               {(p) => <Input {...p} {...register('template_name')} />}
             </Field>
           )}
 
-          {!esPlantilla && <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Comprobante (opcional)</span>
-            {recibo && !archivo ? (
-              <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
-                <Paperclip className="size-4 text-muted" aria-hidden="true" />
-                <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
-                <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
-              </div>
-            ) : (
-              <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
-                className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
-            )}
-            <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
-            {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
-          </div>}
+          <SelectorEventoGasto evento={v.event_id ?? ''} concepto={v.event_item_id ?? ''} compromiso={v.event_commitment_id ?? ''} soloEvento={esPlantilla} conservarHistorial={modo === 'editar'}
+            onEvento={(id) => { setValue('event_id', id, { shouldDirty: true }); setValue('event_item_id', ''); setValue('event_commitment_id', '') }}
+            onConcepto={(id) => { setValue('event_item_id', id, { shouldDirty: true }); setValue('event_commitment_id', '') }}
+            onCompromiso={(id, item) => { setValue('event_commitment_id', id, { shouldDirty: true }); if (item) setValue('event_item_id', item, { shouldDirty: true }) }} />
+          {origenNoDisponible && <p role="status" className="text-xs text-muted">El evento de origen ya no recibe gastos y se ha omitido. Puedes elegir otro o continuar sin evento.</p>}
         </div>
-
         <div className="flex min-w-0 flex-col gap-4">
-          <Field label={esPlantilla ? 'Importe sugerido' : 'Importe'} error={errors.amount?.message}>
-            {(p) => <Controller control={control} name="amount" render={({ field }) => <MoneyInput grande id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} />} />}
-          </Field>
+          <CampoChips etiqueta={esPlantilla ? 'Medio de pago (opcional)' : 'Medio de pago'} error={errors.payment_method_id?.message}>
+            {(id) => (
+              <Controller control={control} name="payment_method_id" render={({ field }) => (
+                <SelectorChips etiqueta="Medio de pago" variante="ficha" items={catalogo.medios} value={field.value} invalido={Boolean(errors.payment_method_id)} descritoPor={id}
+                  limpiable={esPlantilla} onChange={(x) => field.onChange(x)} />
+              )} />
+            )}
+          </CampoChips>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Controller control={control} name="amount" render={({ field }) => (
+              <ImporteMoneda titulo={esPlantilla ? 'Importe sugerido' : 'Importe del gasto'} aria-label={esPlantilla ? 'Importe sugerido' : 'Importe'} aria-describedby={errors.amount ? idErrorImporte : undefined} invalid={Boolean(errors.amount)}
+                currency={v.original_currency ?? 'PEN'} onCurrencyChange={(c) => setValue('original_currency', c, { shouldDirty: true })} amount={field.value} onAmountChange={field.onChange} date={v.expense_date ?? HOY} template={esPlantilla} onConversionChange={setConversion}
+                initial={modo === 'editar' && gasto?.original_currency === 'USD' ? { original_currency: 'USD', original_amount: String(gasto.original_amount), amount: String(gasto.amount), exchange_rate: String(gasto.exchange_rate), exchange_rate_source: gasto.exchange_rate_source, exchange_rate_reference_date: gasto.exchange_rate_reference_date, conversion_method: gasto.conversion_method as Conversion['conversion_method'], exchange_rate_fetched_at: gasto.exchange_rate_fetched_at, conversion_snapshot_version: 1 } : undefined} />
+            )} />
+            {errors.amount && <p id={idErrorImporte} className="text-sm text-bad">{errors.amount.message}</p>}
+          </div>
           {esPlantilla && (
             <label className="-mt-1 flex items-center gap-2 text-sm font-medium" title="Si varía, el importe sugerido es solo una referencia y se confirma al registrar; nunca se asume cero.">
               <input type="checkbox" {...register('amount_variable')} /> ¿El importe varía?
@@ -414,7 +443,7 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
                 {(p) => <Input {...p} inputMode="numeric" placeholder="1–31" title="Se propone este día en cada mes (en meses cortos, el último día). Vacío: eliges la fecha al registrar." {...register('day_of_month')} />}
               </Field>
             ) : (
-            <Field label="Fecha" error={errors.expense_date?.message} hint={v.expense_date ? `Se registra en ${formatMes(v.expense_date)}${v.expense_date !== HOY ? ` (no es hoy: ${formatFecha(HOY, formato)})` : ''}.` : undefined}>
+            <Field label="Fecha" error={errors.expense_date?.message}>
               {(p) => <Controller control={control} name="expense_date" render={({ field }) => <DatePicker id={p.id} aria-describedby={p['aria-describedby']} invalid={p['aria-invalid']} value={field.value} onChange={field.onChange} formato={formato} />} />}
             </Field>
             )}
@@ -431,34 +460,48 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
             </div>
           </div>
 
-          <CampoChips etiqueta={esPlantilla ? 'Medio de pago (opcional)' : 'Medio de pago'} error={errors.payment_method_id?.message}>
-            {(id) => (
-              <Controller control={control} name="payment_method_id" render={({ field }) => (
-                <SelectorChips etiqueta="Medio de pago" variante="ficha" items={catalogo.medios} value={field.value} invalido={Boolean(errors.payment_method_id)} descritoPor={id}
-                  limpiable={esPlantilla} onChange={(x) => field.onChange(x)} />
-              )} />
-            )}
-          </CampoChips>
-
           {!esPlantilla && <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('is_recurring')} /> Es un gasto recurrente</label>}
-
-          {!esPlantilla && <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-3 border-t border-line pt-4 lg:sticky lg:top-0">
-            <div>
-              <h3 className="font-display text-base font-bold">Cobertura estimada por fondos</h3>
-              <p className="text-xs text-muted">Estimación del motor con los datos de hoy. La imputación definitiva se calcula al guardar.</p>
-            </div>
+          {!esPlantilla && <aside aria-label="Imputación a fondos" className="flex min-w-0 flex-col gap-2 border-t border-line pt-3">
+            <h3 className="font-display text-sm font-bold">Cobertura estimada por fondos <span className="text-xs font-normal text-muted">· se confirma al guardar</span></h3>
             <PanelPrevio payload={payloadPrevio} actualizando={previoActualizando} error={previo.isError} reporte={payloadPrevio === payloadDebounced ? previo.data : undefined} />
           </aside>}
         </div>
+        <details className="group min-w-0 rounded-lg border border-line lg:col-span-2" open={detallesAbiertos} onToggle={(e) => setDetalles((e.currentTarget as HTMLDetailsElement).open)}>
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium">
+            <span>Detalles adicionales{!detallesAbiertos && (v.notes || recibo || archivo) ? <span className="ml-2 text-xs font-normal text-muted">{[v.notes ? 'notas' : '', recibo || archivo ? 'comprobante' : ''].filter(Boolean).join(' · ')}</span> : null}</span>
+            <ChevronDown className="size-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="grid min-w-0 gap-4 border-t border-line p-3 lg:grid-cols-2">
+            <Field label="Notas (opcional)" error={errors.notes?.message}>
+              {(p) => <textarea {...p} rows={2} {...register('notes')} className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 text-sm placeholder:text-muted" placeholder="Detalles que no caben en el concepto" />}
+            </Field>
+  
+            {!esPlantilla && <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium">Comprobante (opcional)</span>
+              {recibo && !archivo ? (
+                <div className="flex items-center gap-2 rounded-md border border-line px-3 py-2 text-sm">
+                  <Paperclip className="size-4 text-muted" aria-hidden="true" />
+                  <span className="flex-1 truncate">{recibo.split('/').pop()}</span>
+                  <button type="button" aria-label="Quitar comprobante" onClick={() => setRecibo(null)} className="grid size-6 place-items-center rounded hover:bg-surface-2"><X className="size-4" aria-hidden="true" /></button>
+                </div>
+              ) : (
+                <input type="file" accept={TIPOS_ARCHIVO.join(',')} aria-label="Comprobante" onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+                  className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:font-medium" />
+              )}
+              <p className="text-xs text-muted">Imagen JPG, PNG o WebP, o PDF. Máximo 5 MB. Se guarda en un espacio privado.</p>
+              {errorArchivo && <p className="text-sm text-bad">{errorArchivo}</p>}
+            </div>}
+          </div>
+        </details>
       </form>
     </Modal>
   )
 }
 
 function PanelPrevio({ payload, actualizando, error, reporte }: { payload: string | null; actualizando: boolean; error: boolean; reporte?: import('./useGastos').ReporteGasto }) {
-  if (!payload) return <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">Completa importe, fecha, clasificación y medio de pago para ver qué fondos cubrirán este gasto.</p>
+  if (!payload) return <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">Completa los datos para ver la cobertura.</p>
   if (error) return <Alert tone="error">No se pudo calcular la cobertura. Puedes guardar igualmente: el servidor valida y asigna los fondos.</Alert>
-  if (!reporte) return <div role="status" aria-label="Calculando cobertura" className="flex flex-col gap-2"><Skeleton className="h-10" /><Skeleton className="h-10" /></div>
+  if (!reporte) return <div role="status" aria-label="Calculando cobertura" className="flex flex-col gap-2"><Skeleton className="h-8" /></div>
   if (reporte.blocked) {
     return (
       <Alert tone="error">

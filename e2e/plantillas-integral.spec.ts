@@ -41,6 +41,7 @@ test.describe('Plantillas de gastos y de fondos', () => {
     await page.getByRole('button', { name: 'Nuevo gasto' }).click()
     const gasto = page.getByRole('dialog', { name: 'Nuevo gasto' })
     await expect(gasto.getByRole('radiogroup', { name: 'Ámbito', exact: true })).toBeVisible()
+    await gasto.getByText('Detalles adicionales').click()
     await expect(gasto.getByText('Comprobante (opcional)')).toBeVisible()
     await page.keyboard.press('Escape')
 
@@ -52,7 +53,10 @@ test.describe('Plantillas de gastos y de fondos', () => {
     await expect(f.getByLabel('Importe sugerido')).toBeVisible()
     await expect(f.getByText('Comprobante (opcional)')).toHaveCount(0)
     await expect(f.getByText('Cobertura estimada por fondos')).toHaveCount(0)
-    await expect(f.getByRole('combobox')).toHaveCount(0) // nada de desplegables: todo se elige con chips
+    // La clasificación sigue usando chips; el único desplegable es el evento opcional.
+    await expect(f.getByRole('combobox')).toHaveCount(1) // solo el evento opcional; la moneda es un selector segmentado
+    await expect(f.getByRole('radiogroup', { name: 'Moneda del importe' })).toBeVisible()
+    await expect(f.getByRole('combobox', { name: 'Evento asociado (opcional)', exact: true })).toBeVisible()
     await expect(f.getByRole('button', { name: 'Guardar plantilla' })).toBeVisible()
   })
 
@@ -124,7 +128,10 @@ test.describe('Plantillas de gastos y de fondos', () => {
     const f = page.getByRole('dialog', { name: 'Nueva plantilla de fondo' })
     await expect(f.getByLabel('Nombre')).toHaveValue('Hogar') // sin «(copia)»
     await expect(f.getByLabel('Importe sugerido (S/)')).toHaveValue(montoAntes.toFixed(2))
-    await expect(f.getByText('Esta plantilla puede utilizarse en diferentes meses.')).toBeVisible()
+    await f.getByRole('button', { name: 'Ayuda: cómo funciona' }).click()
+    await expect(page.getByRole('dialog', { name: 'Ayuda: cómo funciona' })).toContainText('Una plantilla guarda su configuración para otros meses.')
+    await page.keyboard.press('Escape')
+    await expect(f).toBeVisible()
     await expect(f.getByLabel('Importe de este mes (S/)')).toHaveCount(0)
     const nombre = `Plantilla Hogar ${sufijo()}`
     await f.getByLabel('Nombre').fill(nombre)

@@ -14,6 +14,10 @@ import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
 import { fechaEfectiva } from '@/domain/plantillas'
+import { formatOriginal, type Moneda } from '@/domain/moneda'
+import { conversionDePlantilla, importePenDeFila } from '@/domain/registroPlantillas'
+import { EquivalenteUsd } from '@/features/moneda/EquivalenteUsd'
+import { useCotizaciones } from '@/features/moneda/useCotizaciones'
 import { errorImporte, formatFecha, formatMes, formatSoles, parseImporte, sumarImportes } from '@/lib/format'
 import type { Plantilla } from '@/lib/tipos'
 import { claseDe } from '@/features/plantillas/clase'
@@ -46,7 +50,7 @@ export function LoteDialog({ onClose, mesInicial, maximo }: { onClose: () => voi
   const [sucio, setSucio] = useState(false)
   const [cambiarA, setCambiarA] = useState<string | null>(null)
   return (
-    <Modal open onOpenChange={(o) => !o && onClose()} title="Registrar gastos mensuales" description="Revisa cada plantilla antes de confirmar. No se crea nada sin tu confirmación." size="xl" sucio={sucio}
+    <Modal open onOpenChange={(o) => !o && onClose()} title="Registrar gastos mensuales"  size="xl" sucio={sucio}
       footer={null}>
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -90,6 +94,11 @@ function LoteMes({ mes, onClose, onPendientes, onSucio }: { mes: string; onClose
   const set = (id: string, patch: Partial<Fila>) => { setFilas((f) => ({ ...f, [id]: { ...f[id], ...patch } })); onSucio(true) }
 
   const incluidas = items.filter((p) => fila(p).decision === 'include')
+  // Las plantillas en USD se registran con la cotización oficial de la fecha de cada gasto; sin ella no se guarda nada.
+  const enDolares = (p: Plantilla) => p.original_currency === 'USD'
+  const cotizaciones = useCotizaciones(incluidas.filter(enDolares).map((p) => fila(p).date))
+  const conversionDe = (p: Plantilla) => { const e = cotizaciones.get(fila(p).date); return conversionDePlantilla(p, fila(p).amount, e?.estado === 'ok' ? e.cotizacion : null) }
+  const penDe = (p: Plantilla) => importePenDeFila(p, fila(p).amount, conversionDe(p))
   /** Datos que faltan o están mal en una fila que se va a registrar. */
   const problemas = (p: Plantilla): string[] => {
     const f = fila(p)
@@ -98,11 +107,12 @@ function LoteMes({ mes, onClose, onPendientes, onSucio }: { mes: string; onClose
     const ei = errorImporte(f.amount)
     if (ei) out.push(ei)
     else if (!f.confirmado) out.push('Revisa y confirma el importe de este mes.')
+    if (!ei && enDolares(p) && !conversionDe(p)) out.push(cotizaciones.get(f.date)?.estado === 'cargando' ? 'Consultando la cotización…' : 'Falta la cotización de esa fecha.')
     if (!f.method) out.push('Elige el medio de pago.')
     return out
   }
   const conProblemas = incluidas.filter((p) => problemas(p).length > 0)
-  const total = sumarImportes(incluidas.map((p) => parseImporte(fila(p).amount) ?? 0))
+  const total = sumarImportes(incluidas.map((p) => penDe(p) ?? 0))
   const formato = perfil.data?.date_format ?? 'dd/MM/yyyy'
   const nPend = items.filter((p) => fila(p).decision === 'include').length
   // Lo que la persona aún debe revisar (se informa arriba y en el pie)
@@ -121,7 +131,8 @@ function LoteMes({ mes, onClose, onPendientes, onSucio }: { mes: string; onClose
       const payload = items.map((p) => {
         const f = fila(p)
         return f.decision === 'include'
-          ? { template_id: p.id, outcome: 'include', amount: parseImporte(f.amount), expense_date: f.date, payment_method_id: f.method }
+          ? enDolares(p) ? { template_id: p.id, outcome: 'include', ...conversionDe(p), amount: null, expense_date: f.date, payment_method_id: f.method }
+            : { template_id: p.id, outcome: 'include', amount: parseImporte(f.amount), expense_date: f.date, payment_method_id: f.method }
           : { template_id: p.id, outcome: f.decision === 'na' ? 'not_applicable' : 'exclude' }
       })
       const r = await mut.aplicarLote.mutateAsync({ fecha: mes, items: payload, clave })
@@ -172,10 +183,11 @@ function LoteMes({ mes, onClose, onPendientes, onSucio }: { mes: string; onClose
               {usa ? (
                 <>
                   <div className="min-w-0">
-                    <MoneyInput aria-label={`Importe de ${p.name}`} value={f.amount} onChange={(x) => set(p.id, { amount: x, confirmado: true })} invalid={Boolean(prob.some((m) => /importe|número|decimal|signo|máximo|mayor|Usa|Formato/i.test(m)))} />
+                    <MoneyInput aria-label={`Importe de ${p.name}`} currency={p.original_currency as Moneda} value={f.amount} onChange={(x) => set(p.id, { amount: x, confirmado: true })} invalid={Boolean(prob.some((m) => /importe|número|decimal|signo|máximo|mayor|Usa|Formato/i.test(m)))} />
                     {p.is_amount_variable && !f.confirmado && f.amount !== '' && (
-                      <button type="button" onClick={() => set(p.id, { confirmado: true })} className="mt-1 text-xs font-semibold text-pri hover:underline">Confirmar {formatSoles(parseImporte(f.amount) ?? 0)}</button>
+                      <button type="button" onClick={() => set(p.id, { confirmado: true })} className="mt-1 text-xs font-semibold text-pri hover:underline">Confirmar {formatOriginal(parseImporte(f.amount) ?? 0, p.original_currency)}</button>
                     )}
+                    {enDolares(p) && <EquivalenteUsd importe={f.amount} fecha={f.date} estado={cotizaciones.get(f.date)} />}
                   </div>
                   <div className="min-w-0"><DatePicker aria-label={`Fecha de ${p.name}`} value={f.date} onChange={(x) => set(p.id, { date: x })} min={mes} max={finDeMes(mes)} formato={formato} /></div>
                   <div className="min-w-0"><Combobox aria-label={`Medio de pago de ${p.name}`} value={f.method} searchable={false} options={opciones(catalogo.medios, f.method)} onChange={(x) => set(p.id, { method: x ?? '' })} placeholder="Elegir medio" invalid={prob.includes('Elige el medio de pago.')} /></div>
@@ -214,7 +226,7 @@ function LoteMes({ mes, onClose, onPendientes, onSucio }: { mes: string; onClose
             <p>Se crearán <b>{incluidas.length}</b> {incluidas.length === 1 ? 'gasto' : 'gastos'} por <b className="num">{formatSoles(total)}</b> y se imputarán a tus fondos:</p>
             {incluidas.length > 0 && (
               <ul className="max-h-40 divide-y divide-line overflow-y-auto rounded-lg border border-line text-sm">
-                {incluidas.map((p) => <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-1.5"><span className="min-w-0 truncate">{p.name} · {formatFecha(fila(p).date, formato)}</span><span className="num shrink-0 font-semibold">{formatSoles(parseImporte(fila(p).amount) ?? 0)}</span></li>)}
+                {incluidas.map((p) => <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-1.5"><span className="min-w-0 truncate">{p.name} · {formatFecha(fila(p).date, formato)}</span><span className="num shrink-0 font-semibold">{enDolares(p) ? `${formatOriginal(parseImporte(fila(p).amount) ?? 0, 'USD')} ≈ ` : ''}{formatSoles(penDe(p) ?? 0)}</span></li>)}
               </ul>
             )}
             {items.length - incluidas.length > 0 && <p className="text-xs text-muted">Las demás ({items.length - incluidas.length}) solo guardan tu decisión («No aplica» u «Omitir»); no crean gastos.</p>}

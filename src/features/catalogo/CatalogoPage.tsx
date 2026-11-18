@@ -39,9 +39,6 @@ export function CatalogoPage() {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
-      <p className="text-sm text-muted">
-        Las opciones usadas por gastos anteriores no se eliminan: se desactivan y conservan su significado en el histórico. Cambiar un color solo cambia cómo se ve, nunca los importes.
-      </p>
       <Tabs.Root value={tab} onValueChange={(v) => setTab(v as CatalogoKind)}>
         <Tabs.List aria-label="Tipo de catálogo" className="flex flex-wrap gap-1 rounded-md bg-surface-2 p-1">
           {(Object.keys(CONFIG) as CatalogoKind[]).map((k) => (

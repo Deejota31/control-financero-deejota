@@ -1,3 +1,4 @@
+import { AyudaInfo } from '@/components/ui/Hint'
 import { ArrowLeftRight, ArrowRight, Minus, Receipt, TrendingDown, TrendingUp, Trophy, Wallet, X } from 'lucide-react'
 import { useMemo, useState, type ComponentType } from 'react'
 import { useNavigate } from 'react-router'
@@ -35,8 +36,8 @@ function Kpi({ etiqueta, valor, nota, tono, icono, acento }: { etiqueta: string;
   return (
     <div className={cn(claseAcento(acento), 'relative flex min-w-0 flex-col gap-1 rounded-2xl border border-[var(--a-bd)] bg-gradient-to-br from-[var(--a-soft)] to-surface px-5 py-4 pr-16')}>
       <span className="text-sm font-medium text-muted">{etiqueta}</span>
-      <span className={cn('num truncate font-semibold leading-tight', valor.length > 10 ? 'text-xl' : 'text-[1.7rem]', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
-      <span className="truncate text-xs text-muted">{nota}</span>
+      <span className={cn('num break-words font-semibold leading-tight', valor.length > 10 ? 'text-xl' : 'text-[1.7rem]', tono === 'bad' && 'text-bad', tono === 'ok' && 'text-ok')}>{valor}</span>
+      <span className="break-words text-xs text-muted">{nota}</span>
       <IconoAcento icono={icono} acento={acento} size="md" className="absolute right-4 top-4" />
     </div>
   )
@@ -127,11 +128,8 @@ export function DashboardPage() {
   const gruposSub = agruparPorNombre(subcategoriasOpc, filtros.subcategoria)
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">{etiquetaPeriodo} · <span aria-live="polite">{cruzados ? 'con filtros activos' : 'todos los ámbitos y medios de pago'}</span></p>
-        {cruzados && valido && <Button variant="secondary" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>}
-      </div>
+    <div className="flex w-full min-w-0 flex-col gap-4">
+      {cruzados && valido && <Button variant="secondary" className="self-end" onClick={irAGastos}>Ver en Gastos <ArrowRight className="size-4" aria-hidden="true" /></Button>}
 
       {/* Banda pegajosa: ocupa todo el ancho útil del contenido y cubre el hueco de arriba y de los lados con el fondo de la página, así las tarjetas nunca se asoman por
           encima ni por los lados del filtro. Empieza en top-0 (sin valores sueltos) y respeta el área segura superior de iOS. */}
@@ -168,7 +166,7 @@ export function DashboardPage() {
             action={<div className="flex gap-2"><Button onClick={abrirNuevo}>Registrar gasto</Button><Button variant="secondary" onClick={() => navigate('/gastos?lote=1')}>Registrar mensuales</Button></div>} />
         )
       ) : (
-        <div className={cn('flex flex-col gap-6 transition-opacity', actualizando && 'opacity-60')} aria-busy={actualizando}>
+        <div className={cn('flex flex-col gap-4 transition-opacity', actualizando && 'opacity-60')} aria-busy={actualizando}>
           <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Kpi acento="indigo" icono={Wallet} etiqueta={cruzados ? 'Gasto con filtros actuales' : 'Gasto del período'} valor={formatSoles(total)} nota={`${cantidad} movimientos · ${filtros.dia ? '1 día' : `${dias} días`}`} />
             <Kpi acento="sky" icono={ArrowLeftRight} etiqueta="Movimientos" valor={String(cantidad)} nota={`${Number(panel?.dias_con_gasto ?? 0)} días con gasto`} />
@@ -185,20 +183,20 @@ export function DashboardPage() {
 
           <PresupuestoConsolidado r={resumen} etiquetaPeriodo={etiquetaPeriodo} />
 
-          <Tarjeta titulo="Gasto acumulado" filtrada={hayFiltrosSerie} descripcion={`${etiquetaPeriodo} · día a día${hayFiltrosSerie ? ' · solo el gasto que cumple los filtros' : ''} · selecciona un día para filtrar`}>
+          <Tarjeta titulo="Gasto acumulado" filtrada={hayFiltrosSerie}>
             <div className="flex flex-wrap gap-2">
               <Pill tone="pri">{cruzados ? 'Con filtros' : 'Real'}: {formatSoles(total)}</Pill>
               {proy?.aplicable && proyeccion !== null && <Pill tone="warn">Cierre estimado{proy.confiabilidad === 'preliminar' ? ' (preliminar)' : ''}: {formatSoles(proyeccion)}</Pill>}
               {proy?.aplicable && proyeccion === null && <Pill tone="neutral">Proyección: datos insuficientes</Pill>}
               {presupuesto !== null && !hayFiltrosSerie && <Pill tone="neutral">Presupuesto: {formatSoles(presupuesto)}</Pill>}
-            </div>
             {proy?.aplicable && (
-              <div role="note" className="flex flex-col gap-1 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+              <AyudaInfo label="Información de la estimación"><div role="note" className="flex flex-col gap-1 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 {proy.motivo && <p>{proy.motivo}{proy.lineal !== null && <> Referencia lineal, <b>no fiable</b>: <span className="num">{formatSoles(proy.lineal)}</span> (promedio de los días transcurridos × días del mes).</>}</p>}
                 {proy.modelo && <p><b>Modelo:</b> {proy.modelo}. Es una estimación, no una predicción exacta.</p>}
                 {proy.advertencias.map((a) => <p key={a}>{a}</p>)}
-              </div>
+              </div></AyudaInfo>
             )}
+            </div>
             <GraficoAcumulado serie={serie} formato={formato} dia={filtros.dia || null} onDia={(f) => seleccionar('dia', f)} mostrarIdeal={!hayFiltrosSerie && presupuesto !== null} resumen={resumenGrafico} />
             <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-muted">
               <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-[var(--chart-series-1)]" /> Gasto acumulado</span>
@@ -218,7 +216,7 @@ export function DashboardPage() {
           </Tarjeta>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Tarjeta titulo="Distribución por ámbito" filtrada={Boolean(filtros.categoria || filtros.subcategoria || filtros.medio || filtros.tipo || filtros.dia)} descripcion={`${etiquetaPeriodo} · selecciona un ámbito para filtrar todo el panel`}>
+            <Tarjeta titulo="Distribución por ámbito" filtrada={Boolean(filtros.categoria || filtros.subcategoria || filtros.medio || filtros.tipo || filtros.dia)}>
               {porAmbito.length === 0 ? <p className="text-sm text-muted">No hay gasto con estos filtros.</p> : (
                 <div className="my-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
                   {/* La dona mide lo que mide (12 rem) y no se estira; la leyenda se queda con el resto y, si no cabe a su lado con 14 rem, baja debajo de ella. */}

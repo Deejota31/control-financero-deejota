@@ -7,6 +7,7 @@ import { TooltipGrafico, TTCabecera, TTMetrica, TTPrincipal } from '@/components
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { cn } from '@/lib/cn'
 import { formatFecha, formatSoles } from '@/lib/format'
+import { formatOriginal } from '@/domain/moneda'
 import { Paginacion } from '@/components/ui/Paginacion'
 import { TAMANOS_PAGINA } from '@/domain/paginacion'
 import { type FiltrosGastos, type GastoConFondos } from './useGastos'
@@ -175,7 +176,7 @@ export function TablaGastos(p: Props) {
                   <td className="hidden px-2 @min-[1150px]:table-cell"><ChipK color={amb?.color_css}><ItemIcon name={amb?.icon_key} className="size-3" /> {amb?.name}</ChipK></td>
                   <td className="px-2"><ChipK color={med?.color_css}><ItemIcon name={med?.icon_key} className="size-3" /> {med?.name}</ChipK></td>
                   <td className="px-2">{anulado ? <ChipK color="muted">Anulado</ChipK> : <ChipsFondos g={g} fondoPorId={fondoPorId} />}</td>
-                  <td className={cn('num whitespace-nowrap px-2 text-right text-[15px] font-semibold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</td>
+                  <td className={cn('num whitespace-nowrap px-2 text-right text-[15px] font-semibold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}{g.original_currency === 'USD' && <span className="block text-[11px] font-normal leading-tight text-muted" title="Importe original; el equivalente en soles es el que suma">{formatOriginal(g.original_amount, 'USD')}</span>}</td>
                   <td className="px-1">
                     <div className="flex justify-end gap-0">
                       <Accion label={`Ver detalle de ${g.description}`} onClick={() => p.onDetalle(g)}><Eye className="size-4" aria-hidden="true" /></Accion>
@@ -232,7 +233,7 @@ export function TablaGastos(p: Props) {
                         <p className={cn('break-words font-semibold', anulado && 'line-through')}>{g.description}</p>
                         <p className="num text-xs text-muted">{formatFecha(g.expense_date, formato)} · {g.expense_type === 'fixed' ? 'Fijo' : 'Variable'}{g.is_recurring ? ' · Recurrente' : ''}</p>
                       </div>
-                      <p className={cn('num shrink-0 pt-2 text-base font-bold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}</p>
+                      <p className={cn('num shrink-0 pt-2 text-right text-base font-bold', anulado && 'line-through')}>{formatSoles(Number(g.amount))}{g.original_currency === 'USD' && <span className="block text-[11px] font-normal leading-tight text-muted">{formatOriginal(g.original_amount, 'USD')}</span>}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5 pl-[3.25rem]">
                       <ChipK color={cat?.color_css}><ItemIcon name={cat?.icon_key} className="size-3" /> {cat?.name}{sub ? ` › ${sub.name}` : ''}</ChipK>

@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 /** Tarjeta de contenido del Dashboard: título, descripción opcional, acción a la derecha y la marca «Filtrado» cuando los filtros reducen lo que muestra. */
 export function Tarjeta({ titulo, descripcion, derecha, children, className, filtrada }: { titulo: string; descripcion?: string; derecha?: ReactNode; children: ReactNode; className?: string; filtrada?: boolean }) {
   return (
-    <section aria-label={titulo} className={cn('flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-5', className)}>
+    <section aria-label={titulo} className={cn('flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4', className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">

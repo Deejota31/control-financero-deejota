@@ -6,6 +6,7 @@ import { ChipK, TinteK } from '@/components/ui/ChipK'
 import { Modal } from '@/components/ui/Dialog'
 import { ItemIcon } from '@/components/ui/ItemIcon'
 import { cn } from '@/lib/cn'
+import { formatOriginal, formatTasa } from '@/domain/moneda'
 import { formatFecha, formatSoles } from '@/lib/format'
 import { colorVar } from '@/lib/icons'
 import { supabase } from '@/lib/supabase'
@@ -55,6 +56,7 @@ export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, o
   const anulado = g.status === 'annulled'
   const amb = nom.ambito.get(g.ambito_id), cat = nom.categoria.get(g.categoria_id), sub = g.subcategoria_id ? nom.sub.get(g.subcategoria_id) : null, med = nom.medio.get(g.payment_method_id)
   const importe = Number(g.amount)
+  const enDolares = g.original_currency === 'USD'
   const asignaciones = g.expense_fund_allocations
   const imputado = asignaciones.reduce((s, a) => s + Number(a.amount), 0)
   const sinFondo = Math.max(0, Math.round((importe - imputado) * 100) / 100)
@@ -67,7 +69,7 @@ export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, o
           <div className="min-w-0 flex-1">
             <p className="text-sm text-muted">{cat?.name}{sub ? ` · ${sub.name}` : ''}</p>
             <p className={cn('num text-3xl font-bold leading-tight', anulado && 'text-muted line-through')}>{formatSoles(importe)}</p>
-            <p className="num text-sm text-muted">{formatFecha(g.expense_date, formato)}</p>
+            <p className="num text-sm text-muted">{formatFecha(g.expense_date, formato)}{enDolares && ` · ${formatOriginal(g.original_amount, 'USD')}`}</p>
           </div>
           <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold', anulado ? 'border-bad bg-bad-soft text-bad' : 'border-ok bg-ok-soft text-ok')}>
             {anulado ? <CircleSlash className="size-4" aria-hidden="true" /> : <CircleCheck className="size-4" aria-hidden="true" />}{anulado ? 'Anulado' : 'Activo'}
@@ -93,6 +95,21 @@ export function DetalleGasto({ g, nom, fondoPorId, formato, onClose, onEditar, o
             </div>
           </Seccion>
         </div>
+
+        {enDolares && (
+          <Seccion titulo="Conversión a soles">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Dato icono={Wallet} etiqueta="Importe original"><b className="num">{formatOriginal(g.original_amount, 'USD')}</b></Dato>
+              <Dato icono={Wallet} etiqueta={g.conversion_method === 'exact' ? 'Tipo de cambio efectivo' : 'Tipo de cambio'}><span className="num">{formatTasa(g.exchange_rate)}</span></Dato>
+              <Dato icono={Tag} etiqueta="Método">{({ automatic: 'Automático', manual: 'Personalizado', exact: 'Cargo exacto' } as Record<string, string>)[g.conversion_method] ?? g.conversion_method}</Dato>
+              <Dato icono={CalendarDays} etiqueta="Fuente">
+                {g.exchange_rate_source === 'BCRP:PD04640PD' ? 'BCRP (SBS venta)' : g.exchange_rate_source}
+                {g.conversion_method === 'automatic' && <span className="num block text-xs text-muted">Cotización del {formatFecha(g.exchange_rate_reference_date ?? g.expense_date, formato)}</span>}
+              </Dato>
+            </div>
+            <p className="mt-2 text-xs text-muted">El importe en soles queda fijo: no cambia si el dólar varía después.</p>
+          </Seccion>
+        )}
 
         <Seccion titulo="Fondos que lo cubren">
           {anulado ? (

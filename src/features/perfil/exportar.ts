@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 
 /** Tablas de las que se lee con la sesión del navegador (clave pública + RLS): solo se obtienen filas del propio hogar. */
 type Tabla =
+  | 'events' | 'event_items' | 'event_commitments'
   | 'households' | 'ambitos' | 'categorias' | 'subcategorias' | 'medios_pago' | 'funds' | 'fund_scope_rules' | 'fund_payment_rules'
   | 'budget_periods' | 'fund_period_budgets' | 'expense_templates' | 'expenses' | 'expense_fund_allocations'
 
@@ -45,6 +46,7 @@ export async function generarRespaldo(
   const hogar = (await l('households', 'hogar'))[0] ?? null
   const datos: DatosRespaldo = {
     perfil, hogar,
+    eventos: await l('events', 'eventos'), conceptos_evento: await l('event_items', 'conceptos de eventos'), compromisos_evento: await l('event_commitments', 'compromisos de eventos'),
     ambitos: await l('ambitos', 'ámbitos'), categorias: await l('categorias', 'categorías'), subcategorias: await l('subcategorias', 'subcategorías'), medios_pago: await l('medios_pago', 'medios de pago'),
     fondos: await l('funds', 'fondos'), reglas_ambito: await l('fund_scope_rules', 'reglas de cobertura'), reglas_medio: await l('fund_payment_rules', 'reglas de medios de pago'),
     periodos: await l('budget_periods', 'períodos'), presupuestos_fondo: await l('fund_period_budgets', 'presupuestos por fondo'),

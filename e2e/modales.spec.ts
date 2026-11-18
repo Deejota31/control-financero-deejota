@@ -14,7 +14,7 @@ async function medir(page: Page, d: Locator, acciones: string[]) {
     if (caja.left < -0.5 || caja.right > vp.w + 0.5 || caja.top < -0.5 || caja.bottom > vp.h + 0.5) fallos.push(`la tarjeta excede la ventana (${Math.round(caja.left)},${Math.round(caja.top)} → ${Math.round(caja.right)},${Math.round(caja.bottom)} en ${vp.w}×${vp.h})`)
     for (const el of raiz.querySelectorAll<HTMLElement>('input:not([type=hidden]), textarea, select, button, [role=combobox], [role=radio]')) {
       const b = el.getBoundingClientRect()
-      if (b.width === 0 || b.height === 0 || el.closest('[hidden]')) continue
+      if (b.width === 0 || b.height === 0 || el.closest('[hidden]') || el.closest('details:not([open])')) continue
       if (el.closest('.sr-only')) continue
       if (b.left < caja.left - 0.5 || b.right > caja.right + 0.5) fallos.push(`${el.tagName.toLowerCase()}[${el.getAttribute('aria-label') ?? el.id ?? el.textContent?.trim().slice(0, 24)}] rebasa la tarjeta en horizontal`)
     }

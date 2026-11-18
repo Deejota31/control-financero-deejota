@@ -50,14 +50,14 @@ test.describe('Gastos', () => {
     await dialogo.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(dialogo.getByText('El importe no puede llevar signo ni ser negativo.')).toBeVisible()
 
-    // Crear: la descripción se propone desde la subcategoría y se puede editar
+    // Crear: elegir una subcategoría conserva la descripción vacía.
     await dialogo.getByLabel('Importe', { exact: true }).fill('1,250')
     await dialogo.getByLabel('Importe', { exact: true }).blur()
     await dialogo.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(dialogo.getByText(/es ambiguo/)).toBeVisible()
     await expect(dialogo.getByLabel('Importe', { exact: true })).toHaveValue('1,250')
     await llenarGasto(page, { importe: '33,5', ambito: 'Personal', categoria: 'Alimentación', sub: 'Comidas fuera', medio: 'Yape' })
-    await expect(dialogo.getByLabel('Descripción', { exact: true })).toHaveValue('Comidas fuera')
+    await expect(dialogo.getByLabel('Descripción', { exact: true })).toHaveValue('')
     await expect(dialogo.getByLabel('Importe', { exact: true })).toHaveValue('33.50')
     await expect(dialogo.getByText('Saldo después:').first()).toBeVisible()
     const desc = `E2E ${sufijo()}`

@@ -18,10 +18,10 @@ export const claves = {
 
 /** Dominios que un cambio financiero deja obsoletos. Se listan por operación: no se invalida todo por costumbre. */
 export const DOMINIOS = {
-  fondos: ['fondos', 'gastos', 'periodo', 'dashboard', 'planificacion'],
-  plantillasFondos: ['plantillas-fondos', 'fondos', 'periodo', 'dashboard', 'planificacion', 'gastos'],
-  gastos: ['gastos', 'fondos', 'dashboard', 'plantillas'],
-  plantillasGastos: ['plantillas', 'gastos', 'fondos', 'dashboard'],
+  fondos: ['fondos', 'gastos', 'periodo', 'dashboard', 'planificacion', 'sugerencias-descripciones'],
+  plantillasFondos: ['plantillas-fondos', 'fondos', 'periodo', 'dashboard', 'planificacion', 'gastos', 'sugerencias-descripciones'],
+  gastos: ['gastos', 'fondos', 'dashboard', 'plantillas', 'sugerencias-descripciones', 'eventos'],
+  plantillasGastos: ['plantillas', 'gastos', 'fondos', 'dashboard', 'sugerencias-descripciones', 'eventos'],
 } as const
 
 export function invalidar(qc: QueryClient, dominios: readonly string[]) {

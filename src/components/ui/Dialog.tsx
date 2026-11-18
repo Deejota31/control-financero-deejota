@@ -1,11 +1,11 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as Dialog from '@radix-ui/react-dialog'
-import * as Popover from '@radix-ui/react-popover'
-import { Info, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { registrarCambiosPendientes } from '@/lib/cambiosPendientes'
 import { cn } from '@/lib/cn'
 import { Button } from './Button'
+import { AyudaInfo } from './Hint'
 
 interface ModalProps {
   open: boolean
@@ -75,26 +75,14 @@ export function Modal({ open, onOpenChange, title, description, size = 'md', ayu
             <div className="min-w-0">
               <Dialog.Title className="break-words font-display text-lg font-bold [@media(max-height:520px)]:text-base">{title}</Dialog.Title>
               {description ? (
-                <Dialog.Description className="mt-1 break-words text-sm text-muted max-sm:line-clamp-2 max-sm:text-xs [@media(max-height:520px)]:sr-only">{description}</Dialog.Description>
+                <Dialog.Description className="mt-1 break-words text-sm text-muted max-sm:text-xs">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{title}</Dialog.Description>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {ayuda && (
-                <Popover.Root>
-                  <Popover.Trigger aria-label="Ayuda: cómo funciona" className="grid size-8 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-pri">
-                    <Info className="size-4" aria-hidden="true" />
-                  </Popover.Trigger>
-                  <Popover.Portal>
-                    <Popover.Content align="end" sideOffset={6} onEscapeKeyDown={(e) => e.stopPropagation()} className="z-[80] w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-surface p-3 text-sm shadow-pop">
-                      {ayuda}
-                      <Popover.Arrow className="fill-surface" />
-                    </Popover.Content>
-                  </Popover.Portal>
-                </Popover.Root>
-              )}
-              <Dialog.Close aria-label="Cerrar" className="grid size-8 shrink-0 place-items-center rounded-md hover:bg-surface-2">
+              {ayuda && <AyudaInfo label="Ayuda: cómo funciona">{ayuda}</AyudaInfo>}
+              <Dialog.Close aria-label="Cerrar" className="grid size-9 shrink-0 place-items-center rounded-md hover:bg-surface-2">
                 <X className="size-4" aria-hidden="true" />
               </Dialog.Close>
             </div>
@@ -141,12 +129,12 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
             e.preventDefault()
             if (devolverElFoco) devolverFoco(origen)
           }}
-          className="anim-dialog fixed left-1/2 top-1/2 z-[70] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-line bg-surface p-6 shadow-pop">
-          <AlertDialog.Title className="font-display text-lg font-bold">{title}</AlertDialog.Title>
+          className="anim-dialog fixed left-1/2 top-1/2 z-[70] flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-pop sm:p-6">
+          <AlertDialog.Title className="shrink-0 break-words font-display text-lg font-bold">{title}</AlertDialog.Title>
           <AlertDialog.Description asChild>
-            <div className="text-sm text-muted">{description}</div>
+            <div className="min-h-0 overflow-y-auto overscroll-contain text-sm text-muted">{description}</div>
           </AlertDialog.Description>
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-2 flex shrink-0 flex-wrap justify-end gap-2">
             <AlertDialog.Cancel asChild>
               <Button variant="secondary" disabled={loading}>
                 {cancelLabel}

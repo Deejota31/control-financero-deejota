@@ -1,9 +1,8 @@
-import { ArrowRightLeft, Ban, CalendarDays, CircleHelp, Hash, PiggyBank, Percent, ReceiptText, TriangleAlert, WalletCards } from 'lucide-react'
+import { ArrowRightLeft, Ban, CalendarDays, Hash, PiggyBank, Percent, ReceiptText, TriangleAlert, WalletCards } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { claseAcento, IconoAcento, type Acento } from '@/components/ui/Acento'
-import { Hint } from '@/components/ui/Hint'
-import { TooltipGrafico, TTCabecera, TTPie } from '@/components/ui/TooltipGrafico'
+import { AyudaInfo } from '@/components/ui/Hint'
 import { geometriaBarra, type ResumenPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { formatSoles } from '@/lib/format'
@@ -30,18 +29,15 @@ function Metrica({ etiqueta, valor, nota, tono }: { etiqueta: string; valor: str
   )
 }
 
-function Tile({ icono, acento, etiqueta, valor, nota, ayuda, alerta }: { icono: ComponentType<{ className?: string }>; acento: Acento; etiqueta: string; valor: ReactNode; nota: string; ayuda: string; alerta?: boolean }) {
+function Tile({ icono, acento, etiqueta, valor, ayuda, alerta }: { icono: ComponentType<{ className?: string }>; acento: Acento; etiqueta: string; valor: ReactNode; ayuda: string; alerta?: boolean }) {
   return (
-    <Hint contenido={ayuda} side="top">
-      <div tabIndex={0} className={cn(claseAcento(acento), 'flex items-center gap-3 rounded-xl border bg-surface p-3 transition-colors hover:bg-surface-2', alerta ? 'border-[var(--a-bd)] bg-[var(--a-soft)]' : 'border-line')}>
-        <IconoAcento icono={icono} acento={acento} size="md" />
+      <div className={cn(claseAcento(acento), 'flex min-w-0 flex-col gap-2 rounded-xl border bg-surface p-3 sm:flex-row sm:items-center sm:gap-3', alerta ? 'border-[var(--a-bd)] bg-[var(--a-soft)]' : 'border-line')}>
+        <IconoAcento icono={icono} acento={acento} size="md" className="hidden sm:grid" />
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium leading-tight text-muted">{etiqueta}</p>
-          <p className={cn('num text-lg font-semibold leading-snug', alerta && 'text-[var(--a-fg)]')}>{valor}</p>
-          <p className="truncate text-xs text-muted">{nota}</p>
+          <div className="flex items-start gap-1"><p className="break-words text-xs font-medium leading-tight text-muted">{etiqueta}</p><AyudaInfo label={`Información: ${etiqueta}`} className="-mt-2 -mr-2 size-8">{ayuda}</AyudaInfo></div>
+          <p className={cn('num break-words text-base font-semibold leading-snug sm:text-lg', alerta && 'text-[var(--a-fg)]')}>{valor}</p>
         </div>
       </div>
-    </Hint>
   )
 }
 
@@ -60,23 +56,11 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
     <section aria-label="Presupuesto consolidado" className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-white md:px-6" style={{ background: 'linear-gradient(110deg, var(--grad-a), var(--grad-b) 55%, var(--grad-c))' }}>
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-xl border border-white/25 bg-white/15"><WalletCards className="size-5" aria-hidden="true" /></span>
+          <span className="hidden size-11 place-items-center rounded-xl border border-white/25 bg-white/15 min-[440px]:grid"><WalletCards className="size-5" aria-hidden="true" /></span>
           <div>
             <div className="flex items-center gap-1.5">
               <h2 className="font-display text-lg font-bold">Presupuesto consolidado</h2>
-              <Hint
-                side="bottom"
-                contenido={
-                  <TooltipGrafico>
-                    <TTCabecera titulo="¿Cómo se calcula?" />
-                    <TTPie><span className="text-[0.8125rem] text-fg">Suma lo asignado a los fondos activos en los períodos que toca el rango. Disponible = asignado − gasto imputado a fondos. Los filtros de los gráficos no reparten el presupuesto: se muestran aparte.</span></TTPie>
-                  </TooltipGrafico>
-                }
-              >
-                <button type="button" aria-label="Cómo se calcula el presupuesto consolidado" className="grid size-6 place-items-center rounded-full text-white/80 hover:bg-white/15 hover:text-white">
-                  <CircleHelp className="size-4" aria-hidden="true" />
-                </button>
-              </Hint>
+              <AyudaInfo label="Cómo se calcula el presupuesto consolidado" className="text-white hover:bg-white/15 hover:text-white">Suma lo asignado a los fondos activos del período. Disponible = asignado − gasto imputado a fondos. Los filtros de los gráficos no reparten el presupuesto.</AyudaInfo>
             </div>
             <p className="text-sm text-white/80">{etiquetaPeriodo}</p>
           </div>
@@ -88,20 +72,20 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
         </div>
       </header>
 
-      <div className="flex flex-col gap-5 p-5 md:p-6">
+      <div className="flex flex-col gap-4 p-4">
         {r.asignado === null ? (
           <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-line p-5">
             <p className="font-medium">No hay presupuesto asignado a fondos activos en este período.</p>
-            <p className="text-sm text-muted">El gasto se sigue registrando con normalidad. Asigna importes a tus fondos para ver el consumo y lo disponible.</p>
+            <p className="text-sm text-muted">Asigna importes a tus fondos para ver lo disponible.</p>
             <Link to="/fondos" className="text-sm font-semibold text-pri underline">Ir a Fondos</Link>
           </div>
         ) : (
           <>
             <div className="grid divide-y divide-line rounded-xl border border-line bg-surface-2/40 sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4 xl:divide-x">
-              <Metrica etiqueta="Presupuesto asignado" valor={formatSoles(r.asignado)} tono="pri" nota="Fondos activos del período" />
+              <Metrica etiqueta="Presupuesto asignado" valor={formatSoles(r.asignado)} tono="pri"  />
               <Metrica etiqueta="Gastado del período" valor={formatSoles(r.gastado)} nota={`Imputado a fondos: ${formatSoles(r.imputado)}`} />
-              <Metrica etiqueta="Disponible consolidado" valor={formatSoles(r.disponible ?? 0)} tono={excede ? 'bad' : 'ok'} nota="Asignado − gasto imputado" />
-              <Metrica etiqueta="Exceso sobre el presupuesto" valor={excede ? formatSoles(r.exceso) : formatSoles(0)} tono={excede ? 'bad' : 'muted'} nota={excede ? 'Superaste lo asignado' : 'Sin exceso'} />
+              <Metrica etiqueta="Disponible consolidado" valor={formatSoles(r.disponible ?? 0)} tono={excede ? 'bad' : 'ok'}  />
+              <Metrica etiqueta="Exceso sobre el presupuesto" valor={excede ? formatSoles(r.exceso) : formatSoles(0)} tono={excede ? 'bad' : 'muted'}  />
             </div>
 
             <div>
@@ -148,20 +132,20 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
             <p>
               <b>Gasto con filtros actuales: <span className="num">{formatSoles(r.gastoFiltrado)}</span></b>
               {r.porcentajeFiltradoDelGastado !== null && <> ({r.porcentajeFiltradoDelGastado.toFixed(1)} % del gastado del período)</>}.
-              <span className="text-muted"> El presupuesto de arriba es el del período completo: no se puede repartir por los filtros elegidos, por eso no se resta un disponible filtrado.</span>
+              <span className="text-muted"> Presupuesto y disponible corresponden al período completo.</span>
             </p>
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" role="list" aria-label="Indicadores complementarios">
-          <div role="listitem" className="contents"><Tile icono={PiggyBank} acento="blue" etiqueta="Fondos activos" valor={r.fondosActivos} nota="Reciben gasto" ayuda="Fondos habilitados que reciben gasto en el período." /></div>
-          <div role="listitem" className="contents"><Tile icono={Ban} acento="slate" etiqueta="Fondos agotados" valor={r.fondosAgotados} nota="Disponible en cero" ayuda="Fondos con presupuesto asignado cuyo disponible es exactamente cero." /></div>
-          <div role="listitem" className="contents"><Tile icono={ArrowRightLeft} acento="orange" etiqueta="Con excedente" valor={r.fondosConExcedente} nota="Absorbido por General" ayuda="Fondos específicos agotados cuyo exceso absorbió el Fondo General." /></div>
-          <div role="listitem" className="contents"><Tile icono={TriangleAlert} acento="red" etiqueta="Fondos sobregirados" valor={r.fondosSobregirados} nota="Saldo negativo" alerta={r.fondosSobregirados > 0} ayuda="Fondos que consumieron más de lo asignado (saldo negativo)." /></div>
-          <div role="listitem" className="contents"><Tile icono={ReceiptText} acento="violet" etiqueta="Sin fondo asignable" valor={formatSoles(r.sinFondo)} nota="Lo normal es S/ 0.00" alerta={r.sinFondo > 0} ayuda="Gasto del período que no quedó imputado a ningún fondo. Lo normal es S/ 0.00." /></div>
-          <div role="listitem" className="contents"><Tile icono={Percent} acento={acentoConsumo} etiqueta="Consumo del presupuesto" valor={r.consumoPct === null ? '—' : `${r.consumoPct.toFixed(1)} %`} nota="Imputado ÷ asignado" ayuda="Gasto imputado dividido entre el presupuesto asignado. Puede superar 100 %." /></div>
-          <div role="listitem" className="contents"><Tile icono={CalendarDays} acento="sky" etiqueta="Promedio diario" valor={r.promedioDiario === null ? '—' : formatSoles(r.promedioDiario)} nota="Por día transcurrido" ayuda="Gasto con los filtros actuales entre los días transcurridos del rango." /></div>
-          <div role="listitem" className="contents"><Tile icono={Hash} acento="teal" etiqueta="Promedio por movimiento" valor={r.promedioPorMovimiento === null ? '—' : formatSoles(r.promedioPorMovimiento)} nota="Por registro" ayuda="Gasto con los filtros actuales entre la cantidad de movimientos." /></div>
+          <div role="listitem" className="contents"><Tile icono={PiggyBank} acento="blue" etiqueta="Fondos activos" valor={r.fondosActivos} ayuda="Fondos habilitados que reciben gasto en el período." /></div>
+          <div role="listitem" className="contents"><Tile icono={Ban} acento="slate" etiqueta="Fondos agotados" valor={r.fondosAgotados} ayuda="Fondos con presupuesto asignado cuyo disponible es exactamente cero." /></div>
+          <div role="listitem" className="contents"><Tile icono={ArrowRightLeft} acento="orange" etiqueta="Con excedente" valor={r.fondosConExcedente} ayuda="Fondos específicos agotados cuyo exceso absorbió el Fondo General." /></div>
+          <div role="listitem" className="contents"><Tile icono={TriangleAlert} acento="red" etiqueta="Fondos sobregirados" valor={r.fondosSobregirados} alerta={r.fondosSobregirados > 0} ayuda="Fondos que consumieron más de lo asignado (saldo negativo)." /></div>
+          <div role="listitem" className="contents"><Tile icono={ReceiptText} acento="violet" etiqueta="Sin fondo asignable" valor={formatSoles(r.sinFondo)} alerta={r.sinFondo > 0} ayuda="Gasto del período que no quedó imputado a ningún fondo. Lo normal es S/ 0.00." /></div>
+          <div role="listitem" className="contents"><Tile icono={Percent} acento={acentoConsumo} etiqueta="Consumo del presupuesto" valor={r.consumoPct === null ? '—' : `${r.consumoPct.toFixed(1)} %`} ayuda="Gasto imputado dividido entre el presupuesto asignado. Puede superar 100 %." /></div>
+          <div role="listitem" className="contents"><Tile icono={CalendarDays} acento="sky" etiqueta="Promedio diario" valor={r.promedioDiario === null ? '—' : formatSoles(r.promedioDiario)} ayuda="Gasto con los filtros actuales entre los días transcurridos del rango." /></div>
+          <div role="listitem" className="contents"><Tile icono={Hash} acento="teal" etiqueta="Promedio por movimiento" valor={r.promedioPorMovimiento === null ? '—' : formatSoles(r.promedioPorMovimiento)} ayuda="Gasto con los filtros actuales entre la cantidad de movimientos." /></div>
         </div>
       </div>
     </section>

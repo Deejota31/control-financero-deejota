@@ -105,7 +105,6 @@ export function AsistentePlanificacion({ mes, onClose }: { mes: string; onClose:
   return (
     <>
       <Modal open onOpenChange={(o) => !o && onClose()} title={`Planificación · ${formatMes(mes)}`} size="2xl"
-        description="Prepara los fondos y los gastos habituales del mes. Puedes cerrar y retomarlo cuando quieras."
         sucio={copia.tocado && !copia.copiado}
         footer={null}>
         <div className="flex min-w-0 flex-col gap-4">
@@ -167,7 +166,7 @@ export function AsistentePlanificacion({ mes, onClose }: { mes: string; onClose:
 }
 
 function Navegacion({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-3">{children}</div>
+  return <div className="sticky -bottom-4 z-10 -mx-4 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-4 py-3 sm:-bottom-5 sm:-mx-6 sm:px-6">{children}</div>
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -201,7 +200,6 @@ function PasoFondos({ mes, etapa, cerrado, cargando, fondos, asignado, copia, on
     <div className="flex min-w-0 flex-col gap-4">
       <div>
         <h3 className="font-display text-lg font-bold">Prepara tus fondos de {formatMes(mes)}</h3>
-        <p className="text-sm text-muted">Cada mes tiene sus propios fondos. Usa tus plantillas, ajusta los importes y confirma; también puedes copiar los de otro mes o crear uno nuevo. No se crea nada hasta que lo confirmes. Cuando termines, pulsa Continuar.</p>
       </div>
 
       {cerrado && <Alert tone="info">Este mes está cerrado: su histórico no se modifica y no admite fondos nuevos.</Alert>}
@@ -298,7 +296,6 @@ function PasoGastos({ mes, etapa, onEtapa, onAnterior, onSiguiente }: { mes: str
     <div className="flex min-w-0 flex-col gap-3">
       <div>
         <h3 className="font-display text-lg font-bold">Prepara tus gastos de {formatMes(mes)}</h3>
-        <p className="text-sm text-muted">Una plantilla es una configuración reutilizable, no un gasto: solo afecta a tus fondos cuando la registras y la confirmas. Ajusta importe, fecha y medio de cada una y registra varias a la vez.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
@@ -311,7 +308,6 @@ function PasoGastos({ mes, etapa, onEtapa, onAnterior, onSiguiente }: { mes: str
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" onClick={() => setGestion(true)}><FileStack className="size-4" aria-hidden="true" /> Abrir gastos mensuales</Button>
-        <span className="text-xs text-muted">Opción avanzada: la biblioteca completa de plantillas con su fecha general y más filtros.</span>
       </div>
 
       <Navegacion>
@@ -333,9 +329,9 @@ function Kpi({ icono: Icono, etiqueta, valor, nota, tono }: { icono: ComponentTy
     <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-line bg-surface px-3 py-2.5">
       <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', tono === 'bad' ? 'bg-bad-soft text-bad' : tono === 'warn' ? 'bg-surface-2 text-warn' : tono === 'ok' ? 'bg-ok-soft text-ok' : 'bg-pri-soft text-pri')}><Icono className="size-[18px]" /></span>
       <div className="min-w-0">
-        <p className="truncate text-xs text-muted">{etiqueta}</p>
-        <p className={cn('num truncate text-base font-bold leading-tight', tono === 'bad' && 'text-bad')}>{valor}</p>
-        <p className="truncate text-[11px] leading-tight text-muted">{nota}</p>
+        <p className="break-words text-xs text-muted">{etiqueta}</p>
+        <p className={cn('num break-words text-base font-bold leading-tight', tono === 'bad' && 'text-bad')}>{valor}</p>
+        <p className="break-words text-xs leading-tight text-muted">{nota}</p>
       </div>
     </div>
   )
@@ -395,7 +391,7 @@ function PasoResumen({ mes, resumen, onAnterior, onIrAPaso, onCerrar, onFinaliza
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-display text-lg font-bold">Resumen de planificación · {formatMes(mes)}</h3>
-          <p className="text-sm text-muted">Finalizar guarda el estado del mes y desactiva sus avisos. No crea fondos ni gastos nuevos.</p>
+          <p className="text-sm text-muted">Finalizar desactiva los avisos del mes; no crea fondos ni gastos.</p>
         </div>
         {completada && <Pill tone="ok"><Check className="size-3" aria-hidden="true" /> Finalizada{plan?.completed_at ? ` el ${formatFecha(toIso(new Date(plan.completed_at)), formato)}` : ''}</Pill>}
       </div>
@@ -429,7 +425,7 @@ function PasoResumen({ mes, resumen, onAnterior, onIrAPaso, onCerrar, onFinaliza
             <div className="flex justify-between gap-3"><dt className="text-muted">Gastos sin fondo compatible</dt><dd className={cn('num font-semibold', sinFondo > 0 && 'text-warn')}>{formatSoles(sinFondo)}</dd></div>
           </dl>
         )}
-        <p className="mt-2 text-[11px] text-muted">Importes en soles (S/): el sistema trabaja en una sola moneda. No todo gasto consume fondos: la diferencia entre el gasto total y el consumo se muestra aparte.</p>
+        <p className="mt-2 text-[11px] text-muted">Soles (S/). Gasto y consumo de fondos se muestran por separado.</p>
       </section>
 
       {/* C. Estado de planificación */}

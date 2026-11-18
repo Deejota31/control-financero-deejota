@@ -41,7 +41,6 @@ export function DatosHogar() {
         </form>
       )}
       {hogar.data?.is_demo && <Alert tone="info">Este hogar contiene <b>datos de demostración</b> solo para desarrollo local. Se reinician con <code>npm run db:reset</code>.</Alert>}
-      <p className="text-sm text-muted">Hoy eres la única persona con acceso. El modelo de hogar permite añadir colaboración familiar más adelante.</p>
     </div>
   )
 }

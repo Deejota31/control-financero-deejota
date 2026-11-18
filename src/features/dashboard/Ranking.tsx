@@ -77,7 +77,7 @@ export function RankingTendencia({ catalogo, filtros, hoy, seleccionar }: Props)
   return (
     <Tarjeta
       titulo="Ranking con tendencia"
-      descripcion={r ? (r.comparable ? `Tendencia de 6 meses${r.parcial ? ' · referencia prorrateada al mes en curso' : ''}. Subir o bajar no es bueno ni malo por sí mismo.` : 'Comparación histórica solo con un mes completo o el mes en curso.') : undefined}
+      descripcion={r ? (r.comparable ? `Tendencia de 6 meses${r.parcial ? ' · referencia prorrateada al mes en curso' : ''}` : 'Comparación histórica solo con un mes completo o el mes en curso.') : undefined}
       derecha={<Chips dim={dim} setDim={setDim} />}
     >
       {q.isError ? <p className="text-sm text-bad">No se pudo cargar el ranking.</p> : q.isPending || !r ? <p className="text-sm text-muted" role="status">Cargando…</p> : r.items.length === 0 ? <p className="text-sm text-muted">Sin gastos con estos filtros.</p> : (
@@ -98,7 +98,7 @@ export function RankingTendencia({ catalogo, filtros, hoy, seleccionar }: Props)
                       {it.variacionAbs !== null && <TTMetrica etiqueta="Variación en soles" valor={`${it.variacionAbs > 0 ? '+' : it.variacionAbs < 0 ? '−' : ''}${formatSoles(Math.abs(it.variacionAbs))}`} />}
                     </div>
                     {it.variacion !== null && <TTAlerta><span>Variación vs base</span><span className="num whitespace-nowrap font-semibold">{textoVariacion(it.variacion)}</span></TTAlerta>}
-                    {it.variacion !== null && it.baseCorta && <p className="text-[11px] text-muted">Base corta ({it.mesesBase} {it.mesesBase === 1 ? 'mes' : 'meses'} con gasto): léela con cautela, un cambio pequeño en soles se ve enorme en porcentaje.</p>}
+                    {it.variacion !== null && it.baseCorta && <p className="text-[11px] text-muted">Base corta: {it.mesesBase} {it.mesesBase === 1 ? 'mes' : 'meses'} con gasto. Variación poco representativa.</p>}
                     <TTHistorial titulo="Últimos 6 meses" meses={r.meses.map((m, k) => ({ etiqueta: mesCorto(m), valor: formatSolesCorto(it.serie[k]), actual: k === r.meses.length - 1 }))} />
                     <TTPie>{sel ? 'Clic para quitar el filtro' : 'Clic para filtrar todo el panel'}</TTPie>
                   </TooltipGrafico>}>
