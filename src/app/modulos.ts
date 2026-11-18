@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Settings, Tags, Wallet, type LucideIcon } from 'lucide-react'
+import { CalendarRange, LayoutDashboard, Receipt, Settings, Tags, Wallet, type LucideIcon } from 'lucide-react'
 
 export interface Modulo {
   path: string
@@ -14,9 +14,10 @@ export interface Modulo {
 }
 
 export const MODULOS: Modulo[] = [
-  { path: '/', label: 'Dashboard', corto: 'Inicio', icon: LayoutDashboard, finLibre: true },
+  { path: '/', label: 'Dashboard', corto: 'Inicio', icon: LayoutDashboard },
   { path: '/gastos', label: 'Gastos', corto: 'Gastos', icon: Receipt },
   { path: '/fondos', label: 'Fondos', corto: 'Fondos', icon: Wallet },
+  { path: '/eventos', label: 'Eventos', corto: 'Eventos', icon: CalendarRange },
   { path: '/catalogo', label: 'Catálogo', corto: 'Catálogo', icon: Tags },
   { path: '/configuracion', label: 'Configuración', corto: 'Ajustes', icon: Settings },
 ]

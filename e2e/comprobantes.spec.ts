@@ -3,7 +3,8 @@ import { PDF, existeComprobante, rest } from './api'
 import { expect, test } from './fixtures'
 import { elegirEnGasto, email, iniciarSesion, password, sufijo } from './helpers'
 
-const RPC = (nombre: string) => `**/rest/v1/rpc/${nombre}`
+// El formulario de gasto guarda con `save_expense_event` (gasto + evento) y, sin evento, con la RPC original: se interceptan ambas.
+const RPC = (nombre: string) => `**/rest/v1/rpc/{${nombre},save_expense_event}`
 const rechazo = (route: Route) =>
   route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: '23514', message: 'rechazado por la prueba', details: null, hint: null }) })
 
@@ -30,6 +31,7 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
       await rechazo(route)
     })
     const d = await abrirNuevoGasto(page, `E2E fallo ${sufijo()}`)
+    await d.getByText('Detalles adicionales').click()
     await d.getByLabel('Comprobante').setInputFiles(PDF('recibo.pdf'))
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(d.getByText('Algún dato no cumple las reglas de validación.')).toBeVisible()
@@ -50,6 +52,7 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
     // El almacenamiento rechaza el borrado: simula una caída justo en la compensación
     await page.route('**/storage/v1/object/comprobantes', (route) => (route.request().method() === 'DELETE' ? route.abort('connectionrefused') : route.continue()))
     const d = await abrirNuevoGasto(page, `E2E tarea ${sufijo()}`)
+    await d.getByText('Detalles adicionales').click()
     await d.getByLabel('Comprobante').setInputFiles(PDF('recibo.pdf'))
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(d.getByText('Algún dato no cumple las reglas de validación.')).toBeVisible()
@@ -71,6 +74,7 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
     const desc = `E2E edicion ${sufijo()}`
     // gasto con comprobante A
     const d = await abrirNuevoGasto(page, desc)
+    await d.getByText('Detalles adicionales').click()
     await d.getByLabel('Comprobante').setInputFiles(PDF('a.pdf'))
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(page.getByText('Gasto guardado.')).toBeVisible()
@@ -89,6 +93,7 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
     await page.getByRole('button', { name: `Editar ${desc}` }).click()
     const e = page.getByRole('dialog', { name: 'Editar gasto' })
     await e.getByRole('button', { name: 'Quitar comprobante' }).click()
+    await e.getByText('Detalles adicionales').click()
     await e.getByLabel('Comprobante').setInputFiles(PDF('b.pdf'))
     await e.getByRole('button', { name: 'Guardar cambios' }).click()
     await expect(e.getByText('Algún dato no cumple las reglas de validación.')).toBeVisible()
@@ -111,6 +116,7 @@ test.describe('Comprobantes: sin archivos huérfanos', () => {
     await iniciarSesion(page)
     const desc = `E2E quitar ${sufijo()}`
     const d = await abrirNuevoGasto(page, desc)
+    await d.getByText('Detalles adicionales').click()
     await d.getByLabel('Comprobante').setInputFiles(PDF('c.pdf'))
     await d.getByRole('button', { name: 'Guardar gasto' }).click()
     await expect(page.getByText('Gasto guardado.')).toBeVisible()

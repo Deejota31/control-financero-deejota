@@ -2,7 +2,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, CheckCircle2, Download, History, Home, LogOut, Moon, ShieldCheck, Sun, User, type LucideIcon } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { Alert } from '@/components/ui/Alert'
@@ -22,22 +22,21 @@ import { useActualizarPerfil, usePerfil } from './usePerfil'
 
 const HOY = toIso(new Date())
 
-const SECCIONES: { id: string; titulo: string; descripcion: string; icono: LucideIcon }[] = [
-  { id: 'perfil', titulo: 'Perfil y preferencias', descripcion: 'Nombre, zona horaria, fecha y tema', icono: User },
-  { id: 'hogar', titulo: 'Hogar', descripcion: 'Nombre y acceso', icono: Home },
-  { id: 'exportar', titulo: 'Exportar datos', descripcion: 'CSV de gastos y respaldo JSON', icono: Download },
-  { id: 'cuenta', titulo: 'Cuenta y seguridad', descripcion: 'Correo, contraseña y sesión', icono: ShieldCheck },
-  { id: 'actividad', titulo: 'Actividad reciente', descripcion: 'Registro de cambios', icono: History },
+const SECCIONES: { id: string; titulo: string; icono: LucideIcon }[] = [
+  { id: 'perfil', titulo: 'Perfil y preferencias', icono: User },
+  { id: 'hogar', titulo: 'Hogar', icono: Home },
+  { id: 'exportar', titulo: 'Exportar datos', icono: Download },
+  { id: 'cuenta', titulo: 'Cuenta y seguridad', icono: ShieldCheck },
+  { id: 'actividad', titulo: 'Actividad reciente', icono: History },
 ]
 
 const ETIQUETA_FORMATO: Record<string, string> = { 'dd/MM/yyyy': 'Día / mes / año', 'MM/dd/yyyy': 'Mes / día / año', 'yyyy-MM-dd': 'Año-mes-día (ISO)' }
 
-function Panel({ titulo, descripcion, children }: { titulo: string; descripcion: string; children: React.ReactNode }) {
+function Panel({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-6">
+    <section className="flex min-w-0 flex-col gap-4 rounded-xl border border-line bg-surface p-4 sm:p-5">
       <header>
         <h2 className="font-display text-xl font-bold">{titulo}</h2>
-        <p className="text-sm text-muted">{descripcion}</p>
       </header>
       {children}
     </section>
@@ -65,7 +64,6 @@ function PerfilForm() {
   const { setTema } = useTema()
   const zonas = useMemo(() => zonasHorarias(), [])
   const { register, handleSubmit, reset, control, formState: { errors, isDirty } } = useForm<PerfilValues>({ resolver: zodResolver(perfilSchema) })
-  const formato = useWatch({ control, name: 'date_format' })
 
   useEffect(() => {
     if (perfil.data) {
@@ -90,10 +88,10 @@ function PerfilForm() {
   if (perfil.isError) return <div className="flex flex-col gap-3"><Alert tone="error">No se pudo cargar tu perfil.</Alert><Button variant="secondary" className="w-fit" onClick={() => perfil.refetch()}>Reintentar</Button></div>
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      <div className="grid gap-5 lg:grid-cols-2">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Field label="Nombre" error={errors.display_name?.message}>{(p) => <Input {...p} autoComplete="name" {...register('display_name')} />}</Field>
-        <Field label="Zona horaria" hint="Escribe para buscar, por ejemplo «Lima» o «Madrid»." error={errors.timezone?.message}>
+        <Field label="Zona horaria" error={errors.timezone?.message}>
           {(p) => (
             <Controller control={control} name="timezone" render={({ field }) => (
               <Combobox id={p.id} aria-describedby={p['aria-describedby']} invalid={Boolean(errors.timezone)} value={field.value} options={opcionesZona} placeholder="Elegir zona horaria" searchPlaceholder="Buscar zona horaria…" onChange={(v) => v && field.onChange(v)} />
@@ -117,10 +115,9 @@ function PerfilForm() {
             </>
           )} />
         </div>
-        <p className="text-sm text-muted" aria-live="polite">Así se verán las fechas en toda la aplicación: <b className="num text-fg">{formatFecha(HOY, formato ?? 'dd/MM/yyyy')}</b> (hoy).</p>
       </fieldset>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-medium">Tema</legend>
           <div className="inline-flex w-fit rounded-lg border border-line bg-surface-2 p-1" role="radiogroup">
@@ -135,9 +132,8 @@ function PerfilForm() {
               </>
             )} />
           </div>
-          <p className="text-sm text-muted">El tema se aplica y recuerda en este dispositivo al guardar.</p>
         </fieldset>
-        <Field label="Moneda" hint="Fija en soles peruanos (PEN). La aplicación no convierte monedas, por eso no se puede cambiar.">
+        <Field label="Moneda" hint="Moneda contable: soles (PEN). Los gastos en dólares se convierten a soles.">
           {(p) => <Input {...p} value="PEN (S/)" readOnly />}
         </Field>
       </div>
@@ -157,23 +153,23 @@ export function ConfiguracionPage() {
   const actual = SECCIONES.some((s) => s.id === params.get('seccion')) ? params.get('seccion')! : 'perfil'
 
   return (
-    <Tabs.Root value={actual} onValueChange={(v) => setParams({ seccion: v }, { replace: true })} orientation="vertical" className="flex w-full min-w-0 flex-col gap-6 lg:grid lg:grid-cols-[16.25rem_minmax(0,1fr)] lg:items-start">
+    <Tabs.Root value={actual} onValueChange={(v) => setParams({ seccion: v }, { replace: true })} orientation="vertical" className="flex w-full min-w-0 flex-col gap-4 lg:grid lg:grid-cols-[16.25rem_minmax(0,1fr)] lg:items-start">
       <Tabs.List aria-label="Secciones de configuración" className="grid shrink-0 grid-cols-3 gap-1 sm:grid-cols-5 lg:sticky lg:top-4 lg:flex lg:flex-col">
-        {SECCIONES.map(({ id, titulo, descripcion, icono: Icono }) => (
+        {SECCIONES.map(({ id, titulo, icono: Icono }) => (
           <Tabs.Trigger key={id} value={id} className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-transparent px-1.5 py-2 text-center data-[state=active]:border-pri lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left data-[state=active]:bg-pri-soft data-[state=inactive]:hover:bg-surface-2">
             <Icono className="size-5 shrink-0 text-pri" aria-hidden="true" />
-            <span className="flex min-w-0 flex-col"><span className="text-xs font-semibold sm:text-sm lg:text-sm">{titulo}</span><span className="hidden text-xs text-muted lg:block">{descripcion}</span></span>
+            <span className="flex min-w-0 flex-col"><span className="text-xs font-semibold sm:text-sm lg:text-sm">{titulo}</span></span>
           </Tabs.Trigger>
         ))}
       </Tabs.List>
 
       <div className="min-w-0 flex-1">
-        <Tabs.Content value="perfil" className="focus-visible:outline-none"><Panel titulo="Perfil y preferencias" descripcion="Cómo te llamamos y cómo se muestran las fechas y el tema."><PerfilForm /></Panel></Tabs.Content>
-        <Tabs.Content value="hogar" className="focus-visible:outline-none"><Panel titulo="Hogar" descripcion="El espacio donde viven tus gastos, fondos y catálogo."><DatosHogar /></Panel></Tabs.Content>
-        <Tabs.Content value="exportar" className="focus-visible:outline-none"><Panel titulo="Exportar datos" descripcion="Lleva tu información contigo: una hoja de cálculo o un respaldo completo."><ExportarDatos /></Panel></Tabs.Content>
+        <Tabs.Content value="perfil" className="focus-visible:outline-none"><Panel titulo="Perfil y preferencias"><PerfilForm /></Panel></Tabs.Content>
+        <Tabs.Content value="hogar" className="focus-visible:outline-none"><Panel titulo="Hogar"><DatosHogar /></Panel></Tabs.Content>
+        <Tabs.Content value="exportar" className="focus-visible:outline-none"><Panel titulo="Exportar datos"><ExportarDatos /></Panel></Tabs.Content>
         <Tabs.Content value="cuenta" className="focus-visible:outline-none">
-          <Panel titulo="Cuenta y seguridad" descripcion="Acceso a tu cuenta.">
-            <dl className="grid gap-1 text-sm"><dt className="text-muted">Correo de acceso</dt><dd className="font-medium">{user?.email}</dd></dl>
+          <Panel titulo="Cuenta y seguridad">
+            <dl className="grid gap-1 text-sm"><dt className="text-muted">Correo de acceso</dt><dd className="break-all font-medium">{user?.email}</dd></dl>
             <div className="flex flex-col gap-3 border-t border-line pt-4">
               <h3 className="font-display text-base font-bold">Cambiar contraseña</h3>
               <PasswordForm submitLabel="Cambiar contraseña" onDone={() => toast.success('Contraseña actualizada.')} />
@@ -181,7 +177,7 @@ export function ConfiguracionPage() {
             <div className="border-t border-line pt-4"><Button variant="secondary" onClick={() => signOut()}><LogOut className="size-4" aria-hidden="true" /> Cerrar sesión</Button></div>
           </Panel>
         </Tabs.Content>
-        <Tabs.Content value="actividad" className="focus-visible:outline-none"><Panel titulo="Actividad reciente" descripcion="Tus últimos movimientos. Es un registro de solo lectura."><ActividadReciente /></Panel></Tabs.Content>
+        <Tabs.Content value="actividad" className="focus-visible:outline-none"><Panel titulo="Actividad reciente"><ActividadReciente /></Panel></Tabs.Content>
       </div>
     </Tabs.Root>
   )

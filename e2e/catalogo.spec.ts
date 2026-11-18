@@ -185,7 +185,6 @@ test.describe('Catálogo', () => {
     await page.getByRole('button', { name: 'Editar Servicios' }).click()
     const panel = page.getByRole('form', { name: 'Editar categoría' })
     await panel.getByRole('radio', { name: /Heredar de/ }).click()
-    await expect(panel.getByText(/Si el ámbito cambia de color/)).toBeVisible()
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
     await guardado(page)
     expect(sqlLocal(`select color_mode || '|' || coalesce(color_hex, 'null') from public.categorias where household_id = ${HID} and name = 'Servicios'`)).toBe('inherit|null')

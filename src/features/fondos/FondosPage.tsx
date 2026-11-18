@@ -187,7 +187,7 @@ export function FondosPage() {
 
   if (cargando) {
     return (
-      <div className="flex w-full min-w-0 flex-col gap-4" role="status" aria-label="Cargando fondos">
+      <div className="@container flex w-full min-w-0 flex-col gap-4" role="status" aria-label="Cargando fondos">
         <Skeleton className="h-12 w-full" />
         <div className="grid gap-3 sm:grid-cols-3"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
         <Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" />
@@ -202,9 +202,9 @@ export function FondosPage() {
   const detalleFondo = detalle ? [...datos.activos, ...datos.inactivos].find((t) => t.id === detalle) : null
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
-        <BarraFiltros className="w-full min-w-0 md:flex-1">
+    <div className="@container flex w-full min-w-0 flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3 @min-[48rem]:flex-nowrap">
+        <BarraFiltros className="w-full min-w-0 @min-[48rem]:flex-1">
           <CeldaFiltro peso={1.4} min="16.5rem" completa><FiltroFecha modo="mes" desde={mes} hasta={finDeMes(mes)} formato={formato} hoy={hoyZona} onAplicar={(d) => setParams({ mes: d }, { replace: true })} /></CeldaFiltro>
           {!cerrado && (
             <CeldaFiltro peso={0.8} min="9rem">
@@ -218,7 +218,7 @@ export function FondosPage() {
             </label>
           </CeldaFiltro>
         </BarraFiltros>
-        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2 md:shrink-0">
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2 @min-[48rem]:shrink-0">
           {!cerrado && <Button variant="secondary" title="Planificación mensual" onClick={() => planificacion.abrirEstado(mes)}><CalendarCheck className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Planificación</span></Button>}
           {!cerrado && <Button variant="secondary" title="Plantillas de fondos" aria-label="Plantillas de fondos" onClick={() => setBiblioteca(true)}><BookmarkPlus className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Plantillas</span></Button>}
           {!cerrado && <Button variant="secondary" title="Copiar fondos de otro mes" onClick={() => setCopiando(true)}><Copy className="size-4" aria-hidden="true" /><span className="max-2xl:sr-only">Copiar fondos de otro mes</span></Button>}
@@ -229,7 +229,7 @@ export function FondosPage() {
 
       {cerrado && <Alert tone="info">Este período está cerrado: se muestra el resultado histórico tal como quedó. Editar fondos hoy no lo modifica.</Alert>}
 
-      <section aria-label="Resumen del período" className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+      <section aria-label="Resumen del período" className="grid grid-cols-2 gap-2.5 @min-[48rem]:grid-cols-4">
         <Kpi etiqueta="Presupuesto asignado" valor={formatSoles(totales.asignado)} nota="Suma de fondos activos" icono={Wallet} />
         <Kpi etiqueta="Consumido" valor={formatSoles(totales.consumido)} nota="Gastos imputados a fondos" icono={Banknote} />
         <Kpi etiqueta="Disponible" valor={formatSoles(totales.disponible)} tono={totales.disponible < 0 ? 'bad' : 'ok'} nota={totales.disponible < 0 ? 'Hay sobregasto' : 'Asignado − consumido'} icono={Percent} />

@@ -35,7 +35,6 @@ export function InvitacionPlanificacion() {
       <CalendarCheck className="size-5 shrink-0 text-pri" aria-hidden="true" />
       <div className="min-w-0 flex-1 basis-60">
         <p className="font-display text-base font-bold">Prepara {formatMes(mes).toLowerCase()}</p>
-        <p className="text-sm text-muted">{plan?.status === 'in_progress' ? 'Dejaste la planificación a medias. Retómala cuando quieras.' : 'Comienza un nuevo mes. Configura tus fondos y organiza tus gastos habituales.'}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => abrirAsistente(mes)}>{plan?.status === 'in_progress' ? 'Continuar planificación' : 'Comenzar planificación'}</Button>

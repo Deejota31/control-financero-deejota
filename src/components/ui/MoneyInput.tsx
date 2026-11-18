@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn'
 import { parseImporte } from '@/lib/format'
 
 interface MoneyInputProps {
+  currency?: 'PEN' | 'USD'
   id?: string
   value: string
   onChange: (value: string) => void
@@ -16,7 +17,7 @@ interface MoneyInputProps {
 }
 
 /** Importe con prefijo S/ fijo dentro del mismo contorno, de modo que nunca se separe del número. */
-export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, placeholder = '0.00', grande, ...aria }: MoneyInputProps) {
+export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, placeholder = '0.00', grande, currency = 'PEN', ...aria }: MoneyInputProps) {
   return (
     <div
       className={cn(
@@ -25,7 +26,7 @@ export function MoneyInput({ id, value, onChange, onBlur, invalid, disabled, pla
         disabled && 'opacity-60',
       )}
     >
-      <span aria-hidden="true" className="select-none whitespace-nowrap pl-3 pr-1 text-sm text-muted">S/</span>
+      <span aria-hidden="true" className="select-none whitespace-nowrap pl-3 pr-1 text-sm text-muted">{currency === 'USD' ? 'US$' : 'S/'}</span>
       <input
         id={id}
         value={value}

@@ -104,11 +104,12 @@ export function GastosPage() {
 
   function exportarFilas(rows: GastoConFondos[], nombre: string) {
     const csv = aCsv(
-      ['Fecha', 'Descripción', 'Ámbito', 'Categoría', 'Subcategoría', 'Medio de pago', 'Tipo', 'Recurrente', 'Estado', 'Importe (PEN)', 'Fondos', 'Notas'],
+      ['Fecha', 'Descripción', 'Ámbito', 'Categoría', 'Subcategoría', 'Medio de pago', 'Tipo', 'Recurrente', 'Estado', 'Importe (PEN)', 'Fondos', 'Notas', 'Importe original', 'Moneda original', 'Tipo de cambio', 'Método de conversión', 'Fecha de cotización'],
       rows.map((g) => [
         g.expense_date, g.description, nom.ambito.get(g.ambito_id)?.name, nom.categoria.get(g.categoria_id)?.name, g.subcategoria_id ? nom.sub.get(g.subcategoria_id)?.name : '',
         nom.medio.get(g.payment_method_id)?.name, g.expense_type === 'fixed' ? 'Fijo' : 'Variable', g.is_recurring ? 'Sí' : 'No', g.status === 'active' ? 'Activo' : 'Anulado',
         Number(g.amount).toFixed(2), g.expense_fund_allocations.map((a) => `${fondoPorId.get(a.fund_id)?.name ?? 'Fondo'}: ${Number(a.amount).toFixed(2)}`).join('; '), g.notes ?? '',
+        Number(g.original_amount).toFixed(2), g.original_currency, String(g.exchange_rate), g.conversion_method, g.exchange_rate_reference_date ?? '',
       ]),
     )
     descargar(nombre, csv)

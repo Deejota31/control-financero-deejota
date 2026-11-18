@@ -1,4 +1,5 @@
 import { errorImporte, formatMes, parseImporte } from '@/lib/format'
+import { convertirPen, importeATexto, type Conversion } from './moneda'
 import type { PayloadGasto } from '@/features/gastos/useGastos'
 import type { Plantilla } from '@/lib/tipos'
 import { finDeMes } from './periodo'
@@ -45,10 +46,31 @@ export function diferenciasConBase(f: ValoresFila, b: ValoresFila): { importe?: 
   return d
 }
 
-/** Carga útil de `create_expense` para una plantilla con sus valores del mes. */
-export function payloadDePlantilla(p: Plantilla, f: Pick<ValoresFila, 'amount' | 'date' | 'method'>): PayloadGasto {
+/** Cotización de una fecha, tal como la entrega el servicio de tipos de cambio. */
+export interface CotizacionPlantilla { rate: string; reference_date: string; source: string; fetched_at: string }
+
+/** Una plantilla en USD se registra con la cotización oficial de la fecha del gasto. PEN no necesita conversión (devuelve null). */
+export function conversionDePlantilla(p: Pick<Plantilla, 'original_currency'>, importe: string, cot: CotizacionPlantilla | null | undefined): Conversion | null {
+  if (p.original_currency !== 'USD' || !cot) return null
+  const original = importeATexto(importe)
+  if (!original) return null
   return {
-    expense_date: f.date, amount: parseImporte(f.amount)!, description: p.description, ambito_id: p.ambito_id, categoria_id: p.categoria_id, subcategoria_id: p.subcategoria_id,
+    original_currency: 'USD', original_amount: original, amount: convertirPen(original, cot.rate), exchange_rate: cot.rate, exchange_rate_source: cot.source,
+    exchange_rate_reference_date: cot.reference_date, conversion_method: 'automatic', exchange_rate_fetched_at: cot.fetched_at, conversion_snapshot_version: 1,
+  }
+}
+
+/** Importe contable en soles de una fila: el de la plantilla si es PEN, el convertido si es USD (null mientras falte la cotización). */
+export function importePenDeFila(p: Pick<Plantilla, 'original_currency'>, importe: string, conversion: Conversion | null): number | null {
+  if (p.original_currency === 'USD') return conversion ? Number(conversion.amount) : null
+  return parseImporte(importe)
+}
+
+/** Carga útil de `create_expense` para una plantilla con sus valores del mes (con su conversión si está en USD). */
+export function payloadDePlantilla(p: Plantilla, f: Pick<ValoresFila, 'amount' | 'date' | 'method'>, conversion: Conversion | null = null): PayloadGasto {
+  return {
+    ...(conversion ?? {}),
+    expense_date: f.date, amount: conversion ? Number(conversion.amount) : parseImporte(f.amount)!, description: p.description, ambito_id: p.ambito_id, categoria_id: p.categoria_id, subcategoria_id: p.subcategoria_id,
     payment_method_id: f.method, expense_type: p.expense_type as 'fixed' | 'variable', is_recurring: true, notes: p.notes ?? '', template_id: p.id,
   }
 }

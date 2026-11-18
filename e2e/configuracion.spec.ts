@@ -71,7 +71,7 @@ test.describe('Configuración', () => {
     await iniciarSesion(page)
     await irA(page, 'Perfil y preferencias')
     await expect(page.getByLabel('Moneda')).toHaveAttribute('readonly', '')
-    await expect(page.getByText(/no convierte monedas/)).toBeVisible()
+    await expect(page.getByText(/Los gastos en dólares se convierten a soles/)).toBeVisible()
     await expect(page.getByRole('status').filter({ hasText: 'Sin cambios' })).toBeVisible()
 
     // zona horaria: abrir con teclado, filtrar y elegir
@@ -88,7 +88,7 @@ test.describe('Configuración', () => {
     const previa = (await iso.textContent())!.match(/\d{4}-\d{2}-\d{2}/)![0]
     await iso.click()
     await expect(iso).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByText('Así se verán las fechas')).toContainText(previa)
+    await expect(iso).toContainText(previa) // la vista previa de la fecha actual está en la propia opción
 
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
     await expect(page.getByText('Cambios guardados')).toBeVisible()
@@ -266,7 +266,7 @@ test.describe('Configuración', () => {
     const texto = await readFile((await d.path())!, 'utf8')
     const json = JSON.parse(texto)
     expect(json.aplicacion).toBe('Control Financiero')
-    expect(json.version_esquema).toBe(1)
+    expect(json.version_esquema).toBe(2)
     expect(Date.parse(json.exportado_en)).not.toBeNaN()
     expect(Object.keys(json)).toEqual(expect.arrayContaining(['perfil', 'hogar', 'catalogo', 'fondos', 'periodos', 'gastos', 'imputaciones', 'plantillas']))
     expect(json.gastos.length).toBe(Number(sqlLocal(`select count(*) from public.expenses where household_id = ${HID}`)))

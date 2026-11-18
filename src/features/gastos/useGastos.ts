@@ -138,7 +138,7 @@ export async function gastosParaExportar(f: FiltrosGastos): Promise<GastoConFond
   return filas as unknown as GastoConFondos[]
 }
 
-export interface PayloadGasto {
+export interface PayloadGasto extends Partial<Omit<import('@/domain/moneda').Conversion,'amount'>> {
   id?: string
   editing_id?: string
   expense_date: string
@@ -153,6 +153,9 @@ export interface PayloadGasto {
   notes: string
   receipt_path?: string | null
   template_id?: string | null
+  event_id?: string | null
+  event_item_id?: string | null
+  event_commitment_id?: string | null
 }
 
 export interface AsignacionReporte {
@@ -202,7 +205,9 @@ export function useGastoMutaciones() {
   }
   const crear = useMutation({
     mutationFn: async (v: { payload: PayloadGasto; clave: string }) => {
-      const { data, error } = await supabase.rpc('create_expense', { p: v.payload as unknown as Json, p_key: v.clave })
+      const { data, error } = 'event_id' in v.payload
+        ? await supabase.rpc('save_expense_event', { p: v.payload as unknown as Json, p_key: v.clave })
+        : await supabase.rpc('create_expense', { p: v.payload as unknown as Json, p_key: v.clave })
       if (error) throw error
       return leerRpc(reporteGasto, data, 'create_expense')
     },
@@ -210,7 +215,9 @@ export function useGastoMutaciones() {
   })
   const actualizar = useMutation({
     mutationFn: async (v: { id: string; payload: PayloadGasto }) => {
-      const { data, error } = await supabase.rpc('update_expense', { p_id: v.id, p: v.payload as unknown as Json })
+      const { data, error } = 'event_id' in v.payload
+        ? await supabase.rpc('save_expense_event', { p_id: v.id, p: v.payload as unknown as Json })
+        : await supabase.rpc('update_expense', { p_id: v.id, p: v.payload as unknown as Json })
       if (error) throw error
       return leerRpc(reporteGasto, data, 'update_expense')
     },

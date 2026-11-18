@@ -4,6 +4,7 @@ import { GastoForm } from './GastoForm'
 interface Registro {
   /** Abre el formulario global de nuevo gasto sobre la pantalla actual (no cambia de ruta, filtros ni desplazamiento). */
   abrir: () => void
+  abrirConEvento: (inicial: { event_id: string; event_item_id?: string; event_commitment_id?: string }) => void
   abierto: boolean
 }
 
@@ -15,13 +16,15 @@ const Ctx = createContext<Registro | null>(null)
  */
 export function RegistroGastoProvider({ children }: { children: ReactNode }) {
   const [abierto, setAbierto] = useState(false)
-  const abrir = useCallback(() => setAbierto(true), []) // idempotente: abrir dos veces no monta dos formularios
+  const [inicial, setInicial] = useState<{ event_id: string; event_item_id?: string; event_commitment_id?: string }>()
+  const abrir = useCallback(() => { setInicial(undefined); setAbierto(true) }, []) // idempotente: abrir dos veces no monta dos formularios
+  const abrirConEvento = useCallback((v: { event_id: string; event_item_id?: string; event_commitment_id?: string }) => { setInicial(v); setAbierto(true) }, [])
 
-  const valor = useMemo(() => ({ abrir, abierto }), [abrir, abierto])
+  const valor = useMemo(() => ({ abrir, abrirConEvento, abierto }), [abrir, abrirConEvento, abierto])
   return (
     <Ctx.Provider value={valor}>
       {children}
-      {abierto && <GastoForm modo="nuevo" onClose={() => setAbierto(false)} />}
+      {abierto && <GastoForm modo="nuevo" inicial={inicial} onClose={() => setAbierto(false)} />}
     </Ctx.Provider>
   )
 }

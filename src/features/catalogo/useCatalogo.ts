@@ -90,7 +90,10 @@ export interface CatalogoValores {
 
 export function useCatalogoMutaciones(kind: CatalogoKind) {
   const qc = useQueryClient()
-  const invalidar = () => qc.invalidateQueries({ queryKey: ['catalogo'] })
+  const invalidar = () => Promise.all([
+    qc.invalidateQueries({ queryKey: ['catalogo'] }),
+    qc.invalidateQueries({ queryKey: ['sugerencias-descripciones'] }),
+  ])
   const tabla = () => supabase.from(kind as 'ambitos')
 
   const guardar = useMutation({

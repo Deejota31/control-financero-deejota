@@ -435,7 +435,7 @@ export function PlantillasFondosDialog({ mes: mesInicial = MES_ACTUAL, onClose, 
   const [mes, setMes] = useState(mesInicial)
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Plantillas de fondos" size="xl"
-      description="Configuraciones reutilizables para preparar cada mes. Una plantilla no es un fondo: cada mes tiene sus propios fondos y cambiarlos no modifica la plantilla."
+      ayuda="Cada mes tiene fondos independientes. Cambiarlos no modifica su plantilla."
       footer={null}>
       <div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm text-muted">Período destino</span><MesSelector mes={mes} onChange={setMes} /></div>
       <GestorPlantillasFondos key={mes} mes={mes} onCambio={onCambio} onCerrar={onClose} />

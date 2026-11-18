@@ -40,6 +40,8 @@ export function useEstadoLote(periodId: string | undefined, desde: string, hasta
 }
 
 export interface PlantillaValores {
+  original_currency?: 'PEN' | 'USD'
+  event_id?: string | null
   name: string
   description: string
   notes: string | null

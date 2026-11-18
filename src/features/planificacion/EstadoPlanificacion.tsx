@@ -51,7 +51,6 @@ export function EstadoPlanificacion({ mesInicial, onClose, onAbrirAsistente }: {
 
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Planificación mensual" size="md"
-      description="Prepara los fondos y los gastos habituales de cada mes."
       footer={(cerrar) => (
         <>
           <Button variant="secondary" onClick={cerrar}>Cerrar</Button>
@@ -82,7 +81,7 @@ export function EstadoPlanificacion({ mesInicial, onClose, onAbrirAsistente }: {
           {recordatorios && (
             <div className="flex flex-col gap-2 rounded-lg border border-line p-3 text-sm">
               <label className="flex items-center gap-2"><input type="checkbox" className="size-4" checked={avisos} disabled={actualizarPerfil.isPending} onChange={(e) => alternarAvisos(e.target.checked)} /> Avisarme al comenzar cada mes</label>
-              <p className="text-xs text-muted">El aviso aparece dentro de la aplicación y no bloquea nada. No se envían correos ni notificaciones.</p>
+              <p className="text-xs text-muted">Avisos dentro de la aplicación; sin correos ni notificaciones.</p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={() => posponer(mananaDe(hoy))} disabled={guardar.isPending || estado === 'completed'}>Posponer hasta mañana</Button>
                 {plan?.remind_after && <Button variant="secondary" onClick={() => posponer(null)} disabled={guardar.isPending}>Quitar aplazamiento</Button>}

@@ -4,6 +4,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Dialog'
 import { Pill } from '@/components/ui/States'
+import { formatOriginal, type Conversion } from '@/domain/moneda'
 import { payloadDePlantilla } from '@/domain/registroPlantillas'
 import { cn } from '@/lib/cn'
 import { leerRpc, reporteGasto } from '@/lib/contratos'
@@ -18,11 +19,14 @@ import { useGastoMutaciones, type PayloadGasto, type ReporteGasto } from './useG
 
 /* ------------------------------ Revisión y registro ------------------------------ */
 
-export interface FilaRegistro { plantilla: Plantilla; amount: string; date: string; method: string; confirmado: boolean }
+/** `conversion` es la instantánea en soles de una plantilla en USD (null si es PEN o aún no hay cotización). */
+export interface FilaRegistro { plantilla: Plantilla; amount: string; date: string; method: string; confirmado: boolean; conversion?: Conversion | null }
 type Revision = { estado: 'cargando' } | { estado: 'listo'; reporte: ReporteGasto } | { estado: 'error'; mensaje: string }
 type ResultadoFila = { estado: 'ok' } | { estado: 'error'; mensaje: string; ambiguo: boolean }
 
-const payloadDe = (f: FilaRegistro): PayloadGasto => payloadDePlantilla(f.plantilla, f)
+const payloadDe = (f: FilaRegistro): PayloadGasto => payloadDePlantilla(f.plantilla, f, f.conversion)
+/** Importe contable en soles de la fila. */
+const penDe = (f: FilaRegistro) => (f.conversion ? Number(f.conversion.amount) : parseImporte(f.amount) ?? 0)
 
 /**
  * Resumen previo al registro: valida cada fila con el motor (simulación exacta, sin guardar), avisa de fondos en sobregasto y de posibles duplicados, y registra
@@ -55,7 +59,7 @@ export function RevisionRegistro({ filas, mes, formato, registradas, catalogo, o
   const pendientes = filas.filter((f) => resultados[f.plantilla.id]?.estado !== 'ok')
   const bloqueada = (f: FilaRegistro) => { const r = previas[f.plantilla.id]; return r?.estado === 'listo' && Boolean(r.reporte.blocked) }
   const calculando = pendientes.some((f) => previas[f.plantilla.id]?.estado === 'cargando')
-  const total = sumarImportes(pendientes.map((f) => parseImporte(f.amount) ?? 0))
+  const total = sumarImportes(pendientes.map(penDe))
   const hechas = filas.length - pendientes.length
   const validas = pendientes.filter((f) => !bloqueada(f))
 
@@ -78,7 +82,7 @@ export function RevisionRegistro({ filas, mes, formato, registradas, catalogo, o
     if (creados.length) onRegistrados(creados)
     const fallidas = validas.length - creados.length
     if (fallidas === 0 && bloqueadas(filas, previas, resultados) === 0) {
-      toast.success(`Se ${creados.length === 1 ? 'registró 1 gasto' : `registraron ${creados.length} gastos`} por ${formatSoles(sumarImportes(validas.map((f) => parseImporte(f.amount) ?? 0)))}.`)
+      toast.success(`Se ${creados.length === 1 ? 'registró 1 gasto' : `registraron ${creados.length} gastos`} por ${formatSoles(sumarImportes(validas.map(penDe)))}.`)
       onClose()
     } else if (creados.length) toast.warning(`Se registraron ${creados.length}; ${fallidas} quedaron pendientes.`)
   }
@@ -110,7 +114,7 @@ export function RevisionRegistro({ filas, mes, formato, registradas, catalogo, o
               <li key={id} className={cn('rounded-lg border p-2.5 text-sm', res?.estado === 'ok' ? 'border-ok bg-ok-soft/40' : res?.estado === 'error' || reporte?.blocked ? 'border-bad/50' : 'border-line')}>
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <span className="min-w-0 font-semibold">{f.plantilla.name}</span>
-                  <span className="num shrink-0 font-semibold">{formatSoles(parseImporte(f.amount) ?? 0)}</span>
+                  <span className="num shrink-0 font-semibold">{f.conversion ? `${formatOriginal(f.conversion.original_amount, 'USD')} ≈ ` : ''}{formatSoles(penDe(f))}</span>
                 </div>
                 <p className="text-xs text-muted">{formatFecha(f.date, formato)} · {medio?.name ?? 'sin medio'}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">

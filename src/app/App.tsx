@@ -18,6 +18,8 @@ const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').th
 const FondosPage = lazy(() => import('@/features/fondos/FondosPage').then((m) => ({ default: m.FondosPage })))
 const GastosPage = lazy(() => import('@/features/gastos/GastosPage').then((m) => ({ default: m.GastosPage })))
 const ConfiguracionPage = lazy(() => import('@/features/perfil/ConfiguracionPage').then((m) => ({ default: m.ConfiguracionPage })))
+const EventosPage = lazy(() => import('@/features/eventos/EventosPage').then((m) => ({ default: m.EventosPage })))
+const EventoDetalle = lazy(() => import('@/features/eventos/EventoDetalle').then((m) => ({ default: m.EventoDetalle })))
 
 function Notificaciones() {
   const { tema } = useTema()
@@ -44,6 +46,8 @@ export function App() {
                   <Route index element={<DashboardPage />} />
                   <Route path="gastos" element={<GastosPage />} />
                   <Route path="fondos" element={<FondosPage />} />
+                  <Route path="eventos" element={<EventosPage />} />
+                  <Route path="eventos/:id" element={<EventoDetalle />} />
                   <Route path="catalogo" element={<CatalogoPage />} />
                   <Route path="configuracion" element={<ConfiguracionPage />} />
                 </Route>

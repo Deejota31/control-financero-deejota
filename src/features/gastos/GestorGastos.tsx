@@ -15,7 +15,10 @@ import { MoneyInput } from '@/components/ui/MoneyInput'
 import { EmptyState, ErrorState, Pill, Skeleton } from '@/components/ui/States'
 import { agrupar, claveDeNombre, estadoSeleccion, moverAntes, moverDelta, ordenarSecciones, reordenarVisibles, type ClaveSeccion } from '@/domain/agrupacion'
 import { fechaEfectiva, nombreCopia } from '@/domain/plantillas'
-import { diferenciasConBase, problemasDeFila, valoresBase, type Ajuste, type ValoresFila } from '@/domain/registroPlantillas'
+import { conversionDePlantilla, diferenciasConBase, importePenDeFila, problemasDeFila, valoresBase, type Ajuste, type ValoresFila } from '@/domain/registroPlantillas'
+import { formatOriginal, type Moneda } from '@/domain/moneda'
+import { EquivalenteUsd } from '@/features/moneda/EquivalenteUsd'
+import { useCotizaciones } from '@/features/moneda/useCotizaciones'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
 import { formatMes, formatSoles, parseImporte, sumarImportes } from '@/lib/format'
@@ -147,11 +150,19 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
   const idsVisibles = visibles.filter((p) => p.is_active).map((p) => p.id)
   const marcar = (ids: string[], marcarlas: boolean) => setSel((s) => { const n = new Set(s); for (const id of ids) { if (marcarlas) n.add(id); else n.delete(id) } return n })
   const elegidas = lista.filter((p) => sel.has(p.id))
-  const importeDe = (p: Plantilla) => parseImporte(fila(p).amount) ?? 0
+  // Las plantillas en USD se registran con la cotización oficial de la fecha de cada gasto; los totales y fondos usan siempre soles.
+  const enDolares = (p: Plantilla) => p.original_currency === 'USD'
+  const cotizaciones = useCotizaciones(elegidas.filter(enDolares).map((p) => fila(p).date))
+  const conversionDe = (p: Plantilla) => { const e = cotizaciones.get(fila(p).date); return conversionDePlantilla(p, fila(p).amount, e?.estado === 'ok' ? e.cotizacion : null) }
+  const importeDe = (p: Plantilla) => importePenDeFila(p, fila(p).amount, conversionDe(p)) ?? 0
   const total = sumarImportes(elegidas.map(importeDe))
   const ocultas = elegidas.filter((p) => !visibles.some((v) => v.id === p.id)).length
 
-  const problemas = (p: Plantilla): string[] => problemasDeFila(fila(p), mes)
+  const problemas = (p: Plantilla): string[] => {
+    const out = problemasDeFila(fila(p), mes)
+    if (enDolares(p) && sel.has(p.id) && parseImporte(fila(p).amount) !== null && !conversionDe(p)) out.push(cotizaciones.get(fila(p).date)?.estado === 'cargando' ? 'Consultando la cotización…' : 'Falta la cotización de esa fecha.')
+    return out
+  }
   const conProblemas = elegidas.filter((p) => problemas(p).length > 0)
 
   // ---- fechas ----
@@ -183,7 +194,7 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
   // ---- acciones de la biblioteca ----
   function duplicar(p: Plantilla) {
     const valores: PlantillaValores = {
-      name: nombreCopia(p.name, lista.map((x) => x.name)), description: p.description, notes: p.notes, default_amount: p.default_amount === null ? null : Number(p.default_amount),
+      name: nombreCopia(p.name, lista.map((x) => x.name)), description: p.description, notes: p.notes, default_amount: p.default_amount === null ? null : Number(p.default_amount), event_id: p.event_id ?? null, original_currency: p.original_currency as Moneda,
       is_amount_variable: p.is_amount_variable, ambito_id: p.ambito_id, categoria_id: p.categoria_id, subcategoria_id: p.subcategoria_id,
       payment_method_id: p.payment_method_id, default_fund_id: p.default_fund_id, expense_type: p.expense_type as 'fixed' | 'variable', day_of_month: p.day_of_month,
     }
@@ -328,11 +339,12 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
                         {p.is_active ? (
                           <div className="col-span-3 grid min-w-0 grid-cols-2 gap-2 @min-[40rem]:grid-cols-3 @min-[58rem]:contents">
                             <div className="min-w-0">
-                              <MoneyInput aria-label={`Importe de ${p.name}`} value={f.amount} onChange={(x) => ajustar(p.id, { amount: x, confirmado: true })}
+                              <MoneyInput aria-label={`Importe de ${p.name}`} currency={p.original_currency as Moneda} value={f.amount} onChange={(x) => ajustar(p.id, { amount: x, confirmado: true })}
                                 invalid={probs.some((m) => /importe|número|decimal|signo|máximo|mayor|Usa|Formato|Ingresa/i.test(m))} />
                               {p.is_amount_variable && sel.has(p.id) && !f.confirmado && f.amount !== '' && (
-                                <button type="button" onClick={() => ajustar(p.id, { confirmado: true })} className="mt-1 text-xs font-semibold text-pri hover:underline">Confirmar {formatSoles(parseImporte(f.amount) ?? 0)}</button>
+                                <button type="button" onClick={() => ajustar(p.id, { confirmado: true })} className="mt-1 text-xs font-semibold text-pri hover:underline">Confirmar {formatOriginal(parseImporte(f.amount) ?? 0, p.original_currency)}</button>
                               )}
+                              {enDolares(p) && sel.has(p.id) && <EquivalenteUsd importe={f.amount} fecha={f.date} estado={cotizaciones.get(f.date)} />}
                             </div>
                             <div className="col-span-2 min-w-0 @min-[40rem]:col-span-1">
                               <Combobox aria-label={`Medio de pago de ${p.name}`} value={f.method} searchable={false} options={opciones(catalogo.medios, f.method)} placeholder="Elegir medio"
@@ -348,7 +360,7 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
                           <p className="col-span-3 text-xs text-muted @min-[58rem]:col-span-3">Inactiva: actívala para poder registrarla.</p>
                         )}
                         <div className="hidden @min-[58rem]:flex @min-[58rem]:items-center">{estadoPill}</div>
-                        {sel.has(p.id) && hayDif && <p className="col-span-3 text-[11px] text-muted @min-[58rem]:col-span-8">Ajustes solo para este registro: la plantilla conserva {p.is_amount_variable ? 'su referencia' : formatSoles(Number(p.default_amount ?? 0))}.</p>}
+                        {sel.has(p.id) && hayDif && <p className="col-span-3 text-[11px] text-muted @min-[58rem]:col-span-8">Ajustes solo para este registro: la plantilla conserva {p.is_amount_variable ? 'su referencia' : formatOriginal(Number(p.default_amount ?? 0), p.original_currency)}.</p>}
                       </>
                         )}
                       </FilaAcciones>
@@ -377,7 +389,7 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
       {registrando && <GastoForm modo="desde-plantilla" plantilla={registrando} mes={mes} onClose={() => setRegistrando(null)} />}
       {revisando && (
         <RevisionRegistro
-          filas={elegidas.map((p) => ({ plantilla: p, ...fila(p) }))} mes={mes} formato={formato} registradas={registradas} catalogo={catalogo}
+          filas={elegidas.map((p) => ({ plantilla: p, ...fila(p), conversion: conversionDe(p) }))} mes={mes} formato={formato} registradas={registradas} catalogo={catalogo}
           onClose={() => setRevisando(false)}
           onRegistrados={(ids) => {
             setSel((s) => { const n = new Set(s); for (const id of ids) n.delete(id); return n })
@@ -395,7 +407,7 @@ export function GestorPlantillasGastos({ mes: mesInicial = MES_ACTUAL, embebido 
             <div className="flex flex-col gap-2">
               <p>Esto cambia la configuración ORIGINAL de la plantilla; los próximos registros partirán de estos valores. Los gastos ya registrados no cambian.</p>
               <ul className="list-disc pl-5">
-                {diferencias(actualizar).importe !== undefined && <li>Importe: {actualizar.default_amount ? formatSoles(Number(actualizar.default_amount)) : 'sin importe'} → <b>{formatSoles(diferencias(actualizar).importe!)}</b></li>}
+                {diferencias(actualizar).importe !== undefined && <li>Importe: {actualizar.default_amount ? formatOriginal(Number(actualizar.default_amount), actualizar.original_currency) : 'sin importe'} → <b>{formatOriginal(diferencias(actualizar).importe!, actualizar.original_currency)}</b></li>}
                 {diferencias(actualizar).medio !== undefined && <li>Medio de pago: {catalogo.medios.find((m) => m.id === actualizar.payment_method_id)?.name ?? 'ninguno'} → <b>{catalogo.medios.find((m) => m.id === diferencias(actualizar).medio)?.name}</b></li>}
                 {diferencias(actualizar).dia !== undefined && <li>Día del mes: {actualizar.day_of_month ?? 'sin día'} → <b>{diferencias(actualizar).dia}</b></li>}
               </ul>
@@ -418,7 +430,7 @@ export function PlantillasDialog({ onClose, mes }: { onClose: () => void; mes?: 
   const [sucio, setSucio] = useState(false)
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title="Plantillas mensuales" size="2xl" sucio={sucio} footer={null}
-      description="Prepara varios gastos habituales de una vez. Los ajustes de importe, fecha y medio solo valen para lo que registres: las plantillas no cambian.">
+      ayuda="Los ajustes se aplican al gasto registrado; la plantilla no cambia.">
       <GestorPlantillasGastos mes={mes} onCerrar={onClose} onSucio={setSucio} />
     </Modal>
   )

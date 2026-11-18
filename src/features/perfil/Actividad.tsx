@@ -79,7 +79,7 @@ export function ActividadReciente() {
       ) : (
         <ul className="divide-y divide-line" aria-label="Actividad reciente">{q.data.filas.map((e) => <Fila key={e.id} e={e} tz={tz} />)}</ul>
       )}
-      <p className="text-xs text-muted">Solo lectura. Horas en {tz}. Las cargas iniciales y procesos internos no se muestran aquí.</p>
+      <p className="text-xs text-muted">Solo lectura · Horas en {tz}.</p>
       <Button variant="secondary" className="w-fit" onClick={() => setCompleta(true)}>Ver toda la actividad</Button>
       {completa && <ActividadCompleta open onOpenChange={setCompleta} tz={tz} formato={perfil.data?.date_format ?? 'dd/MM/yyyy'} />}
     </div>

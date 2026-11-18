@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Plantilla } from '@/lib/tipos'
-import { diferenciasConBase, payloadDePlantilla, problemasDeFila, valoresBase } from './registroPlantillas'
+import { conversionDePlantilla, diferenciasConBase, importePenDeFila, payloadDePlantilla, problemasDeFila, valoresBase } from './registroPlantillas'
 
 const plantilla = (o: Partial<Plantilla> = {}) => ({
   id: 'p1', name: 'Luz', description: 'Recibo de luz', notes: null, default_amount: '180', is_amount_variable: false, day_of_month: 31,
@@ -48,5 +48,30 @@ describe('payloadDePlantilla', () => {
   it('arma el gasto con los valores del mes, es recurrente y enlaza la plantilla (idempotencia por plantilla)', () => {
     const p = payloadDePlantilla(plantilla(), { amount: '195.50', date: '2026-10-05', method: 'm2' })
     expect(p).toMatchObject({ amount: 195.5, expense_date: '2026-10-05', payment_method_id: 'm2', template_id: 'p1', is_recurring: true, expense_type: 'fixed', notes: '' })
+  })
+})
+
+describe('plantillas en USD', () => {
+  const usd = plantilla({ default_amount: '20', original_currency: 'USD' } as unknown as Partial<Plantilla>)
+  const cot = { rate: '3.42', reference_date: '2026-11-16', source: 'BCRP:PD04640PD', fetched_at: '2026-11-18T12:00:00Z' }
+  const f = { amount: '20.00', date: '2026-11-18', method: 'm1' }
+  it('convierte con la cotización de la fecha y conserva el importe original', () => {
+    const c = conversionDePlantilla(usd, '20.00', cot)!
+    expect(c).toMatchObject({ original_currency: 'USD', original_amount: '20.00', amount: '68.40', exchange_rate: '3.42', conversion_method: 'automatic', exchange_rate_reference_date: '2026-11-16' })
+    expect(importePenDeFila(usd, '20.00', c)).toBe(68.4)
+  })
+  it('sin cotización no hay conversión ni importe en soles: nunca se asume 1:1', () => {
+    expect(conversionDePlantilla(usd, '20.00', null)).toBeNull()
+    expect(importePenDeFila(usd, '20.00', null)).toBeNull()
+  })
+  it('una plantilla en PEN no necesita conversión y conserva su importe', () => {
+    const pen = plantilla({ original_currency: 'PEN' } as Partial<Plantilla>)
+    expect(conversionDePlantilla(pen, '180', cot)).toBeNull()
+    expect(importePenDeFila(pen, '180', null)).toBe(180)
+  })
+  it('la carga útil lleva el importe contable en soles y la instantánea completa', () => {
+    const p = payloadDePlantilla(usd, f, conversionDePlantilla(usd, '20.00', cot))
+    expect(p).toMatchObject({ amount: 68.4, original_amount: '20.00', original_currency: 'USD', exchange_rate: '3.42', template_id: usd.id })
+    expect(payloadDePlantilla(plantilla({ original_currency: 'PEN' } as Partial<Plantilla>), { ...f, amount: '180' })).not.toHaveProperty('original_currency')
   })
 })

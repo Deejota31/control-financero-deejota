@@ -17,6 +17,8 @@ import { errorImporte, parseMontoNoNegativo } from '@/lib/format'
 import type { Catalogo } from '@/features/catalogo/useCatalogo'
 import type { Fila } from '@/lib/tipos'
 import type { FondoPayload } from './useFondos'
+import { DescripcionInteligente } from '@/features/descripciones/DescripcionInteligente'
+import type { ContextoDescripcion, ReglaSugerencia, MedioSugerencia } from '@/features/descripciones/contexto'
 
 type Regla = 'none' | 'include' | 'exclude'
 
@@ -162,6 +164,14 @@ export function FondoForm({
   const esGeneral = useWatch({ control, name: 'is_general' })
   const color = useWatch({ control, name: 'color_token' })
   const nombreFondo = useWatch({ control, name: 'name' })
+  const contextoDescripcion: ContextoDescripcion = {
+    tipo: 'fund', is_general: esGeneral, listo: !catalogo.isPending && !catalogo.isError,
+    scope_rules: Object.entries(alcance).filter(([, e]) => e !== 'none').map(([k, effect]) => {
+      const [kind, ref] = k.split(':')
+      return { kind, ref, effect } as ReglaSugerencia
+    }),
+    payment_rules: Object.entries(medios).filter(([, e]) => e !== 'none').map(([method, effect]) => ({ method, effect }) as MedioSugerencia),
+  }
   const editando = Boolean(fondo && !clon)
   const textoImporte = esPlantilla ? 'Importe sugerido (S/)' : 'Importe de este mes (S/)'
 
@@ -242,7 +252,6 @@ export function FondoForm({
 
   return (
     <Modal open onOpenChange={(o) => !o && onClose()} title={esPlantilla ? (editando ? 'Editar plantilla de fondo' : 'Nueva plantilla de fondo') : editando ? 'Editar fondo' : inicial.plantillaId ? 'Nuevo fondo desde plantilla' : clon ? 'Clonar fondo' : 'Nuevo fondo'} size="xl"
-      description={esPlantilla ? 'Una plantilla es una configuración reutilizable: no es presupuesto asignado ni afecta a ningún mes hasta que la uses.' : 'Un fondo es presupuesto asignado, no dinero ingresado ni una cuenta.'}
       sucio={sucio}
       footer={(cerrar) => (
         <>
@@ -252,7 +261,7 @@ export function FondoForm({
       )}
       ayuda={
         <>
-          <p className="font-semibold">Cómo se aplican las reglas</p>
+          <p className="mb-2 text-muted">Un fondo es presupuesto asignado. Una plantilla guarda su configuración para otros meses.</p><p className="font-semibold">Cómo se aplican las reglas</p>
           <p className="mt-1 text-muted">Si incluyes elementos, el fondo solo admite esos; lo que excluyas nunca se admite (la exclusión gana). Sin reglas de un tipo, el fondo admite todo en ese tipo.</p>
           <ul className="mt-2 list-disc space-y-1 pl-4 text-muted">
             <li><b>Sodexo:</b> incluye Alimentación (Trabajo) y el medio Sodexo.</li>
@@ -262,20 +271,24 @@ export function FondoForm({
           {esGeneral && <p className="mt-2 text-muted">Un Fondo General suele quedar sin reglas de clasificación.</p>}
         </>
       }>
-      <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-5 lg:grid-cols-2">
+      <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-4 lg:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-3">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} {...register('name')} />}</Field>
           {!esPlantilla && editando && periodoAbierto ? (
-            <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes: los demás meses no cambian.">
+            <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes.">
               {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
             </Field>
           ) : (
-            <Field label={textoImporte} error={errors.default_amount?.message} hint={esPlantilla ? 'Esta plantilla puede utilizarse en diferentes meses.' : 'El fondo existe solo en este mes.'}>
+            <Field label={textoImporte} error={errors.default_amount?.message}>
               {(p) => <Controller control={control} name="default_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.default_amount)} />} />}
             </Field>
           )}
-          <Field label="Descripción (opcional)" error={errors.description?.message}>{(p) => <Input {...p} {...register('description')} />}</Field>
-          {esPlantilla && <Field label="Grupo (opcional)" error={errors.group_name?.message} hint="Solo organiza tu biblioteca de plantillas (por ejemplo, «Alimentación»). No cambia las reglas ni la prioridad del fondo.">{(p) => <Input {...p} {...register('group_name')} />}</Field>}
+          <Field label="Descripción (opcional)" error={errors.description?.message}>
+            {(p) => <Controller control={control} name="description" render={({ field }) => (
+              <DescripcionInteligente {...p} name={field.name} ref={field.ref} onBlur={field.onBlur} value={field.value} onValueChange={field.onChange} maxLength={300} contexto={contextoDescripcion} />
+            )} />}
+          </Field>
+          {esPlantilla && <Field label="Grupo (opcional)" error={errors.group_name?.message}>{(p) => <Input {...p} {...register('group_name')} />}</Field>}
           <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-sm font-medium">Icono</span>
             <Controller control={control} name="icon_key" render={({ field }) => <SelectorIcono value={field.value} onChange={field.onChange} sugerencias={sugerirIconos(nombreFondo ?? '')} color={color} />} />
@@ -319,11 +332,11 @@ export function FondoForm({
                 const hijosA = cuenta(cats.flatMap(({ c, subs }) => [`categoria:${c.id}`, ...subs.map((s) => `subcategoria:${s.id}`)]))
                 return (
                   <div key={a.id} className="rounded-md">
-                    <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
-                      <button type="button" aria-expanded={abierto} aria-label={`${abierto ? 'Contraer' : 'Expandir'} ${a.name}`} onClick={() => alternarAbierto(claveA)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                    <div className="flex min-w-0 flex-col items-stretch gap-1 rounded-md px-2 py-1.5 sm:flex-row sm:items-center sm:gap-2 hover:bg-surface-2">
+                      <button type="button" aria-expanded={abierto} aria-label={`${abierto ? 'Contraer' : 'Expandir'} ${a.name}`} onClick={() => alternarAbierto(claveA)} className="flex min-h-9 min-w-0 flex-1 items-center gap-2 text-left">
                         <ChevronRight className={cn('size-4 shrink-0 transition-transform', abierto && 'rotate-90')} aria-hidden="true" />
                         <ItemIcon name={a.icon_key} color={a.color_css} />
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{a.name}</span>
+                        <span className="min-w-0 flex-1 break-words text-sm font-semibold">{a.name}</span>
                         {!abierto && <ResumenRamas {...hijosA} />}
                       </button>
                       <SelectorRegla nombre={a.name} value={alcance[claveA] ?? 'none'} onChange={(v) => setRegla(claveA, v)} />
@@ -336,11 +349,11 @@ export function FondoForm({
                           const resumenC = cuenta(subs.map((s) => `subcategoria:${s.id}`))
                           return (
                             <div key={c.id}>
-                              <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-surface-2">
-                                <button type="button" aria-expanded={abiertoC} aria-label={`${abiertoC ? 'Contraer' : 'Expandir'} ${a.name} › ${c.name}`} disabled={subs.length === 0} onClick={() => alternarAbierto(claveC)} className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-60">
+                              <div className="flex min-w-0 flex-col items-stretch gap-1 rounded-md px-2 py-1 sm:flex-row sm:items-center sm:gap-2 hover:bg-surface-2">
+                                <button type="button" aria-expanded={abiertoC} aria-label={`${abiertoC ? 'Contraer' : 'Expandir'} ${a.name} › ${c.name}`} disabled={subs.length === 0} onClick={() => alternarAbierto(claveC)} className="flex min-h-9 min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-60">
                                   <ChevronRight className={cn('size-4 shrink-0 transition-transform', abiertoC && 'rotate-90', subs.length === 0 && 'invisible')} aria-hidden="true" />
                                   <ItemIcon name={c.icon_key} color={c.color_css} />
-                                  <span className="min-w-0 flex-1 truncate text-sm">{c.name}</span>
+                                  <span className="min-w-0 flex-1 break-words text-sm">{c.name}</span>
                                   {!abiertoC && <ResumenRamas {...resumenC} />}
                                 </button>
                                 <SelectorRegla nombre={`${a.name} › ${c.name}`} value={alcance[claveC] ?? 'none'} onChange={(v) => setRegla(claveC, v)} />
@@ -348,8 +361,8 @@ export function FondoForm({
                               {abiertoC && (
                                 <div className="ml-4 flex flex-col gap-1 border-l border-line pl-2 sm:ml-6 sm:pl-3">
                                   {(q ? visSubs : subs).map((s) => (
-                                    <div key={s.id} className="flex min-w-0 items-center gap-2 px-2 py-0.5">
-                                      <span className="min-w-0 flex-1 truncate text-sm text-muted">{s.name}</span>
+                                    <div key={s.id} className="flex min-w-0 flex-col items-stretch gap-1 px-2 py-0.5 sm:flex-row sm:items-center sm:gap-2">
+                                      <span className="min-w-0 flex-1 break-words text-sm text-muted">{s.name}</span>
                                       <SelectorRegla nombre={`${a.name} › ${c.name} › ${s.name}`} value={alcance[`subcategoria:${s.id}`] ?? 'none'} onChange={(v) => setRegla(`subcategoria:${s.id}`, v)} />
                                     </div>
                                   ))}
@@ -376,7 +389,7 @@ export function FondoForm({
               {catalogo.medios.map((m) => (
                 <div key={m.id} className="flex min-w-0 items-center gap-2 px-1.5 py-0.5">
                   <ItemIcon name={m.icon_key} color={m.color_css} />
-                  <span className="min-w-0 flex-1 truncate text-sm">{m.name}</span>
+                  <span className="min-w-0 flex-1 break-words text-sm">{m.name}</span>
                   <SelectorRegla nombre={m.name} value={medios[m.id] ?? 'none'} onChange={(v) => setMedios((x) => ({ ...x, [m.id]: v }))} />
                 </div>
               ))}
