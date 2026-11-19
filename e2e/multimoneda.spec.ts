@@ -58,7 +58,12 @@ const imputado = (descripcion: string) => Number(sqlLocal(`select coalesce(sum(a
 
 test.describe('Multimoneda USD/PEN', () => {
   test.skip(!email || !password, 'Define E2E_USER_EMAIL y E2E_USER_PASSWORD en .env.local')
-  test.beforeEach(async ({ page }) => { consultas = []; proveedor = 'ok'; tasa = TASA_INICIAL; await simularProveedor(page) })
+  test.beforeEach(async ({ page }) => {
+    consultas = []; proveedor = 'ok'; tasa = TASA_INICIAL
+    // Un fondo PEN solo cubre gastos en dólares si se autoriza: el General del hogar de pruebas lo permite para verificar el descuento en soles.
+    sqlLocal(`update public.funds set allow_cross_currency = true where household_id = ${HID} and is_general`)
+    await simularProveedor(page)
+  })
   test.afterAll(() => { sqlLocal(`delete from public.exchange_rate_quotes where source = '${FUENTE}'`) })
 
   test('PEN no muestra controles de conversión, no consulta cotizaciones y admite importes con coma', async ({ page }) => {

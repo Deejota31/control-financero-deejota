@@ -25,6 +25,11 @@ insert into public.exchange_rate_quotes(date_requested,rate,reference_date,sourc
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}',true);
 select public.save_fund(jsonb_build_object('name','General','description','General','is_general',true,'default_amount',500,'period_id',(public.ensure_period_rpc(current_date)).id,'period_amount',500,'scope_rules','[]'::jsonb,'payment_rules','[]'::jsonb));
+-- Los fondos PEN no cubren gastos en dólares salvo que se autorice: aquí el General lo permite para probar el descuento en soles.
+reset role;
+update public.funds set allow_cross_currency = true where is_general and household_id = (select household_id from public.profiles where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}',true);
 
 -- 1. PEN conserva el comportamiento anterior: identidad sin conversión.
 insert into mm.ids select 'pen',(public.create_expense(mm.exp('Pan',100),gen_random_uuid())->>'expense_id')::uuid;

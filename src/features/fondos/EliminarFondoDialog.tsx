@@ -7,7 +7,8 @@ import { Modal } from '@/components/ui/Dialog'
 import { ErrorState, Skeleton } from '@/components/ui/States'
 import { round2 } from '@/domain/fondos'
 import { mensajeDeError } from '@/lib/errors'
-import { formatSoles } from '@/lib/format'
+
+import { formatOriginal } from '@/domain/moneda'
 import { useDependenciasFondo, useFondoMutaciones, type EliminacionFondo } from './useFondos'
 
 interface Props {
@@ -53,6 +54,7 @@ export function EliminarFondoDialog({ fondo, onClose, onDesactivar }: Props) {
   const usado = (d?.open_allocations ?? 0) > 0
   const sinDestino = usado && (d?.destinations.length ?? 0) === 0
   const nombres = new Map<string, string>(d?.destinations.map((x) => [x.id, x.name]) ?? [])
+  const monedas = new Map<string, 'PEN' | 'USD' | undefined>(d?.destinations.map((x) => [x.id, x.currency]) ?? [])
   const filasEfecto = efecto?.consumption_before
     ? Array.from(new Set([...Object.keys(efecto.consumption_before), ...Object.keys(efecto.consumption_after ?? {})]))
         .map((id) => ({ id, antes: efecto.consumption_before?.[id] ?? 0, despues: efecto.consumption_after?.[id] ?? 0 }))
@@ -122,7 +124,7 @@ export function EliminarFondoDialog({ fondo, onClose, onDesactivar }: Props) {
                     <thead><tr className="text-xs text-muted"><th className="py-1">Fondo</th><th className="py-1 text-right">Antes</th><th className="py-1 text-right">Después</th></tr></thead>
                     <tbody>
                       {filasEfecto.map((f) => (
-                        <tr key={f.id} className="border-t border-line"><td className="py-1">{nombres.get(f.id) ?? 'Otro fondo'}</td><td className="num py-1 text-right">{formatSoles(f.antes)}</td><td className="num py-1 text-right font-semibold">{formatSoles(f.despues)}</td></tr>
+                        <tr key={f.id} className="border-t border-line"><td className="py-1">{nombres.get(f.id) ?? 'Otro fondo'}</td><td className="num py-1 text-right">{formatOriginal(f.antes, monedas.get(f.id) ?? 'PEN')}</td><td className="num py-1 text-right font-semibold">{formatOriginal(f.despues, monedas.get(f.id) ?? 'PEN')}</td></tr>
                       ))}
                     </tbody>
                   </table>

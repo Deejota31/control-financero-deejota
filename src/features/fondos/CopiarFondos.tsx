@@ -9,7 +9,8 @@ import { ItemIcon } from '@/components/ui/ItemIcon'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Skeleton } from '@/components/ui/States'
 import { mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatMes, formatSoles, parseMontoNoNegativo } from '@/lib/format'
+import { errorImporte, formatMes, parseMontoNoNegativo } from '@/lib/format'
+import { formatPorMoneda, type Moneda } from '@/domain/moneda'
 import { sumarMeses } from '@/domain/periodo'
 import { usePeriodo } from '@/features/periodos/usePeriodo'
 import { useCopiarFondos, useFondos, usePresupuestosPeriodo, type ResultadoCopia } from './useFondos'
@@ -67,7 +68,8 @@ export function useCopiaFondos(destino: string, origenInicial?: string) {
   const copiables = filas.filter((f) => !f.omitido)
   const seleccionados = copiables.filter((f) => marcados.has(f.fondo.id))
   const importeInvalido = seleccionados.some((f) => errorImporte(importes[f.fondo.id] ?? '', { permitirCero: true }))
-  const total = seleccionados.reduce((s, f) => s + (parseMontoNoNegativo(importes[f.fondo.id] ?? '') ?? 0), 0)
+  const totalPor = (m: Moneda) => seleccionados.filter((f) => (f.fondo.currency ?? 'PEN') === m).reduce((s, f) => s + (parseMontoNoNegativo(importes[f.fondo.id] ?? '') ?? 0), 0)
+  const total = { PEN: totalPor('PEN'), USD: totalPor('USD') }
 
   /** Crea las instancias elegidas en el mes destino. Devuelve el resultado o null si falló (el error queda en `error`). */
   async function confirmar(): Promise<ResultadoCopia | null> {
@@ -136,7 +138,7 @@ export function ListaCopiaFondos({ copia, mostrarOrigen = true }: { copia: Copia
                     </span>
                   </span>
                   <div className="col-span-2 sm:col-span-1">
-                    <MoneyInput id={`importe-${fondo.id}`} aria-label={`Importe de ${fondo.name}`} value={importes[fondo.id] ?? ''} disabled={Boolean(omitido) || !marcado}
+                    <MoneyInput id={`importe-${fondo.id}`} currency={(fondo.currency ?? 'PEN') as Moneda} aria-label={`Importe de ${fondo.name}`} value={importes[fondo.id] ?? ''} disabled={Boolean(omitido) || !marcado}
                       invalid={marcado && Boolean(errorImporte(importes[fondo.id] ?? '', { permitirCero: true }))}
                       onChange={(v) => copia.cambiarImporte(fondo.id, v)} />
                   </div>
@@ -169,7 +171,7 @@ export function CopiarFondos({ destino, origenInicial, onClose, onCopiado }: { d
       sucio={copia.tocado && !copia.copiado}
       footer={(cerrar) => (
         <>
-          <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite">{seleccionados.length} de {copiables.length} · <b className="num text-fg">{formatSoles(copia.total)}</b></p>
+          <p className="mr-auto min-w-0 truncate text-sm text-muted" aria-live="polite">{seleccionados.length} de {copiables.length} · <b className="num text-fg">{formatPorMoneda(copia.total)}</b></p>
           <Button variant="secondary" onClick={cerrar} disabled={copia.copiando}>Cancelar</Button>
           <Button onClick={aceptar} loading={copia.copiando} disabled={seleccionados.length === 0 || copia.importeInvalido || copia.cargando}>
             {copia.copiando ? 'Copiando…' : seleccionados.length === 1 ? 'Copiar 1 fondo' : `Copiar ${seleccionados.length} fondos`}

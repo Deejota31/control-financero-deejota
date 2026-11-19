@@ -146,3 +146,39 @@ describe('presupuesto consolidado: caso de control (captura de noviembre)', () =
     expect(r.fondosAgotados).toBe(0)
   })
 })
+
+describe('presupuesto con fondos en dólares (valoración referencial)', () => {
+  const base: EntradaPresupuesto = { presupuesto: 1000, gastoRango: 168, imputado: 168, sinFondo: 0, excedente: 0, fondos: [], total: 168, cantidad: 2, diasConGasto: 2, desde: '2026-11-01', hasta: '2026-11-30', hoy: '2026-11-18', hayFiltros: false }
+  const usd = { presupuesto_usd: 50, consumido_usd: 20, saldo_usd: 30, sin_cotizacion: false, consumido_pen_fondos: 100, presupuesto_valorizado: 175, consumido_valorizado: 70, saldo_valorizado: 105, tasas: [{ periodo: '2026-11-01', tasa: 3.5, fecha_referencia: '2026-11-17', fuente: 'BCRP:PD04640PD', consultada_para: '2026-11-18' }] }
+  it('suma el presupuesto PEN y el valorizado de los USD, sin mezclar monedas', () => {
+    const r = resumirPresupuesto({ ...base, usd })
+    expect(r.asignado).toBe(1175) // 1000 + 50 × 3.50
+    expect(r.usd).toMatchObject({ presupuestoUsd: 50, consumidoUsd: 20, saldoUsd: 30, presupuestoPen: 1000, valorizado: true, presupuestoValorizado: 175, saldoValorizado: 105 })
+  })
+  it('el disponible es el saldo nominal valorizado y la diferencia cambiaria se muestra, no se oculta', () => {
+    const r = resumirPresupuesto({ ...base, usd })
+    expect(r.disponible).toBe(1005) // (1000 − 100) + 30 × 3.50
+    expect(r.imputado).toBe(168) // el consumo contable conserva la tasa de cada gasto (20 × 3.40 + 100)
+    expect(r.diferenciaCambiaria).toBe(2) // (1175 − 168) − 1005: 20 × (3.50 − 3.40)
+  })
+  it('sin cotización no inventa una tasa: solo cuenta lo que está en soles y avisa', () => {
+    const r = resumirPresupuesto({ ...base, usd: { ...usd, sin_cotizacion: true, presupuesto_valorizado: null, consumido_valorizado: null, saldo_valorizado: null, tasas: [] } })
+    expect(r.asignado).toBe(1000)
+    expect(r.disponible).toBe(900)
+    expect(r.usd).toMatchObject({ valorizado: false, presupuestoValorizado: null, saldoUsd: 30 })
+    expect(r.diferenciaCambiaria).toBe(0)
+  })
+  it('solo fondos USD: el consolidado sale de la valoración', () => {
+    const r = resumirPresupuesto({ ...base, presupuesto: null, usd: { ...usd, consumido_pen_fondos: 0 }, imputado: 68, gastoRango: 68 })
+    expect(r.asignado).toBe(175)
+    expect(r.disponible).toBe(105)
+    expect(r.estado).toBe('ok')
+  })
+  it('sin fondos USD el resultado es el de siempre', () => {
+    const solo = resumirPresupuesto(base)
+    expect(solo.usd).toBeNull()
+    expect(solo.diferenciaCambiaria).toBe(0)
+    expect(solo.asignado).toBe(1000)
+    expect(solo.disponible).toBe(832)
+  })
+})

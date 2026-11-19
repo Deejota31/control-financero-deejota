@@ -163,7 +163,11 @@ export interface AsignacionReporte {
   fund_name: string
   is_general: boolean
   kind: 'specific' | 'general'
+  /** Importe contable en soles. */
   amount: number
+  /** Lo que se descuenta del fondo, en la moneda del fondo (igual a `amount` en un fondo PEN). */
+  fund_amount?: number
+  fund_currency?: 'PEN' | 'USD'
   remaining_after: number
 }
 export interface AdvertenciaReporte {
@@ -171,11 +175,14 @@ export interface AdvertenciaReporte {
   fund_id: string
   fund_name: string
   remaining_after: number
+  fund_currency?: 'PEN' | 'USD'
 }
 export interface ReporteGasto {
   expense_id?: string
   allocations: AsignacionReporte[]
   warnings: AdvertenciaReporte[]
+  /** Parte del gasto que ningún fondo pudo cubrir por restricción de moneda (el gasto se guarda completo). */
+  uncovered?: { amount: number; original_amount: number; currency: 'PEN' | 'USD'; reason: string }
   replayed?: boolean
   blocked?: boolean
   code?: string

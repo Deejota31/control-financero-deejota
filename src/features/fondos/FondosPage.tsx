@@ -21,7 +21,8 @@ import { resumirCobertura } from '@/domain/cobertura'
 import { resumirFondo, round2, type ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatMes, formatSoles, parseMontoNoNegativo, toIso } from '@/lib/format'
+import { errorImporte, formatMes, parseMontoNoNegativo, toIso } from '@/lib/format'
+import { formatPorMoneda, type Moneda } from '@/domain/moneda'
 import type { Fila, Gasto } from '@/lib/tipos'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { useGastosRango } from '@/features/gastos/useGastosRango'
@@ -41,6 +42,8 @@ type FondoFila = Fila<'funds'>
 
 interface Tarjeta {
   fondo: FondoFila | null
+  /** Moneda del fondo: su presupuesto, consumo y saldo se muestran en ella. */
+  moneda: Moneda
   nombre: string
   esGeneral: boolean
   icon: string | null
@@ -87,11 +90,11 @@ export function FondosPage() {
   const datos = useMemo(() => {
     if (!fondosQ.data || !presupuestos.data || !asignaciones.data) return null
     const consumo = new Map<string, number>()
-    for (const a of asignaciones.data) consumo.set(a.fund_id, round2((consumo.get(a.fund_id) ?? 0) + Number(a.amount)))
+    for (const a of asignaciones.data) consumo.set(a.fund_id, round2((consumo.get(a.fund_id) ?? 0) + Number(a.fund_amount ?? a.amount)))
     const asignado = new Map(presupuestos.data.map((b) => [b.fund_id, Number(b.assigned_amount)]))
     const gastosPorId = new Map<string, Gasto>((gastos.data ?? []).map((g) => [g.id, g]))
     const tarjetas: Tarjeta[] = fondosQ.data.fondos.map((f) => ({
-      fondo: f, id: f.id, nombre: f.name, esGeneral: f.is_general, icon: f.icon_key, color: f.color_token, activo: f.is_active,
+      fondo: f, moneda: (f.currency ?? 'PEN') as Moneda, id: f.id, nombre: f.name, esGeneral: f.is_general, icon: f.icon_key, color: f.color_token, activo: f.is_active,
       resumen: resumirFondo(asignado.get(f.id) ?? 0, consumo.get(f.id) ?? 0),
     }))
     const orden = (a: Tarjeta, b: Tarjeta) => Number(b.esGeneral) - Number(a.esGeneral) || (a.fondo!.priority - b.fondo!.priority)
@@ -107,7 +110,7 @@ export function FondosPage() {
     () =>
       (snapshots.data ?? [])
         .map((s) => ({
-          fondo: null, id: s.fund_id, nombre: s.fund_name, esGeneral: s.is_general, icon: null, color: null, activo: true,
+          fondo: null, moneda: (s.currency ?? 'PEN') as Moneda, id: s.fund_id, nombre: s.fund_name, esGeneral: s.is_general, icon: null, color: null, activo: true,
           resumen: resumirFondo(Number(s.assigned_amount), Number(s.consumed_amount)),
         }))
         .sort((a, b) => Number(b.esGeneral) - Number(a.esGeneral) || a.nombre.localeCompare(b.nombre)),
@@ -116,9 +119,13 @@ export function FondosPage() {
 
   const lista = useMemo(() => (cerrado ? tarjetasCerradas : (datos?.activos ?? [])), [cerrado, tarjetasCerradas, datos])
   const totales = useMemo(() => {
-    const asignado = round2(lista.reduce((s, t) => s + t.resumen.asignado, 0))
-    const consumido = round2(lista.reduce((s, t) => s + t.resumen.consumido, 0))
-    return { asignado, consumido, disponible: round2(asignado - consumido), sobregastos: lista.filter((t) => t.resumen.estado === 'negativo').length }
+    // Nunca se suman monedas distintas: cada total va por moneda.
+    const por = (campo: 'asignado' | 'consumido' | 'disponible'): Record<Moneda, number> => ({
+      PEN: round2(lista.filter((t) => t.moneda === 'PEN').reduce((s, t) => s + t.resumen[campo], 0)),
+      USD: round2(lista.filter((t) => t.moneda === 'USD').reduce((s, t) => s + t.resumen[campo], 0)),
+    })
+    const asignado = por('asignado'), consumido = por('consumido'), disponible = por('disponible')
+    return { asignado, consumido, disponible, sobregastos: lista.filter((t) => t.resumen.estado === 'negativo').length }
   }, [lista])
 
   function refrescarTodo() {
@@ -178,7 +185,7 @@ export function FondosPage() {
     medio: new Map((catalogo?.medios ?? []).map((x) => [x.id, x.name])),
   }
   const filasTabla: FilaFondo[] = (cerrado ? tarjetasCerradas : [...(datos?.activos ?? []), ...(datos?.inactivos ?? [])]).map((t) => ({
-    id: t.id, nombre: t.nombre, esGeneral: t.esGeneral, icon: t.icon, color: t.color, activo: t.activo, resumen: t.resumen, editable: !cerrado && Boolean(t.fondo),
+    id: t.id, moneda: t.moneda, nombre: t.nombre, esGeneral: t.esGeneral, icon: t.icon, color: t.color, activo: t.activo, resumen: t.resumen, editable: !cerrado && Boolean(t.fondo),
     cobertura: t.fondo ? resumirCobertura(t.esGeneral, (fondosQ.data?.alcance ?? []).filter((r) => r.fund_id === t.id), (fondosQ.data?.medios ?? []).filter((r) => r.fund_id === t.id), nombresCobertura) : null,
   }))
   const visibles = filasTabla.filter((f) => (cerrado || filtro === 'todos' || (filtro === 'activos') === f.activo) && f.nombre.toLowerCase().includes(q.trim().toLowerCase()))
@@ -230,9 +237,9 @@ export function FondosPage() {
       {cerrado && <Alert tone="info">Este período está cerrado: se muestra el resultado histórico tal como quedó. Editar fondos hoy no lo modifica.</Alert>}
 
       <section aria-label="Resumen del período" className="grid grid-cols-2 gap-2.5 @min-[48rem]:grid-cols-4">
-        <Kpi etiqueta="Presupuesto asignado" valor={formatSoles(totales.asignado)} nota="Suma de fondos activos" icono={Wallet} />
-        <Kpi etiqueta="Consumido" valor={formatSoles(totales.consumido)} nota="Gastos imputados a fondos" icono={Banknote} />
-        <Kpi etiqueta="Disponible" valor={formatSoles(totales.disponible)} tono={totales.disponible < 0 ? 'bad' : 'ok'} nota={totales.disponible < 0 ? 'Hay sobregasto' : 'Asignado − consumido'} icono={Percent} />
+        <Kpi etiqueta="Presupuesto asignado" valor={formatPorMoneda(totales.asignado)} nota="Suma de fondos activos" icono={Wallet} />
+        <Kpi etiqueta="Consumido" valor={formatPorMoneda(totales.consumido)} nota="Gastos imputados a fondos" icono={Banknote} />
+        <Kpi etiqueta="Disponible" valor={formatPorMoneda(totales.disponible)} tono={totales.disponible.PEN < 0 || totales.disponible.USD < 0 ? 'bad' : 'ok'} nota={totales.disponible.PEN < 0 || totales.disponible.USD < 0 ? 'Hay sobregasto' : 'Asignado − consumido'} icono={Percent} />
         <Kpi etiqueta="Fondos en sobregasto" valor={String(totales.sobregastos)} tono={totales.sobregastos ? 'bad' : undefined} nota="Con saldo negativo" icono={TriangleAlert} />
       </section>
 
@@ -289,6 +296,7 @@ export function FondosPage() {
           hayGeneralActivo={hayGeneralActivo}
           periodoAbierto={p.status === 'open'}
           periodId={p.id}
+          tieneGastos={Boolean(form.fondo && (datos?.activos.concat(datos.inactivos).find((t) => t.id === form.fondo!.id)?.resumen.consumido ?? 0) !== 0)}
           cargando={mut.simular.isPending || mut.guardar.isPending}
           onClose={() => setForm(null)}
           onSubmit={guardarFondo}

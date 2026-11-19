@@ -1,7 +1,8 @@
 import { aCsv } from '@/lib/csv'
 import { MARCA } from '@/lib/marca'
 
-export const VERSION_RESPALDO = 2
+/** 3: fondos con moneda y cobertura cruzada, imputaciones con importe nominal y gastos sin cubrir. 2: multimoneda en gastos. 1: solo PEN. */
+export const VERSION_RESPALDO = 3
 
 export type TipoArchivo = 'gastos' | 'respaldo'
 
@@ -36,7 +37,9 @@ export interface GastoFila {
   created_at: string
 }
 export interface Nombrado { id: string; name: string }
-export interface AsignacionFila { expense_id: string; fund_id: string; amount: number | string; allocation_kind: string }
+/** Imputación a un fondo: `amount` es el importe contable en PEN; `fund_amount` lo descontado al fondo en SU moneda (`fund_currency`). */
+export interface AsignacionFila { expense_id: string; fund_id: string; amount: number | string; allocation_kind: string; fund_amount?: number | string; fund_currency?: string }
+export interface NoCubiertoFila { expense_id: string; uncovered_amount: number | string; uncovered_original: number | string; original_currency: string }
 
 export interface OpcionesCsv {
   gastos: GastoFila[]
@@ -46,6 +49,8 @@ export interface OpcionesCsv {
   medios: Nombrado[]
   fondos: Nombrado[]
   asignaciones: AsignacionFila[]
+  /** Remanentes que ningún fondo elegible cubrió por moneda (opcional: respaldos y consultas antiguos no los traen). */
+  noCubierto?: NoCubiertoFila[]
   incluirAnulados: boolean
   desde?: string
   hasta?: string
@@ -55,6 +60,7 @@ export const ENCABEZADOS_CSV = [
   'fecha', 'importe', 'moneda', 'descripcion', 'ambito', 'categoria', 'subcategoria', 'medio_de_pago', 'tipo',
   'recurrente', 'estado', 'notas', 'fondos_imputados', 'tiene_comprobante', 'registrado_en',
   'importe_original', 'moneda_original', 'tipo_de_cambio', 'metodo_conversion', 'fuente_tipo_cambio', 'fecha_referencia', 'importe_contable_pen', 'cotizacion_consultada_en', 'version_conversion',
+  'fondos_imputados_pen', 'no_cubierto_pen',
 ]
 
 /** Importe sin separador de miles y con punto decimal: no depende de la configuración regional de quien abra el archivo. */
@@ -70,6 +76,7 @@ export function construirCsvGastos(o: OpcionesCsv): string {
   const amb = mapa(o.ambitos), cat = mapa(o.categorias), sub = mapa(o.subcategorias), med = mapa(o.medios), fon = mapa(o.fondos)
   const porGasto = new Map<string, AsignacionFila[]>()
   for (const a of o.asignaciones) porGasto.set(a.expense_id, [...(porGasto.get(a.expense_id) ?? []), a])
+  const sinCubrir = new Map((o.noCubierto ?? []).map((n) => [n.expense_id, n]))
   const filas = filtrarGastos(o.gastos, o)
     .sort((a, b) => a.expense_date.localeCompare(b.expense_date) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
     .map((g) => [
@@ -85,12 +92,15 @@ export function construirCsvGastos(o: OpcionesCsv): string {
       g.is_recurring ? 'Sí' : 'No',
       g.status === 'active' ? 'Activo' : 'Anulado',
       g.notes ?? '',
-      (porGasto.get(g.id) ?? []).map((a) => `${fon.get(a.fund_id) ?? 'Fondo'}: ${importeExport(a.amount)}`).join(' | '),
+      // Un fondo PEN conserva el formato de siempre («Fondo: 70.40»); uno en dólares muestra su importe nominal con la moneda («Fondo: 20.00 USD»).
+      (porGasto.get(g.id) ?? []).map((a) => `${fon.get(a.fund_id) ?? 'Fondo'}: ${a.fund_currency === 'USD' ? `${importeExport(a.fund_amount ?? a.amount)} USD` : importeExport(a.amount)}`).join(' | '),
       g.receipt_path ? 'Sí' : 'No',
       g.created_at,
       importeExport(g.original_amount ?? g.amount), g.original_currency ?? 'PEN',
       String(g.exchange_rate ?? 1), g.conversion_method ?? 'none', g.exchange_rate_source ?? '',
       g.exchange_rate_reference_date ?? '', importeExport(g.amount), g.exchange_rate_fetched_at ?? '', g.conversion_snapshot_version ?? 1,
+      (porGasto.get(g.id) ?? []).map((a) => `${fon.get(a.fund_id) ?? 'Fondo'}: ${importeExport(a.amount)}`).join(' | '),
+      sinCubrir.has(g.id) ? importeExport(sinCubrir.get(g.id)!.uncovered_amount) : '',
     ])
   return aCsv(ENCABEZADOS_CSV, filas)
 }
@@ -101,7 +111,7 @@ type Fila = Record<string, unknown>
 export function normalizarRespaldo(entrada: unknown): Record<string, unknown> {
   if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) throw new Error('Respaldo inválido.')
   const r = entrada as Record<string, unknown>
-  if (![1, 2].includes(Number(r.version_esquema)) || !Array.isArray(r.gastos)) throw new Error('Versión de respaldo no compatible.')
+  if (![1, 2, 3].includes(Number(r.version_esquema)) || !Array.isArray(r.gastos)) throw new Error('Versión de respaldo no compatible.')
   const gastos = r.gastos.map((fila: unknown) => {
     if (!fila || typeof fila !== 'object' || Array.isArray(fila)) throw new Error('Gasto inválido en el respaldo.')
     const g = fila as Fila
@@ -111,7 +121,16 @@ export function normalizarRespaldo(entrada: unknown): Record<string, unknown> {
     }
     return { ...g }
   })
-  return { ...r, version_esquema: VERSION_RESPALDO, gastos }
+  const antiguo = Number(r.version_esquema) < 3
+  // Respaldos anteriores a los fondos multimoneda: todos los fondos eran PEN, sin cobertura cruzada, y cada imputación descontaba su importe contable.
+  const bloqueFondos = r.fondos as { fondos?: Fila[] } | undefined
+  const fondos = antiguo && bloqueFondos && Array.isArray(bloqueFondos.fondos)
+    ? { ...bloqueFondos, fondos: bloqueFondos.fondos.map((f) => ({ currency: 'PEN', allow_cross_currency: false, ...f })) }
+    : r.fondos
+  const imputaciones = antiguo && Array.isArray(r.imputaciones)
+    ? (r.imputaciones as Fila[]).map((a) => ({ fund_currency: 'PEN', fund_amount: a.amount, exchange_rate: '1', ...a }))
+    : r.imputaciones
+  return { ...r, version_esquema: VERSION_RESPALDO, gastos, ...(fondos !== undefined ? { fondos } : {}), ...(imputaciones !== undefined ? { imputaciones } : {}), ...(antiguo ? { no_cubierto: [] } : {}) }
 }
 const sin = (f: Fila, claves: string[]): Fila => Object.fromEntries(Object.entries(f).filter(([k]) => !claves.includes(k)))
 
@@ -125,6 +144,8 @@ export interface DatosRespaldo {
   fondos: Fila[]; reglas_ambito: Fila[]; reglas_medio: Fila[]
   periodos: Fila[]; presupuestos_fondo: Fila[]
   gastos: Fila[]; imputaciones: Fila[]; plantillas: Fila[]
+  /** Remanentes sin cubrir por moneda (expense_uncovered). */
+  no_cubierto?: Fila[]
   eventos?: Fila[]; conceptos_evento?: Fila[]; compromisos_evento?: Fila[]
 }
 
@@ -141,6 +162,7 @@ export function construirRespaldo(d: DatosRespaldo, ahoraIso: string) {
     periodos: { periodos: d.periodos, presupuestos_fondo: d.presupuestos_fondo },
     gastos: d.gastos.map((g) => ({ ...sin(g, SENSIBLES), tiene_comprobante: Boolean(g.receipt_path) })),
     imputaciones: d.imputaciones,
+    no_cubierto: d.no_cubierto ?? [],
     plantillas: d.plantillas.map(g => sin(g, SENSIBLES)),
     eventos: (d.eventos ?? []).map(g => sin(g, SENSIBLES)),
     conceptos_evento: (d.conceptos_evento ?? []).map(g => sin(g, SENSIBLES)),

@@ -78,7 +78,7 @@ begin
 end $$;
 revoke all on function public.normalize_conversion(jsonb) from public, anon, authenticated;
 
--- Caché pública de cotizaciones oficiales (BCRP). Solo la escribe la función de borde con service_role;
+-- Caché pública de cotizaciones oficiales (BCRP). Solo la escribe la función de borde (rol de servicio, por los privilegios por defecto del esquema);
 -- las cotizaciones automáticas que se guardan deben coincidir con una fila verificada.
 create table if not exists public.exchange_rate_quotes (
   date_requested date primary key,
@@ -93,7 +93,6 @@ drop policy if exists quotes_read on public.exchange_rate_quotes;
 create policy quotes_read on public.exchange_rate_quotes for select to authenticated using (true);
 revoke all on public.exchange_rate_quotes from anon, authenticated;
 grant select on public.exchange_rate_quotes to authenticated;
-grant all on public.exchange_rate_quotes to service_role;
 
 -- Una cotización automática nueva debe coincidir con la caché verificada de esa fecha y no ser posterior al gasto.
 create or replace function public.validate_conversion_reference(p jsonb) returns void

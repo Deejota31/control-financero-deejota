@@ -81,6 +81,8 @@ export interface FilaPeriodoFondo {
   start: string
   fund_id: string
   fund_name: string
+  /** Moneda del fondo (`assigned` y `consumed` están en ella). Ausente = PEN. */
+  currency?: 'PEN' | 'USD'
   assigned: number
   consumed: number
 }
@@ -91,6 +93,7 @@ export interface CambioPorPeriodo {
   filas: {
     fund_id: string
     nombre: string
+    moneda: 'PEN' | 'USD'
     asignadoAntes: number
     asignadoDespues: number
     consumoAntes: number
@@ -117,7 +120,7 @@ export function cambiosPorPeriodo(antes: FilaPeriodoFondo[], despues: FilaPeriod
     const consumoAntes = x?.consumed ?? 0, consumoDespues = y?.consumed ?? 0
     if (r2(asignadoAntes) === r2(asignadoDespues) && r2(consumoAntes) === r2(consumoDespues)) continue
     const p = porPeriodo.get(ref.period_id) ?? { period_id: ref.period_id, start: ref.start, filas: [] }
-    p.filas.push({ fund_id: ref.fund_id, nombre: ref.fund_name, asignadoAntes, asignadoDespues, consumoAntes, consumoDespues, impacto: r2((asignadoDespues - consumoDespues) - (asignadoAntes - consumoAntes)) })
+    p.filas.push({ fund_id: ref.fund_id, nombre: ref.fund_name, moneda: ref.currency ?? 'PEN', asignadoAntes, asignadoDespues, consumoAntes, consumoDespues, impacto: r2((asignadoDespues - consumoDespues) - (asignadoAntes - consumoAntes)) })
     porPeriodo.set(ref.period_id, p)
   }
   return [...porPeriodo.values()].sort((m, n) => m.start.localeCompare(n.start))

@@ -76,6 +76,8 @@ Studio local: http://127.0.0.1:54323 · Correos de prueba (Mailpit): http://127.
 
 - [Multimoneda USD/PEN: modelo, cotización BCRP, integración y despliegue](docs/multimoneda.md)
 
+- [Fondos multimoneda: motor de imputación, cobertura cruzada y conciliación (etapa 1)](docs/fondos-multimoneda.md)
+
 - [Eventos y metas: arquitectura, reglas financieras y validación](docs/eventos.md)
 
 - [Autocompletado de descripciones: funcionamiento, seguridad y pruebas](docs/autocompletado-descripciones.md)

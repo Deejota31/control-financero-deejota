@@ -517,20 +517,26 @@ function PanelPrevio({ payload, actualizando, error, reporte }: { payload: strin
           <li key={a.fund_id} className="rounded-md border border-line p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">{a.fund_name}</span>
-              <span className="num font-semibold">{formatSoles(a.amount)}</span>
+              <span className="num font-semibold">{a.fund_currency === 'USD' ? formatOriginal(a.fund_amount ?? a.amount, 'USD') : formatSoles(a.amount)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted">
               <Pill tone={a.is_general ? 'warn' : 'pri'}>{a.is_general ? 'Excedente al General' : 'Fondo específico'}</Pill>
-              <span className={cn('num', a.remaining_after < 0 && 'font-semibold text-bad')}>Saldo después: {formatSoles(a.remaining_after)}</span>
+              <span className={cn('num', a.remaining_after < 0 && 'font-semibold text-bad')}>Saldo después: {formatOriginal(a.remaining_after, a.fund_currency ?? 'PEN')}</span>
             </div>
           </li>
         ))}
       </ul>
+      {reporte.uncovered && (
+        <Alert tone="info">
+          <p className="font-semibold">Sin fondo para {formatOriginal(reporte.uncovered.original_amount, reporte.uncovered.currency)}{reporte.uncovered.currency === 'USD' ? ` (${formatSoles(reporte.uncovered.amount)})` : ''}.</p>
+          <p className="mt-0.5">Los fondos elegibles no lo cubren por su moneda. El gasto se guarda completo y cuenta en el Dashboard; ningún otro fondo se descuenta.</p>
+        </Alert>
+      )}
       {reporte.warnings.map((w) => (
         <Alert key={`${w.fund_id}-${w.code}`} tone="info">
           {w.code === 'general_negative'
-            ? `El Fondo General quedará en ${formatSoles(w.remaining_after)}. Un saldo negativo no impide guardar.`
-            : `${w.fund_name} quedará en sobregasto (${formatSoles(w.remaining_after)}). Se registra el importe completo.`}
+            ? `El Fondo General quedará en ${formatOriginal(w.remaining_after, w.fund_currency ?? 'PEN')}. Un saldo negativo no impide guardar.`
+            : `${w.fund_name} quedará en sobregasto (${formatOriginal(w.remaining_after, w.fund_currency ?? 'PEN')}). Se registra el importe completo.`}
         </Alert>
       ))}
     </div>

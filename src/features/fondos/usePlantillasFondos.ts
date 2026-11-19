@@ -130,6 +130,7 @@ export function inicialDePlantilla(x: PlantillaFondoConReglas, opciones: { comoF
   const fondo: FondoBase = {
     id: x.plantilla.id, name: x.plantilla.name, description: x.plantilla.description, icon_key: x.plantilla.icon_key, color_token: x.plantilla.color_token,
     is_general: x.plantilla.is_general, is_active: x.plantilla.is_active, default_amount: x.plantilla.suggested_amount, priority: x.plantilla.priority,
+    currency: x.plantilla.currency, allow_cross_currency: x.plantilla.allow_cross_currency,
   }
   return {
     fondo, alcance: x.alcance, medios: x.medios, grupo: x.plantilla.group_name,

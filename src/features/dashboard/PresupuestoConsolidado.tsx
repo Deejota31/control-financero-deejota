@@ -6,6 +6,8 @@ import { AyudaInfo } from '@/components/ui/Hint'
 import { geometriaBarra, type ResumenPresupuesto } from '@/domain/presupuesto'
 import { cn } from '@/lib/cn'
 import { formatSoles } from '@/lib/format'
+import { formatOriginal, formatTasa } from '@/domain/moneda'
+import { formatFecha } from '@/lib/format'
 
 const ESTADO: Record<ResumenPresupuesto['estado'], { etiqueta: string; relleno: string }> = {
   'sin-presupuesto': { etiqueta: 'Sin presupuesto', relleno: 'from-slate-400 to-slate-500' },
@@ -87,6 +89,27 @@ export function PresupuestoConsolidado({ r, etiquetaPeriodo }: { r: ResumenPresu
               <Metrica etiqueta="Disponible consolidado" valor={formatSoles(r.disponible ?? 0)} tono={excede ? 'bad' : 'ok'}  />
               <Metrica etiqueta="Exceso sobre el presupuesto" valor={excede ? formatSoles(r.exceso) : formatSoles(0)} tono={excede ? 'bad' : 'muted'}  />
             </div>
+
+            {r.usd && (
+              <div role="status" data-usd className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2/40 px-4 py-3 text-sm">
+                <p className="num">
+                  <b>Por moneda:</b> fondos en soles <b>{formatSoles(r.usd.presupuestoPen)}</b> · fondos en dólares <b>{formatOriginal(r.usd.presupuestoUsd, 'USD')}</b>
+                  <span className="text-muted"> (consumido {formatOriginal(r.usd.consumidoUsd, 'USD')} · disponible {formatOriginal(r.usd.saldoUsd, 'USD')})</span>
+                </p>
+                {r.usd.valorizado && r.usd.tasas.length > 0 ? (
+                  <p className="num flex flex-wrap items-center gap-x-1 text-xs text-muted">
+                    Total referencial en soles: los fondos en dólares se valoran a S/ {formatTasa(r.usd.tasas[r.usd.tasas.length - 1].tasa)} por US$ ({r.usd.tasas[r.usd.tasas.length - 1].fuente === 'BCRP:PD04640PD' ? 'BCRP' : r.usd.tasas[r.usd.tasas.length - 1].fuente}, cotización del {formatFecha(r.usd.tasas[r.usd.tasas.length - 1].fecha_referencia)}). No es dinero depositado.
+                    <AyudaInfo label="Cómo se valoran los fondos en dólares" className="size-7">
+                      Los presupuestos y saldos en dólares se convierten solo para este total, con la última cotización de cada período; los saldos de cada fondo siguen en dólares y no cambian con el tipo de cambio. Los gastos conservan la tasa con la que se registraron
+                      {r.diferenciaCambiaria !== 0 ? `, por eso «asignado − gastado» y el disponible difieren en ${formatSoles(Math.abs(r.diferenciaCambiaria))} (diferencia cambiaria)` : ''}.
+                    </AyudaInfo>
+                  </p>
+                ) : (
+                  <p className="text-xs font-medium text-warn">Sin cotización disponible para valorar los fondos en dólares: el total en soles incluye solo los fondos en soles.</p>
+                )}
+                {r.usd.valorizado && r.diferenciaCambiaria !== 0 && <p className="num text-xs text-muted">Diferencia cambiaria: <b className="text-fg">{r.diferenciaCambiaria > 0 ? '+' : '−'}{formatSoles(Math.abs(r.diferenciaCambiaria))}</b></p>}
+              </div>
+            )}
 
             <div>
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-sm">

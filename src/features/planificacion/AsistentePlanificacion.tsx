@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
 import { round2 } from '@/domain/fondos'
 import { formatFecha, formatMes, formatSoles, toIso } from '@/lib/format'
+import { formatOriginal, formatPorMoneda } from '@/domain/moneda'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
 import { ListaCopiaFondos, textoResultadoCopia, useCopiaFondos, type CopiaFondos } from '@/features/fondos/CopiarFondos'
 import { FondoForm, type FondoInicial } from '@/features/fondos/FondoForm'
@@ -180,7 +181,7 @@ function PasoFondos({ mes, etapa, cerrado, cargando, fondos, asignado, copia, on
 }) {
   const [resultado, setResultado] = useState<ResultadoCopia | null>(null)
   const activos = fondos.filter((f) => f.is_active)
-  const total = activos.reduce((s, f) => s + (asignado.get(f.id) ?? 0), 0)
+  const total = { PEN: activos.filter((f) => f.currency !== 'USD').reduce((s, f) => s + (asignado.get(f.id) ?? 0), 0), USD: activos.filter((f) => f.currency === 'USD').reduce((s, f) => s + (asignado.get(f.id) ?? 0), 0) }
 
   async function confirmar() {
     const r = await copia.confirmar()
@@ -209,7 +210,7 @@ function PasoFondos({ mes, etapa, cerrado, cargando, fondos, asignado, copia, on
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="text-sm font-semibold">Fondos de este mes</h4>
             <Pill tone={activos.length ? 'ok' : 'neutral'}>{activos.length} {activos.length === 1 ? 'fondo' : 'fondos'}</Pill>
-            {activos.length > 0 && <span className="num text-sm text-muted">Presupuesto: <b className="text-fg">{formatSoles(total)}</b></span>}
+            {activos.length > 0 && <span className="num text-sm text-muted">Presupuesto: <b className="text-fg">{formatPorMoneda(total)}</b></span>}
           </div>
           {!cerrado && <Button variant="secondary" onClick={onNuevo}><Plus className="size-4" aria-hidden="true" /> Crear nuevo fondo</Button>}
         </div>
@@ -224,7 +225,7 @@ function PasoFondos({ mes, etapa, cerrado, cargando, fondos, asignado, copia, on
                   <span className="min-w-0"><span className="block truncate font-medium">{f.name}</span>{!f.is_active && <span className="block text-xs text-muted">Inactivo</span>}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1">
-                  <span className="num font-semibold">{formatSoles(asignado.get(f.id) ?? 0)}</span>
+                  <span className="num font-semibold">{formatOriginal(asignado.get(f.id) ?? 0, f.currency)}</span>
                   {!cerrado && <button type="button" aria-label={`Editar ${f.name}`} onClick={() => onEditar(f)} className="grid size-8 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"><Pencil className="size-4" aria-hidden="true" /></button>}
                 </span>
               </li>
@@ -248,7 +249,7 @@ function PasoFondos({ mes, etapa, cerrado, cargando, fondos, asignado, copia, on
           </div>
           <ListaCopiaFondos copia={copia} />
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted" aria-live="polite">{copia.seleccionados.length} de {copia.copiables.length} seleccionados · <b className="num text-fg">{formatSoles(copia.total)}</b></p>
+            <p className="text-sm text-muted" aria-live="polite">{copia.seleccionados.length} de {copia.copiables.length} seleccionados · <b className="num text-fg">{formatPorMoneda(copia.total)}</b></p>
             <Button onClick={confirmar} loading={copia.copiando} disabled={copia.seleccionados.length === 0 || copia.importeInvalido || copia.cargando}>
               {copia.copiando ? 'Creando…' : 'Confirmar fondos'}
             </Button>
@@ -376,14 +377,17 @@ function PasoResumen({ mes, resumen, onAnterior, onIrAPaso, onCerrar, onFinaliza
   // Consumo imputado de los fondos activos del mes (lo que el motor asignó) frente al gasto real: no todo gasto consume fondos.
   const activos = new Set((fondosQ.data?.fondos ?? []).filter((x) => x.is_active).map((x) => x.id))
   const asignaciones = asignQ.data ?? []
+  // Consumo contable en soles (lo que ven reportes y Dashboard) y consumo nominal por moneda del fondo (lo que se compara con su presupuesto).
   const consumo = round2(asignaciones.filter((a) => activos.has(a.fund_id)).reduce((t, a) => t + Number(a.amount), 0))
+  const nominal = (m: 'PEN' | 'USD') => round2(asignaciones.filter((a) => activos.has(a.fund_id) && (a.fund_currency ?? 'PEN') === m).reduce((t, a) => t + Number(a.fund_amount ?? a.amount), 0))
   const consumoGeneral = round2(asignaciones.filter((a) => activos.has(a.fund_id) && a.allocation_kind === 'general').reduce((t, a) => t + Number(a.amount), 0))
   const consumoEspecifico = round2(consumo - consumoGeneral)
   const imputadoTotal = round2(asignaciones.reduce((t, a) => t + Number(a.amount), 0))
   const sinFondo = Math.max(0, round2(resumen.expenses_total - imputadoTotal))
-  const disponible = round2(resumen.budget_total - consumo)
-  const pct = resumen.budget_total > 0 ? Math.min(100, Math.round((consumo / resumen.budget_total) * 100)) : consumo > 0 ? 100 : 0
-  const excedido = disponible < 0
+  const disponible = { PEN: round2(resumen.budget_total - nominal('PEN')), USD: round2(resumen.budget_usd - nominal('USD')) }
+  const consumoPen = nominal('PEN')
+  const pct = resumen.budget_total > 0 ? Math.min(100, Math.round((consumoPen / resumen.budget_total) * 100)) : consumoPen > 0 ? 100 : 0
+  const excedido = disponible.PEN < 0 || disponible.USD < 0
   const cargandoCifras = fondosQ.isPending || asignQ.isPending
 
   return (
@@ -398,9 +402,9 @@ function PasoResumen({ mes, resumen, onAnterior, onIrAPaso, onCerrar, onFinaliza
 
       {/* A. KPIs principales */}
       <section aria-label="Indicadores" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Kpi icono={Wallet} etiqueta="Presupuesto total" valor={formatSoles(resumen.budget_total)} nota={`${resumen.funds_count} ${resumen.funds_count === 1 ? 'fondo activo' : 'fondos activos'}`} />
+        <Kpi icono={Wallet} etiqueta="Presupuesto total" valor={formatPorMoneda({ PEN: resumen.budget_total, USD: resumen.budget_usd })} nota={`${resumen.funds_count} ${resumen.funds_count === 1 ? 'fondo activo' : 'fondos activos'}`} />
         <Kpi icono={Receipt} etiqueta="Gastos reales" valor={formatSoles(resumen.expenses_total)} nota={`${resumen.expenses_count} ${resumen.expenses_count === 1 ? 'movimiento' : 'movimientos'}`} />
-        <Kpi icono={PiggyBank} etiqueta="Disponible" valor={formatSoles(disponible)} nota="Presupuesto − consumo imputado" tono={excedido ? 'bad' : 'ok'} />
+        <Kpi icono={PiggyBank} etiqueta="Disponible" valor={formatPorMoneda(disponible)} nota="Presupuesto − consumo imputado" tono={excedido ? 'bad' : 'ok'} />
         {resumen.overspent_funds > 0
           ? <Kpi icono={TriangleAlert} etiqueta="Fondos en sobregasto" valor={String(resumen.overspent_funds)} nota="Con saldo negativo" tono="bad" />
           : <Kpi icono={ClipboardList} etiqueta="Plantillas pendientes" valor={String(gastosPendientes)} nota={gastosPendientes ? 'Opcionales por registrar' : 'Todo al día'} tono={gastosPendientes ? 'warn' : 'ok'} />}
@@ -421,7 +425,7 @@ function PasoResumen({ mes, resumen, onAnterior, onIrAPaso, onCerrar, onFinaliza
             <div className="flex justify-between gap-3"><dt className="text-muted">Consumo de fondos</dt><dd className="num font-semibold">{formatSoles(consumo)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">En fondos específicos</dt><dd className="num font-semibold">{formatSoles(consumoEspecifico)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">En el Fondo General (incluye excedentes)</dt><dd className="num font-semibold">{formatSoles(consumoGeneral)}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-muted">Saldo disponible</dt><dd className={cn('num font-semibold', excedido && 'text-bad')}>{formatSoles(disponible)}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted">Saldo disponible</dt><dd className={cn('num font-semibold', excedido && 'text-bad')}>{formatPorMoneda(disponible)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Gastos sin fondo compatible</dt><dd className={cn('num font-semibold', sinFondo > 0 && 'text-warn')}>{formatSoles(sinFondo)}</dd></div>
           </dl>
         )}

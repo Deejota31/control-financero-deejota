@@ -11,7 +11,9 @@ import { ColorCompacto } from '@/components/ui/SelectorColor'
 import { SelectorIcono } from '@/components/ui/SelectorIcono'
 import { sugerirIconos } from '@/domain/iconos'
 import { ItemIcon } from '@/components/ui/ItemIcon'
-import { MoneyInput } from '@/components/ui/MoneyInput'
+import { AyudaInfo } from '@/components/ui/Hint'
+import { TarjetaPresupuesto } from '@/features/moneda/TarjetaPresupuesto'
+import type { Moneda } from '@/domain/moneda'
 import { cn } from '@/lib/cn'
 import { errorImporte, parseMontoNoNegativo } from '@/lib/format'
 import type { Catalogo } from '@/features/catalogo/useCatalogo'
@@ -23,7 +25,7 @@ import type { ContextoDescripcion, ReglaSugerencia, MedioSugerencia } from '@/fe
 type Regla = 'none' | 'include' | 'exclude'
 
 /** Lo que el formulario necesita de un fondo; una plantilla de fondo tiene la misma forma (su importe sugerido va en `default_amount`). */
-export type FondoBase = Pick<Fila<'funds'>, 'id' | 'name' | 'description' | 'icon_key' | 'color_token' | 'is_general' | 'is_active' | 'default_amount' | 'priority'>
+export type FondoBase = Pick<Fila<'funds'>, 'id' | 'name' | 'description' | 'icon_key' | 'color_token' | 'is_general' | 'is_active' | 'default_amount' | 'priority'> & Partial<Pick<Fila<'funds'>, 'currency' | 'allow_cross_currency'>>
 
 export interface FondoInicial {
   fondo: FondoBase | null
@@ -50,6 +52,8 @@ const schema = z.object({
   color_token: z.string().min(1),
   is_general: z.boolean(),
   is_active: z.boolean(),
+  currency: z.enum(['PEN', 'USD']),
+  allow_cross_currency: z.boolean(),
   default_amount: z.string().superRefine((v, ctx) => { const e = errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
   group_name: z.string().trim().max(40, 'Máximo 40 caracteres.'),
   period_amount: z.string().superRefine((v, ctx) => { const e = v === '' ? null : errorImporte(v, { permitirCero: true }); if (e) ctx.addIssue({ code: 'custom', message: e }) }),
@@ -116,8 +120,10 @@ function ResumenRamas({ inc, exc }: { inc: number; exc: number }) {
 }
 
 export function FondoForm({
-  catalogo, inicial, hayGeneralActivo, periodoAbierto, periodId, onClose, onSubmit, cargando, modo = 'fondo',
+  catalogo, inicial, hayGeneralActivo, periodoAbierto, periodId, onClose, onSubmit, cargando, modo = 'fondo', tieneGastos = false,
 }: {
+  /** El fondo que se edita ya tiene gastos imputados: su moneda queda fija. */
+  tieneGastos?: boolean
   modo?: ModoFondo
   catalogo: Catalogo
   inicial: FondoInicial
@@ -143,7 +149,7 @@ export function FondoForm({
   const [medios, setMedios] = useState<Record<string, Regla>>(inicialMedios)
   const [errorReglas, setErrorReglas] = useState<string | null>(null)
 
-  const { register, handleSubmit, control, setFocus, formState: { errors, isDirty } } = useForm<Values>({
+  const { register, handleSubmit, control, setFocus, setValue, formState: { errors, isDirty } } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: fondo ? (clon && !inicial.conservarNombre ? `${fondo.name} (copia)` : fondo.name) : '',
@@ -152,6 +158,8 @@ export function FondoForm({
       color_token: fondo?.color_token ?? 'c1',
       is_general: fondo?.is_general ?? false,
       is_active: fondo?.is_active ?? true,
+      currency: (fondo?.currency ?? 'PEN') as Moneda,
+      allow_cross_currency: fondo?.allow_cross_currency ?? false,
       group_name: inicial.grupo ?? '',
       default_amount: fondo ? Number(fondo.default_amount).toFixed(2) : '0.00',
       period_amount: inicial.presupuestoPeriodo !== undefined && !clon ? inicial.presupuestoPeriodo.toFixed(2) : '',
@@ -173,7 +181,9 @@ export function FondoForm({
     payment_rules: Object.entries(medios).filter(([, e]) => e !== 'none').map(([method, effect]) => ({ method, effect }) as MedioSugerencia),
   }
   const editando = Boolean(fondo && !clon)
-  const textoImporte = esPlantilla ? 'Importe sugerido (S/)' : 'Importe de este mes (S/)'
+  const textoImporte = esPlantilla ? 'Importe sugerido' : 'Importe de este mes'
+  const moneda = useWatch({ control, name: 'currency' })
+  const bloqueaMoneda = editando && tieneGastos && !esPlantilla
 
   const arbol = useMemo(
     () =>
@@ -241,6 +251,8 @@ export function FondoForm({
       color_token: v.color_token,
       is_general: v.is_general,
       is_active: v.is_active,
+      currency: v.currency,
+      allow_cross_currency: v.allow_cross_currency,
       default_amount: importeMes,
       scope_rules,
       payment_rules,
@@ -272,17 +284,19 @@ export function FondoForm({
         </>
       }>
       <form id={idForm} onSubmit={enviar} noValidate className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-3">
+        <div className="min-w-0 lg:col-span-2">
           <Field label="Nombre" error={errors.name?.message}>{(p) => <Input {...p} {...register('name')} />}</Field>
-          {!esPlantilla && editando && periodoAbierto ? (
-            <Field label="Importe de este mes (S/)" error={errors.period_amount?.message} hint="Solo este mes.">
-              {(p) => <Controller control={control} name="period_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.period_amount)} />} />}
-            </Field>
-          ) : (
-            <Field label={textoImporte} error={errors.default_amount?.message}>
-              {(p) => <Controller control={control} name="default_amount" render={({ field }) => <MoneyInput {...p} value={field.value} onChange={field.onChange} invalid={Boolean(errors.default_amount)} />} />}
-            </Field>
-          )}
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
+          {(() => { const campo = !esPlantilla && editando && periodoAbierto ? 'period_amount' : 'default_amount'; return (
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Controller control={control} name={campo} render={({ field }) => (
+                <TarjetaPresupuesto titulo={esPlantilla ? 'Presupuesto sugerido' : 'Presupuesto mensual'} aria-label={textoImporte} invalid={Boolean(errors[campo])} amount={field.value} onAmountChange={field.onChange} currency={moneda} onCurrencyChange={(m) => setValue('currency', m, { shouldDirty: true })}
+                  monedaBloqueada={bloqueaMoneda} motivoBloqueo="Con gastos imputados no se cambia la moneda: crea un fondo nuevo en la otra." />
+              )} />
+              {errors[campo] && <p className="text-sm text-bad">{errors[campo]?.message}</p>}
+            </div>
+          ) })()}
           <Field label="Descripción (opcional)" error={errors.description?.message}>
             {(p) => <Controller control={control} name="description" render={({ field }) => (
               <DescripcionInteligente {...p} name={field.name} ref={field.ref} onBlur={field.onBlur} value={field.value} onValueChange={field.onChange} maxLength={300} contexto={contextoDescripcion} />
@@ -307,6 +321,10 @@ export function FondoForm({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" {...register('is_active')} /> {esPlantilla ? 'Plantilla activa' : 'Fondo activo'}
             </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex min-w-0 items-center gap-2 text-sm"><input type="checkbox" {...register('allow_cross_currency')} /> Permitir cobertura en otra moneda</label>
+              <AyudaInfo label="Cómo funciona la cobertura en otra moneda">Un fondo cubre primero los gastos de su propia moneda. Si está activado, también puede cubrir gastos en la otra moneda, convertidos con la tasa del gasto o la cotización de su fecha, y solo después de agotar los fondos de la moneda del gasto. Apagado, nunca descuenta gastos de otra moneda.</AyudaInfo>
+            </div>
           </div>
         </div>
 

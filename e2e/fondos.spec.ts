@@ -32,7 +32,7 @@ async function nuevoFondo(page: Page, nombre: string, ambito: string, importe: s
   await d.getByLabel('Nombre').fill(nombre)
   await d.getByRole('radiogroup', { name: `Regla para ${ambito}` }).getByRole('radio', { name: 'Incluir' }).click()
   if (soloMedio) await d.getByRole('radiogroup', { name: `Regla para ${soloMedio}` }).getByRole('radio', { name: 'Incluir' }).click()
-  await d.getByLabel('Importe de este mes (S/)').fill(importe)
+  await d.getByLabel('Importe de este mes').fill(importe)
   await d.getByRole('button', { name: 'Guardar fondo' }).click()
   await confirmarSiPide(page, 'Fondo guardado.')
 }
@@ -146,7 +146,7 @@ test.describe('Fondos presupuestales', () => {
     await expect(dialogo.getByText('Un fondo específico necesita al menos un ámbito, categoría o subcategoría incluido.')).toBeVisible()
     await dialogo.getByRole('radiogroup', { name: 'Regla para Trabajo' }).getByRole('radio', { name: 'Incluir' }).click()
     await dialogo.getByRole('radiogroup', { name: 'Regla para Efectivo' }).getByRole('radio', { name: 'Excluir' }).click()
-    await dialogo.getByLabel('Importe de este mes (S/)').fill('150')
+    await dialogo.getByLabel('Importe de este mes').fill('150')
     await dialogo.getByRole('button', { name: 'Guardar fondo' }).click()
     await confirmarSiPide(page, 'Fondo guardado.')
     await expect(fila(page, nombre)).toContainText('S/ 150.00')

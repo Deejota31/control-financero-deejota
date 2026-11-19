@@ -1,10 +1,10 @@
-import { construirCsvGastos, construirRespaldo, type DatosRespaldo, type GastoFila } from '@/domain/exportacion'
+import { construirCsvGastos, construirRespaldo, type AsignacionFila, type DatosRespaldo, type GastoFila, type NoCubiertoFila } from '@/domain/exportacion'
 import { leerTodo } from '@/lib/leerTodo'
 import { supabase } from '@/lib/supabase'
 
 /** Tablas de las que se lee con la sesión del navegador (clave pública + RLS): solo se obtienen filas del propio hogar. */
 type Tabla =
-  | 'events' | 'event_items' | 'event_commitments'
+  | 'events' | 'event_items' | 'event_commitments' | 'expense_uncovered'
   | 'households' | 'ambitos' | 'categorias' | 'subcategorias' | 'medios_pago' | 'funds' | 'fund_scope_rules' | 'fund_payment_rules'
   | 'budget_periods' | 'fund_period_budgets' | 'expense_templates' | 'expenses' | 'expense_fund_allocations'
 
@@ -20,7 +20,7 @@ async function leerTabla<T = Record<string, unknown>>(tabla: Tabla, etiqueta: st
   return leerTodo<T>(async (d, h) => {
     signal.throwIfAborted()
     progreso(`Leyendo ${etiqueta}… ${d.toLocaleString('es-PE')} registros`)
-    const r = await supabase.from(tabla).select('*', { count: 'exact' }).order('id').range(d, h).abortSignal(signal)
+    const r = await supabase.from(tabla).select('*', { count: 'exact' }).order(tabla === 'expense_uncovered' ? 'expense_id' : 'id').range(d, h).abortSignal(signal)
     return r as unknown as { data: T[] | null; error: { message: string } | null; count: number | null }
   })
 }
@@ -34,9 +34,10 @@ export async function generarCsvGastos(o: OpcionesExportarCsv, signal: AbortSign
   const subcategorias = await leerTabla<{ id: string; name: string }>('subcategorias', 'subcategorías', signal, progreso)
   const medios = await leerTabla<{ id: string; name: string }>('medios_pago', 'medios de pago', signal, progreso)
   const fondos = await leerTabla<{ id: string; name: string }>('funds', 'fondos', signal, progreso)
-  const asignaciones = await leerTabla<{ expense_id: string; fund_id: string; amount: number; allocation_kind: string }>('expense_fund_allocations', 'imputaciones a fondos', signal, progreso)
+  const asignaciones = await leerTabla<AsignacionFila>('expense_fund_allocations', 'imputaciones a fondos', signal, progreso)
+  const noCubierto = await leerTabla<NoCubiertoFila>('expense_uncovered', 'gastos sin cubrir', signal, progreso)
   progreso('Preparando archivo…')
-  return construirCsvGastos({ gastos, ambitos, categorias, subcategorias, medios, fondos, asignaciones, ...o })
+  return construirCsvGastos({ gastos, ambitos, categorias, subcategorias, medios, fondos, asignaciones, noCubierto, ...o })
 }
 
 export async function generarRespaldo(
@@ -51,6 +52,7 @@ export async function generarRespaldo(
     fondos: await l('funds', 'fondos'), reglas_ambito: await l('fund_scope_rules', 'reglas de cobertura'), reglas_medio: await l('fund_payment_rules', 'reglas de medios de pago'),
     periodos: await l('budget_periods', 'períodos'), presupuestos_fondo: await l('fund_period_budgets', 'presupuestos por fondo'),
     gastos: await l('expenses', 'gastos'), imputaciones: await l('expense_fund_allocations', 'imputaciones a fondos'), plantillas: await l('expense_templates', 'plantillas'),
+    no_cubierto: await l('expense_uncovered', 'gastos sin cubrir'),
   }
   progreso('Preparando archivo…')
   return construirRespaldo(datos, new Date().toISOString())
