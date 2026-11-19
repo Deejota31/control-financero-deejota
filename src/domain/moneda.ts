@@ -67,6 +67,12 @@ export function formatOriginal(importe: number | string, moneda: string = 'PEN')
   return `${moneda === 'USD' ? 'US$' : 'S/'} ${miles.format(Number(importe))}`
 }
 
+/** Totales por moneda sin mezclarlas: «S/ 3,280.00 + US$ 50.00» (solo las monedas con importe; «S/ 0.00» si no hay ninguna). */
+export function formatPorMoneda(totales: Partial<Record<Moneda, number>>): string {
+  const partes = (['PEN', 'USD'] as const).filter((m) => (totales[m] ?? 0) !== 0).map((m) => formatOriginal(totales[m]!, m))
+  return partes.length ? partes.join(' + ') : formatOriginal(0)
+}
+
 /** Tasa para mostrar: 4 decimales («3.4190»). */
 export function formatTasa(tasa: number | string) {
   return Number(tasa).toFixed(4)

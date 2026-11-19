@@ -95,7 +95,7 @@ export interface EliminacionFondo {
   closed_snapshots: number
   budgets: number
   templates: number
-  destinations: { id: string; name: string; is_general: boolean }[]
+  destinations: { id: string; name: string; is_general: boolean; currency?: 'PEN' | 'USD' }[]
   /** El fondo no se puede eliminar (Fondo General o historial en períodos cerrados). */
   blocked: boolean
   code: string | null
@@ -126,6 +126,10 @@ export interface FondoPayload {
   is_general: boolean
   default_amount: number
   is_active: boolean
+  /** Moneda del fondo (su presupuesto y saldo se llevan en ella). Omitido al editar: no cambia. */
+  currency?: 'PEN' | 'USD'
+  /** Permite que el fondo cubra gastos de otra moneda (desactivado por defecto). */
+  allow_cross_currency?: boolean
   priority?: number
   scope_rules?: { kind: 'ambito' | 'categoria' | 'subcategoria'; ref: string; effect: 'include' | 'exclude' }[]
   payment_rules?: { method: string; effect: 'include' | 'exclude' }[]

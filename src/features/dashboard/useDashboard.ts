@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { FiltrosDashboard } from '@/domain/filtrosCruzados'
 import { idsDe } from '@/domain/idsFiltro'
-import type { FondoPanel } from '@/domain/presupuesto'
+import type { FondoPanel, UsdPanel } from '@/domain/presupuesto'
 import { claves } from '@/lib/consultas'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { supabase } from '@/lib/supabase'
@@ -31,6 +31,10 @@ export interface PanelDashboard {
   fondos_periodo: number
   fondos: FondoPanel[]
   excedente: number
+  /** Fondos en dólares del rango y su valoración referencial; null si no hay. */
+  usd: UsdPanel | null
+  /** Gastos que ningún fondo elegible cubrió del todo por moneda (siguen contando completos en todos los totales). */
+  no_cubierto: { cantidad: number; monto: number }
 }
 
 /**

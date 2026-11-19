@@ -11,6 +11,7 @@ import { diasEnRango, esMesCompleto, rangoComparable, serieDiaria, variacion } f
 import { sumar } from '@/domain/dinero'
 import { hayCruzados, paramsGastos } from '@/domain/filtrosCruzados'
 import { resumirPresupuesto } from '@/domain/presupuesto'
+import { useCompletarCotizaciones } from '@/features/moneda/useValoracion'
 import { cn } from '@/lib/cn'
 import { colorVar } from '@/lib/icons'
 import { formatFecha, formatFechaLarga, formatMes, formatSoles } from '@/lib/format'
@@ -94,10 +95,12 @@ export function DashboardPage() {
   const varPct = filtros.dia || !comp.comparable ? null : variacion(totalTramo, totalPrev)
   const dias = valido ? diasEnRango(desde, hasta) : 0
 
+  useCompletarCotizaciones(panel?.usd?.sin_cotizacion, desde, hasta)
   const resumen = useMemo(
     () =>
       resumirPresupuesto({
         presupuesto,
+        usd: panel?.usd ?? null,
         gastoRango: Number(panel?.gasto_rango ?? 0),
         imputado: Number(panel?.imputado_rango ?? 0),
         sinFondo: Number(panel?.sin_fondo ?? 0),

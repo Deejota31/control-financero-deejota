@@ -266,7 +266,7 @@ test.describe('Configuración', () => {
     const texto = await readFile((await d.path())!, 'utf8')
     const json = JSON.parse(texto)
     expect(json.aplicacion).toBe('Control Financiero')
-    expect(json.version_esquema).toBe(2)
+    expect(json.version_esquema).toBe(3)
     expect(Date.parse(json.exportado_en)).not.toBeNaN()
     expect(Object.keys(json)).toEqual(expect.arrayContaining(['perfil', 'hogar', 'catalogo', 'fondos', 'periodos', 'gastos', 'imputaciones', 'plantillas']))
     expect(json.gastos.length).toBe(Number(sqlLocal(`select count(*) from public.expenses where household_id = ${HID}`)))

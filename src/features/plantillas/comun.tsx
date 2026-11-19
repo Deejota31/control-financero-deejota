@@ -23,7 +23,7 @@ export function CasillaTriestado({ estado, onChange, etiqueta, disabled, classNa
  * seleccionado, y botones para subir/bajar la sección cuando el modo lo permite. El contenido (las filas) se oculta al contraer, pero la selección se conserva.
  */
 export function SeccionPlantillas({ titulo, icono, color, total, seleccionadas, subtotal, estado, abierta, onAbrir, onSeleccionar, onMover, children }: {
-  titulo: string; icono?: string | null; color?: string | null; total: number; seleccionadas: number; subtotal: number
+  titulo: string; icono?: string | null; color?: string | null; total: number; seleccionadas: number; subtotal: number | string
   estado: EstadoSeleccion; abierta: boolean; onAbrir: () => void; onSeleccionar: (marcar: boolean) => void
   /** Presente solo cuando el modo permite reordenar secciones. */
   onMover?: (delta: -1 | 1) => void
@@ -39,7 +39,7 @@ export function SeccionPlantillas({ titulo, icono, color, total, seleccionadas, 
           <span className="min-w-0 truncate text-sm font-semibold">{titulo}</span>
           <span className="ml-auto min-w-0 text-right text-xs text-muted">
             {total} {total === 1 ? 'plantilla' : 'plantillas'}
-            {seleccionadas > 0 && <> · <b className="text-fg">{seleccionadas} {seleccionadas === 1 ? 'seleccionada' : 'seleccionadas'}</b> · <b className="num text-fg">{formatSoles(subtotal)}</b></>}
+            {seleccionadas > 0 && <> · <b className="text-fg">{seleccionadas} {seleccionadas === 1 ? 'seleccionada' : 'seleccionadas'}</b> · <b className="num text-fg">{typeof subtotal === 'string' ? subtotal : formatSoles(subtotal)}</b></>}
           </span>
         </button>
         {onMover && (

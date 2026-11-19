@@ -27,7 +27,14 @@ export interface ResumenPlan {
   funds_total: number
   /** Fondos activos del mes. */
   funds_count: number
+  /** Presupuesto de los fondos PEN activos, en soles. */
   budget_total: number
+  /** Presupuesto de los fondos USD activos, en dólares (nunca se suma al de soles). */
+  budget_usd: number
+  funds_usd_count: number
+  /** Gastos del mes que ningún fondo elegible cubrió (total en soles y cantidad). */
+  uncovered_total: number
+  uncovered_count: number
   expenses_total: number
   expenses_count: number
   overspent_funds: number

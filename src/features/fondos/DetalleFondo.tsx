@@ -10,6 +10,7 @@ import { EmptyState, Pill } from '@/components/ui/States'
 import { admite, round2 } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { formatFecha, formatFechaLarga, formatSoles, sumarImportes } from '@/lib/format'
+import { formatOriginal } from '@/domain/moneda'
 import type { Fila, Gasto } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
 import { useCatalogo } from '@/features/catalogo/useCatalogo'
@@ -20,6 +21,8 @@ type Tipo = 'directo' | 'compartido' | 'excedente'
 
 export interface TarjetaDetalle {
   id: string
+  /** Moneda del fondo (sus importes se muestran en ella; los gastos conservan su importe contable en soles). */
+  moneda: 'PEN' | 'USD'
   nombre: string
   esGeneral: boolean
   icon: string | null
@@ -144,8 +147,8 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
   }, [asignaciones, gastos, todas, nombreFondo, tarjeta, fondosQ, cerrado])
 
   const unicos = new Set(filas.map((f) => f.g.id)).size
-  const directo = round2(sumarImportes(filas.filter((f) => f.tipo !== 'excedente').map((f) => Number(f.a.amount))))
-  const excedente = round2(sumarImportes(filas.filter((f) => f.tipo === 'excedente').map((f) => Number(f.a.amount))))
+  const directo = round2(sumarImportes(filas.filter((f) => f.tipo !== 'excedente').map((f) => Number(f.a.fund_amount ?? f.a.amount))))
+  const excedente = round2(sumarImportes(filas.filter((f) => f.tipo === 'excedente').map((f) => Number(f.a.fund_amount ?? f.a.amount))))
   const pct = tarjeta.resumen.asignado > 0 ? Math.min(100, Math.round((tarjeta.resumen.consumido / tarjeta.resumen.asignado) * 100)) : tarjeta.resumen.consumido > 0 ? 100 : 0
   const excedido = tarjeta.resumen.disponible < 0
 
@@ -160,7 +163,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
     const [campo, dir] = orden.split('-') as ['fecha' | 'monto' | 'concepto', 'asc' | 'desc']
     return f.sort((m, n) => {
       const c = campo === 'fecha' ? m.g.expense_date.localeCompare(n.g.expense_date) || m.g.created_at.localeCompare(n.g.created_at)
-        : campo === 'monto' ? Number(m.a.amount) - Number(n.a.amount)
+        : campo === 'monto' ? Number(m.a.fund_amount ?? m.a.amount) - Number(n.a.fund_amount ?? n.a.amount)
         : m.g.description.localeCompare(n.g.description, 'es')
       // En empates el orden es determinista (por id de la imputación), así no se mueve nada entre páginas.
       return (dir === 'asc' ? c : -c) || m.a.id.localeCompare(n.a.id)
@@ -169,7 +172,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
   const paginas = Math.max(1, Math.ceil(filtradas.length / tamano))
   const actual = Math.min(pagina, paginas - 1)
   const mostradas = filtradas.slice(actual * tamano, actual * tamano + tamano)
-  const subtotal = sumarImportes(filtradas.map((f) => Number(f.a.amount)))
+  const subtotal = sumarImportes(filtradas.map((f) => Number(f.a.fund_amount ?? f.a.amount)))
   const hayFiltro = q.trim() !== '' || tipo !== 'todos'
   const limpiar = () => { setQ(''); setTipo('todos'); setPagina(0) }
 
@@ -180,7 +183,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
   const pie = (
     <Paginacion className="w-full" pagina={actual + 1} total={filtradas.length} tamano={tamano} onPagina={(n) => irA(n - 1)}
       opcionesTamano={TAMANOS_PAGINA} onTamano={(n) => { setTamano(n); setPagina(0); setAbierta(null) }}
-      resumen={hayFiltro ? <span title={`El fondo consumió ${formatSoles(tarjeta.resumen.consumido)} en total`}>{formatSoles(subtotal)}</span> : undefined} />
+      resumen={hayFiltro ? <span title={`El fondo consumió ${formatOriginal(tarjeta.resumen.consumido, tarjeta.moneda)} en total`}>{formatOriginal(subtotal, tarjeta.moneda)}</span> : undefined} />
   )
 
   return (
@@ -199,9 +202,9 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
             {onPlantilla && <Button variant="secondary" onClick={onPlantilla}><BookmarkPlus className="size-4" aria-hidden="true" /> <span className="max-sm:sr-only">Guardar como plantilla</span></Button>}
           </div>
           <dl className="grid grid-cols-2 gap-2 text-sm @min-[32rem]:grid-cols-4">
-            <div className="min-w-0"><dt className="text-xs text-muted">Asignado</dt><dd className="num truncate font-semibold">{formatSoles(tarjeta.resumen.asignado)}</dd></div>
-            <div className="min-w-0"><dt className="text-xs text-muted">Consumido</dt><dd className="num truncate font-semibold">{formatSoles(tarjeta.resumen.consumido)}</dd></div>
-            <div className="min-w-0"><dt className="text-xs text-muted">{excedido ? 'Excedido' : 'Disponible'}</dt><dd className={cn('num truncate font-semibold', excedido && 'text-bad')}>{formatSoles(Math.abs(tarjeta.resumen.disponible))}</dd></div>
+            <div className="min-w-0"><dt className="text-xs text-muted">Asignado</dt><dd className="num truncate font-semibold">{formatOriginal(tarjeta.resumen.asignado, tarjeta.moneda)}</dd></div>
+            <div className="min-w-0"><dt className="text-xs text-muted">Consumido</dt><dd className="num truncate font-semibold">{formatOriginal(tarjeta.resumen.consumido, tarjeta.moneda)}</dd></div>
+            <div className="min-w-0"><dt className="text-xs text-muted">{excedido ? 'Excedido' : 'Disponible'}</dt><dd className={cn('num truncate font-semibold', excedido && 'text-bad')}>{formatOriginal(Math.abs(tarjeta.resumen.disponible), tarjeta.moneda)}</dd></div>
             <div className="min-w-0"><dt className="text-xs text-muted">Uso</dt><dd className={cn('num truncate font-semibold', excedido && 'text-bad')}>{pct}%</dd></div>
           </dl>
           <span className="h-2 overflow-hidden rounded-full bg-surface ring-1 ring-inset ring-line" role="progressbar" aria-label={`Consumo de ${tarjeta.nombre}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
@@ -273,7 +276,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
                             )}
                           </span>
                           <span className="num col-start-2 row-start-1 text-right @min-[44rem]:col-start-5">
-                            <span className="block font-bold">{formatSoles(Number(a.amount))}</span>
+                            <span className="block font-bold">{formatOriginal(Number(a.amount), tarjeta.moneda)}</span>
                             {parcial && <span className="block text-[11px] leading-tight text-muted">total {formatSoles(Number(g.amount))}</span>}
                           </span>
                         </div>
@@ -292,7 +295,7 @@ export function DetalleFondo({ tarjeta, periodo, cerrado, asignaciones, gastos, 
                             </div>
                             <div className="flex min-w-0 flex-col gap-1.5">
                               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">Distribución financiera</h4>
-                              <p><span className="text-muted">Gasto total:</span> <b className="num">{formatSoles(Number(g.amount))}</b>{parcial && <span className="text-muted"> · a este fondo <b className="num text-fg">{formatSoles(Number(a.amount))}</b></span>}</p>
+                              <p><span className="text-muted">Gasto total:</span> <b className="num">{formatSoles(Number(g.amount))}</b>{parcial && <span className="text-muted"> · a este fondo <b className="num text-fg">{formatOriginal(Number(a.amount), tarjeta.moneda)}</b></span>}</p>
                               <ul className="flex flex-col gap-1">
                                 {f.reparto.map((r) => (
                                   <li key={r.fund_id} className="flex items-center justify-between gap-3 rounded-md bg-surface-2/60 px-2.5 py-1 ring-1 ring-inset ring-line">

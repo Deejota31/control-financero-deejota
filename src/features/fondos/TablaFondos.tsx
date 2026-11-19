@@ -8,11 +8,13 @@ import { ItemIcon } from '@/components/ui/ItemIcon'
 import type { Cobertura, EtiquetaCobertura } from '@/domain/cobertura'
 import type { ResumenFondo } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
-import { formatSoles } from '@/lib/format'
+import { formatOriginal } from '@/domain/moneda'
 import { colorVar } from '@/lib/icons'
 
 export interface FilaFondo {
   id: string
+  /** Moneda del fondo: todos sus importes se muestran en ella. */
+  moneda: 'PEN' | 'USD'
   nombre: string
   esGeneral: boolean
   icon: string | null
@@ -199,14 +201,14 @@ function Fila({ f, p, sobre, onSobre, tarjeta }: { f: FilaFondo; p: Props; sobre
         )}
       </span>
 
-      <span className="num hidden whitespace-nowrap text-right @min-[720px]:block">{formatSoles(f.resumen.asignado)}</span>
-      <span className="num hidden whitespace-nowrap text-right @min-[720px]:block">{formatSoles(f.resumen.consumido)}</span>
+      <span className="num hidden whitespace-nowrap text-right @min-[720px]:block">{formatOriginal(f.resumen.asignado, f.moneda)}</span>
+      <span className="num hidden whitespace-nowrap text-right @min-[720px]:block">{formatOriginal(f.resumen.consumido, f.moneda)}</span>
       <span className={cn('num whitespace-nowrap text-right text-[15px] font-bold', disp < 0 ? 'text-bad' : disp > 0 ? 'text-ok' : 'text-fg')}>
-        {formatSoles(disp)}<span className="block text-[11px] font-normal text-muted @min-[720px]:hidden">disponible</span>
+        {formatOriginal(disp, f.moneda)}<span className="block text-[11px] font-normal text-muted @min-[720px]:hidden">disponible</span>
       </span>
       <div className="col-span-2 min-w-0 @min-[720px]:col-span-1"><Uso f={f} /></div>
       <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-end gap-2 @min-[720px]:col-span-1">
-        <span className="num w-full min-w-0 text-xs text-muted @min-[720px]:hidden">Asignado {formatSoles(f.resumen.asignado)} · Consumido {formatSoles(f.resumen.consumido)}</span>
+        <span className="num w-full min-w-0 text-xs text-muted @min-[720px]:hidden">Asignado {formatOriginal(f.resumen.asignado, f.moneda)} · Consumido {formatOriginal(f.resumen.consumido, f.moneda)}</span>
         {f.editable && (
           <span className="flex shrink-0 items-center gap-1">
             <Button variant="secondary" aria-label={`Ver gastos de ${f.nombre}`} title="Ver gastos" className={cn('shrink-0 whitespace-nowrap px-2.5 py-1.5 text-[13px]', botonAcciones && 'min-h-11')} onClick={() => p.onVer(f)}>

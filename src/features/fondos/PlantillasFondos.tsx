@@ -14,7 +14,8 @@ import { resumirCobertura } from '@/domain/cobertura'
 import { nombreCopia } from '@/domain/plantillas'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { errorImporte, formatSoles, parseMontoNoNegativo, sumarImportes } from '@/lib/format'
+import { errorImporte, parseMontoNoNegativo, sumarImportes } from '@/lib/format'
+import { formatOriginal, formatPorMoneda, type Moneda } from '@/domain/moneda'
 import { usePreferencia } from '@/lib/usePreferencia'
 import { useCatalogo, type Catalogo } from '@/features/catalogo/useCatalogo'
 import { CasillaTriestado, SeccionPlantillas } from '@/features/plantillas/comun'
@@ -145,7 +146,12 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
   }, [lista, fondosMes, sel])
   const aplicables = elegidas.filter((x) => !estadosConflicto.get(x.plantilla.id))
   const importeInvalido = aplicables.some((x) => errorImporte(importeFila(x), { permitirCero: true }) || !/^\d{1,3}$/.test(prioridadFila(x).trim()))
-  const total = sumarImportes(aplicables.map((x) => parseMontoNoNegativo(importeFila(x)) ?? 0))
+  // Los importes de fondos en monedas distintas nunca se suman: cada total va por moneda.
+  const porMoneda = (xs: PlantillaFondoConReglas[]) => ({
+    PEN: sumarImportes(xs.filter((x) => x.plantilla.currency !== 'USD').map((x) => parseMontoNoNegativo(importeFila(x)) ?? 0)),
+    USD: sumarImportes(xs.filter((x) => x.plantilla.currency === 'USD').map((x) => parseMontoNoNegativo(importeFila(x)) ?? 0)),
+  })
+  const total = porMoneda(aplicables)
   const idsVisiblesAplicables = visibles.filter((x) => !conflicto(x, fondosMes, false, new Set())).map((x) => x.plantilla.id)
   const marcar = (ids: string[], m: boolean) => setSel((s) => { const n = new Set(s); for (const id of ids) { if (m) n.add(id); else n.delete(id) } return n })
 
@@ -171,6 +177,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
     mut.guardar.mutate({
       name: nombreCopia(p.name, lista.map((y) => y.plantilla.name), 60), description: p.description ?? '', icon_key: p.icon_key ?? 'wallet', color_token: p.color_token ?? 'c1',
       is_general: p.is_general, default_amount: Number(p.suggested_amount), is_active: true, priority: p.priority, group_name: p.group_name,
+      currency: p.currency as Moneda, allow_cross_currency: p.allow_cross_currency,
       scope_rules: x.alcance.map((r) => ({ kind: r.ambito_id ? 'ambito' : r.categoria_id ? 'categoria' : 'subcategoria', ref: (r.ambito_id ?? r.categoria_id ?? r.subcategoria_id)!, effect: r.effect as 'include' | 'exclude' })),
       payment_rules: x.medios.map((r) => ({ method: r.payment_method_id, effect: r.effect as 'include' | 'exclude' })),
     }, { onSuccess: () => toast.success('Plantilla duplicada.'), onError: (e) => toast.error(mensajeDeError(e)) })
@@ -236,7 +243,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
 
   const resumen = (
     <p className="min-w-0 text-sm" aria-live="polite">
-      <b>{elegidas.length}</b> {elegidas.length === 1 ? 'seleccionada' : 'seleccionadas'} · <b className="num">{formatSoles(total)}</b>
+      <b>{elegidas.length}</b> {elegidas.length === 1 ? 'seleccionada' : 'seleccionadas'} · <b className="num">{formatPorMoneda(total)}</b>
       {elegidas.length > aplicables.length && <span className="text-bad"> · {elegidas.length - aplicables.length} no aplicable{elegidas.length - aplicables.length === 1 ? '' : 's'}</span>}
     </p>
   )
@@ -340,14 +347,14 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
                   <div className="col-span-3 min-w-0 @min-[52rem]:col-span-1 @min-[52rem]:col-start-3 @min-[52rem]:row-start-1"><CeldaCobertura c={coberturaDe(x, catalogo)} nombre={p.name} /></div>
                   {aplicado ? (
                     <>
-                      <p className="num col-span-3 flex items-baseline justify-between gap-2 text-sm font-semibold @min-[52rem]:col-span-1 @min-[52rem]:block @min-[52rem]:text-right" title={`Importe del fondo de este mes. La plantilla sugiere ${formatSoles(Number(p.suggested_amount))}.`}><span className="text-xs font-normal text-muted @min-[52rem]:hidden">Importe aplicado</span>{formatSoles(asignado.get(aplicado.id) ?? Number(aplicado.default_amount))}</p>
+                      <p className="num col-span-3 flex items-baseline justify-between gap-2 text-sm font-semibold @min-[52rem]:col-span-1 @min-[52rem]:block @min-[52rem]:text-right" title={`Importe del fondo de este mes. La plantilla sugiere ${formatOriginal(Number(p.suggested_amount), p.currency)}.`}><span className="text-xs font-normal text-muted @min-[52rem]:hidden">Importe aplicado</span>{formatOriginal(asignado.get(aplicado.id) ?? Number(aplicado.default_amount), p.currency)}</p>
                       <p className="num col-span-3 flex items-baseline justify-between gap-2 text-sm text-muted @min-[52rem]:col-span-1 @min-[52rem]:block @min-[52rem]:text-center"><span className="text-xs @min-[52rem]:hidden">Prioridad</span>{p.is_general ? '—' : aplicado.priority}</p>
                     </>
                   ) : (
                     <div className="col-span-3 grid min-w-0 grid-cols-[minmax(0,1fr)_5.5rem] gap-2 @min-[52rem]:contents">
                       <div className="min-w-0 @min-[52rem]:contents">
                         <label className="mb-0.5 block text-[11px] text-muted @min-[52rem]:hidden" aria-hidden="true">Importe (S/)</label>
-                        <MoneyInput aria-label={`Importe de ${p.name}`} value={importeFila(x)} disabled={bloqueado || cerrado} invalid={errImporte} onChange={(v) => ajustar(p.id, { amount: v })} />
+                        <MoneyInput aria-label={`Importe de ${p.name}`} currency={p.currency as Moneda} value={importeFila(x)} disabled={bloqueado || cerrado} invalid={errImporte} onChange={(v) => ajustar(p.id, { amount: v })} />
                       </div>
                       <div className="min-w-0 @min-[52rem]:contents">
                       <span className="mb-0.5 block text-[11px] text-muted @min-[52rem]:hidden" aria-hidden="true">Prioridad</span>
@@ -362,7 +369,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
                     </div>
                   )}
                   <div className="hidden @min-[52rem]:flex @min-[52rem]:items-center">{estadoPill}</div>
-                  {elegida && hayDif && <p className="col-span-3 text-[11px] text-muted @min-[52rem]:col-span-7">Ajustes solo para el fondo de este mes: la plantilla conserva {formatSoles(Number(p.suggested_amount))}{p.is_general ? '' : ` y prioridad ${p.priority}`}.</p>}
+                  {elegida && hayDif && <p className="col-span-3 text-[11px] text-muted @min-[52rem]:col-span-7">Ajustes solo para el fondo de este mes: la plantilla conserva {formatOriginal(Number(p.suggested_amount), p.currency)}{p.is_general ? '' : ` y prioridad ${p.priority}`}.</p>}
                   </>
                   )}
                 </FilaAcciones>
@@ -372,7 +379,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
               <div key={sec.clave} className="flex flex-col gap-1.5">{filas}</div>
             ) : (
               <SeccionPlantillas key={sec.clave} titulo={sec.titulo} icono={sec.icono} color={sec.color} total={sec.items.length} seleccionadas={elegidasSec.length}
-                subtotal={sumarImportes(elegidasSec.map((x) => parseMontoNoNegativo(importeFila(x)) ?? 0))} estado={estadoSeleccion(ids, sel)} abierta={seccionAbierta(sec.clave, sec.items.length)}
+                subtotal={formatPorMoneda(porMoneda(elegidasSec))} estado={estadoSeleccion(ids, sel)} abierta={seccionAbierta(sec.clave, sec.items.length)}
                 onAbrir={() => setAbiertas({ ...abiertas, [`${prefs.agrupar}:${sec.clave}`]: !seccionAbierta(sec.clave, sec.items.length) })}
                 onSeleccionar={(m) => marcar(ids, m)} onMover={puedeOrdenarSecciones ? (d) => moverSeccion(sec.clave, d) : undefined}>
                 {filas}
@@ -413,7 +420,7 @@ export function GestorPlantillasFondos({ mes, onCambio, onCerrar, onAdministrar 
             <div className="flex flex-col gap-2">
               <p>Esto cambia la configuración ORIGINAL de la plantilla; los próximos fondos partirán de estos valores. Los fondos ya creados no cambian.</p>
               <ul className="list-disc pl-5">
-                {diferencias(actualizar).suggested_amount !== undefined && <li>Importe sugerido: {formatSoles(Number(actualizar.plantilla.suggested_amount))} → <b>{formatSoles(diferencias(actualizar).suggested_amount!)}</b></li>}
+                {diferencias(actualizar).suggested_amount !== undefined && <li>Importe sugerido: {formatOriginal(Number(actualizar.plantilla.suggested_amount), actualizar.plantilla.currency)} → <b>{formatOriginal(diferencias(actualizar).suggested_amount!, actualizar.plantilla.currency)}</b></li>}
                 {diferencias(actualizar).priority !== undefined && <li>Prioridad sugerida: {actualizar.plantilla.priority} → <b>{diferencias(actualizar).priority}</b></li>}
               </ul>
             </div>

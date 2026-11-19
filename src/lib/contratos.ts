@@ -36,8 +36,10 @@ export const reporteGasto: z.ZodType<ReporteGasto, unknown> = z.object({
   expense_id: op(z.string()),
   allocations: lista(z.object({
     fund_id: z.string(), fund_name: z.string(), is_general: z.boolean(), kind: z.enum(['specific', 'general']), amount: num, remaining_after: num,
+    fund_currency: op(z.enum(['PEN', 'USD'])), fund_amount: op(num),
   })),
-  warnings: lista(z.object({ code: z.enum(['general_negative', 'specific_overspend']), fund_id: z.string(), fund_name: z.string(), remaining_after: num })),
+  warnings: lista(z.object({ code: z.enum(['general_negative', 'specific_overspend']), fund_id: z.string(), fund_name: z.string(), remaining_after: num, fund_currency: op(z.enum(['PEN', 'USD'])) })),
+  uncovered: op(z.object({ amount: num, original_amount: num, currency: z.enum(['PEN', 'USD']), reason: z.string() })),
   replayed: op(z.boolean()),
   blocked: op(z.boolean()),
   code: op(z.string()),
@@ -46,7 +48,7 @@ export const reporteGasto: z.ZodType<ReporteGasto, unknown> = z.object({
 })
 
 const filaPeriodoFondo: z.ZodType<FilaPeriodoFondo, unknown> = z.object({
-  period_id: z.string(), start: z.string(), fund_id: z.string(), fund_name: z.string(), assigned: num, consumed: num,
+  period_id: z.string(), start: z.string(), fund_id: z.string(), fund_name: z.string(), currency: op(z.enum(['PEN', 'USD'])), assigned: num, consumed: num,
 })
 
 export const cambioFondos: z.ZodType<CambioFondos, unknown> = z.object({
@@ -77,7 +79,7 @@ export const resultadoAplicacion: z.ZodType<ResultadoAplicacion, unknown> = z.ob
 export const eliminacionFondo: z.ZodType<EliminacionFondo, unknown> = z.object({
   dry_run: z.boolean(), fund_name: z.string(), is_general: z.boolean(),
   open_expenses: num, open_allocations: num, closed_allocations: num, closed_snapshots: num, budgets: num, templates: num,
-  destinations: z.array(z.object({ id: z.string(), name: z.string(), is_general: z.boolean() })),
+  destinations: z.array(z.object({ id: z.string(), name: z.string(), is_general: z.boolean(), currency: op(z.enum(['PEN', 'USD'])) })),
   blocked: z.boolean(),
   code: z.string().nullish().transform((v) => v ?? null), // ausente cuando el fondo se puede eliminar
   changed_expenses: op(z.number()),
@@ -95,6 +97,8 @@ export const planFila: z.ZodType<PlanFila, unknown> = z.object({
 
 export const resumenPlan: z.ZodType<ResumenPlan, unknown> = z.object({
   period_id: z.string().nullable(), funds_total: num, funds_count: num,
-  budget_total: z.coerce.number(), expenses_total: z.coerce.number(), expenses_count: num, overspent_funds: num,
+  budget_total: z.coerce.number(), budget_usd: z.coerce.number().nullish().transform((v) => v ?? 0), funds_usd_count: num.nullish().transform((v) => v ?? 0),
+  uncovered_total: z.coerce.number().nullish().transform((v) => v ?? 0), uncovered_count: num.nullish().transform((v) => v ?? 0),
+  expenses_total: z.coerce.number(), expenses_count: num, overspent_funds: num,
   plan: planFila.nullable(),
 })

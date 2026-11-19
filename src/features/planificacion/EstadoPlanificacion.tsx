@@ -8,6 +8,7 @@ import { MesSelector } from '@/components/ui/MesSelector'
 import { Pill, Skeleton } from '@/components/ui/States'
 import { mensajeDeError } from '@/lib/errors'
 import { formatFecha, formatMes, formatSoles, toIso } from '@/lib/format'
+import { formatPorMoneda } from '@/domain/moneda'
 import { useHoy } from '@/features/fondos/useHoy'
 import { useActualizarPerfil, usePerfil } from '@/features/perfil/usePerfil'
 import { ETIQUETA_ESTADO, mananaDe, useGuardarPlan, useResumenPlan } from './usePlanificacion'
@@ -69,7 +70,7 @@ export function EstadoPlanificacion({ mesInicial, onClose, onAbrirAsistente }: {
           <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm" aria-label={`Planificación de ${formatMes(mes)}`}>
             <dt className="text-muted">Mes</dt><dd className="text-right font-semibold">{formatMes(mes)}</dd>
             <dt className="text-muted">Fondos configurados</dt><dd className="num text-right font-semibold">{resumen.data.funds_count}</dd>
-            <dt className="text-muted">Presupuesto total</dt><dd className="num text-right font-semibold">{formatSoles(resumen.data.budget_total)}</dd>
+            <dt className="text-muted">Presupuesto total</dt><dd className="num text-right font-semibold">{formatPorMoneda({ PEN: resumen.data.budget_total, USD: resumen.data.budget_usd })}</dd>
             <dt className="text-muted">Gastos reales registrados</dt><dd className="num text-right font-semibold">{formatSoles(resumen.data.expenses_total)} · {resumen.data.expenses_count} mov.</dd>
             <dt className="text-muted">Última actualización</dt><dd className="text-right font-semibold">{actualizado}</dd>
             <dt className="text-muted">Próximo recordatorio</dt><dd className="text-right font-semibold">{proximo}</dd>

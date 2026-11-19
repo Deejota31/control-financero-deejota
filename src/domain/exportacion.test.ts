@@ -18,7 +18,7 @@ describe('exportación', () => {
   })
   it('normaliza PEN antiguo sin recalcular y conserva snapshots v2', () => {
     expect(normalizarRespaldo({ version_esquema: 1, gastos: [{ amount: '100.00', currency: 'PEN' }] }).gastos).toEqual([expect.objectContaining({ original_amount: '100.00', amount: '100.00', original_currency: 'PEN', exchange_rate: '1' })])
-    const datos = { version_esquema: 2, gastos: [{ amount: '34.50', original_amount: '10.00', original_currency: 'USD', exchange_rate: '3.45' }] }
+    const datos = { version_esquema: 3, gastos: [{ amount: '34.50', original_amount: '10.00', original_currency: 'USD', exchange_rate: '3.45' }] }
     expect(normalizarRespaldo(datos)).toEqual(datos)
     expect(() => normalizarRespaldo({ version_esquema: 1, gastos: [{ amount: 10, currency: 'USD' }] })).toThrow('ambigua')
   })
@@ -55,7 +55,30 @@ describe('exportación', () => {
     }, '2026-10-25T00:00:00Z')
     const texto = JSON.stringify({ ...r, nota: '' })
     for (const x of ['u1', 'h/g/a.pdf', 'receipt_path', 'created_by', 'password', 'token']) expect(texto).not.toContain(x)
-    expect(r.version_esquema).toBe(2)
+    expect(r.version_esquema).toBe(3)
     expect(r.gastos[0].tiene_comprobante).toBe(true)
+  })
+
+  it('CSV: los fondos PEN conservan su formato y los USD muestran su importe nominal; el no cubierto va en su columna', () => {
+    const csv = construirCsvGastos({ ...base, fondos: [{ id: 'f1', name: 'Suscripciones' }, { id: 'f2', name: 'General' }], gastos: [g({ amount: '82.60', original_currency: 'USD', original_amount: '23.60', exchange_rate: '3.5', conversion_method: 'manual' })],
+      asignaciones: [{ expense_id: 'g1', fund_id: 'f1', amount: '52.50', allocation_kind: 'specific', fund_amount: '15.00', fund_currency: 'USD' }, { expense_id: 'g1', fund_id: 'f2', amount: '10.00', allocation_kind: 'general', fund_amount: '10.00', fund_currency: 'PEN' }],
+      noCubierto: [{ expense_id: 'g1', uncovered_amount: '20.10', uncovered_original: '5.74', original_currency: 'USD' }], incluirAnulados: false })
+    expect(csv).toContain('Suscripciones: 15.00 USD | General: 10.00')
+    expect(csv).toContain('Suscripciones: 52.50 | General: 10.00,20.10')
+  })
+  it('restaurar un respaldo anterior a los fondos multimoneda no los convierte: PEN, sin cobertura cruzada, imputaciones intactas', () => {
+    const viejo = { version_esquema: 2, gastos: [], fondos: { fondos: [{ id: 'f1', name: 'Hogar' }], reglas_ambito: [] }, imputaciones: [{ expense_id: 'g1', fund_id: 'f1', amount: '70.40' }] }
+    const r = normalizarRespaldo(viejo) as { version_esquema: number; fondos: { fondos: Record<string, unknown>[] }; imputaciones: Record<string, unknown>[]; no_cubierto: unknown[] }
+    expect(r.version_esquema).toBe(3)
+    expect(r.fondos.fondos[0]).toMatchObject({ id: 'f1', currency: 'PEN', allow_cross_currency: false })
+    expect(r.imputaciones[0]).toMatchObject({ amount: '70.40', fund_currency: 'PEN', fund_amount: '70.40', exchange_rate: '1' })
+    expect(r.no_cubierto).toEqual([])
+  })
+  it('restaurar un respaldo v3 conserva monedas e importes nominales sin tocarlos', () => {
+    const v3 = { version_esquema: 3, gastos: [], fondos: { fondos: [{ id: 'f1', name: 'Suscripciones', currency: 'USD', allow_cross_currency: true }] }, imputaciones: [{ amount: '52.50', fund_currency: 'USD', fund_amount: '15.00', exchange_rate: '3.5' }], no_cubierto: [{ expense_id: 'g1' }] }
+    const r = normalizarRespaldo(v3) as { fondos: { fondos: unknown[] }; imputaciones: unknown[]; no_cubierto: unknown[] }
+    expect(r.fondos.fondos[0]).toEqual(v3.fondos.fondos[0])
+    expect(r.imputaciones[0]).toEqual(v3.imputaciones[0])
+    expect(r.no_cubierto).toEqual(v3.no_cubierto)
   })
 })

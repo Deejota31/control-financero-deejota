@@ -31,7 +31,7 @@ async function defectos(page: Page): Promise<string[]> {
     const sel = 'button, a[href], input:not([type=hidden]):not([type=file]), select, textarea, [role=button], [role=radio], [role=checkbox], [role=tab], [role=combobox], [role=switch]'
     for (const el of document.querySelectorAll(sel)) {
       if (!visible(el)) continue
-      if (el.closest('[aria-hidden="true"]') || el.closest('.sr-only')) continue
+      if (el.closest('[aria-hidden="true"]') || el.closest('.sr-only') || el.closest('details:not([open])')) continue // el contenido de un acordeón plegado no se ve
       const r = el.getBoundingClientRect()
       if (r.right > vw + 1 || r.left < -1) { out.push(`fuera de pantalla: «${nombre(el)}»`); continue }
       const area = r.width * r.height

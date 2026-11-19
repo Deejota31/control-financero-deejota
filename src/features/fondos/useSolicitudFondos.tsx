@@ -6,7 +6,8 @@ import { ConfirmDialog, Modal } from '@/components/ui/Dialog'
 import { cambiosPorPeriodo, round2, type CambioFondos } from '@/domain/fondos'
 import { cn } from '@/lib/cn'
 import { mensajeDeError } from '@/lib/errors'
-import { formatMes, formatSoles } from '@/lib/format'
+import { formatMes } from '@/lib/format'
+import { formatOriginal } from '@/domain/moneda'
 import type { Fila } from '@/lib/tipos'
 import { useFondoMutaciones, type FondoPayload } from './useFondos'
 
@@ -106,6 +107,7 @@ export function useSolicitudFondos(fondos: FondoFila[]) {
 
 function EfectoCambio({ cambio, fondos }: { cambio: CambioFondos; fondos: FondoFila[] }) {
   const nombres = new Map(fondos.map((f) => [f.id, f.name]))
+  const monedas = new Map(fondos.map((f) => [f.id, f.currency]))
   const porPeriodo = cambio.periodos?.after ? cambiosPorPeriodo(cambio.periodos.before, cambio.periodos.after) : null
   const ids = Array.from(new Set([...Object.keys(cambio.consumption_before), ...Object.keys(cambio.consumption_after ?? {})]))
   const filas = ids
@@ -129,9 +131,9 @@ function EfectoCambio({ cambio, fondos }: { cambio: CambioFondos; fondos: FondoF
                     {p.filas.map((x) => (
                       <tr key={x.fund_id} className="border-t border-line align-top">
                         <td className="px-3 py-1.5">{x.nombre}</td>
-                        <td className="num px-2 py-1.5 text-right">{x.asignadoAntes === x.asignadoDespues ? formatSoles(x.asignadoAntes) : <>{formatSoles(x.asignadoAntes)} → <b>{formatSoles(x.asignadoDespues)}</b></>}</td>
-                        <td className="num px-2 py-1.5 text-right">{x.consumoAntes === x.consumoDespues ? formatSoles(x.consumoAntes) : <>{formatSoles(x.consumoAntes)} → <b>{formatSoles(x.consumoDespues)}</b></>}</td>
-                        <td className={cn('num px-3 py-1.5 text-right font-semibold', x.impacto > 0 && 'text-ok', x.impacto < 0 && 'text-bad')}>{x.impacto > 0 ? '+' : x.impacto < 0 ? '−' : ''}{formatSoles(Math.abs(x.impacto))}</td>
+                        <td className="num px-2 py-1.5 text-right">{x.asignadoAntes === x.asignadoDespues ? formatOriginal(x.asignadoAntes, x.moneda) : <>{formatOriginal(x.asignadoAntes, x.moneda)} → <b>{formatOriginal(x.asignadoDespues, x.moneda)}</b></>}</td>
+                        <td className="num px-2 py-1.5 text-right">{x.consumoAntes === x.consumoDespues ? formatOriginal(x.consumoAntes, x.moneda) : <>{formatOriginal(x.consumoAntes, x.moneda)} → <b>{formatOriginal(x.consumoDespues, x.moneda)}</b></>}</td>
+                        <td className={cn('num px-3 py-1.5 text-right font-semibold', x.impacto > 0 && 'text-ok', x.impacto < 0 && 'text-bad')}>{x.impacto > 0 ? '+' : x.impacto < 0 ? '−' : ''}{formatOriginal(Math.abs(x.impacto), x.moneda)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -149,8 +151,8 @@ function EfectoCambio({ cambio, fondos }: { cambio: CambioFondos; fondos: FondoF
               {filas.map((f) => (
                 <tr key={f.id} className="border-t border-line">
                   <td className="py-1.5">{nombres.get(f.id) ?? 'Fondo'}</td>
-                  <td className="num py-1.5 text-right">{formatSoles(f.antes)}</td>
-                  <td className="num py-1.5 text-right font-semibold text-fg">{formatSoles(f.despues)}</td>
+                  <td className="num py-1.5 text-right">{formatOriginal(f.antes, monedas.get(f.id) ?? 'PEN')}</td>
+                  <td className="num py-1.5 text-right font-semibold text-fg">{formatOriginal(f.despues, monedas.get(f.id) ?? 'PEN')}</td>
                 </tr>
               ))}
             </tbody>
