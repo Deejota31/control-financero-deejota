@@ -31,8 +31,8 @@ select is((select count(*)::int from public.profiles where display_name = 'Hacke
 -- Anónimo
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select is((select count(*)::int from public.profiles), 0, 'anon no ve perfiles');
-select is((select count(*)::int from public.households), 0, 'anon no ve hogares');
+select throws_ok($$select count(*) from public.profiles$$, '42501', null, 'anon no ve perfiles');
+select throws_ok($$select count(*) from public.households$$, '42501', null, 'anon no ve hogares');
 
 select * from finish();
 rollback;

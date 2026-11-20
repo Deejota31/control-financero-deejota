@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Field } from '@/components/ui/Field'
 import { InputConIcono } from '@/components/ui/InputConIcono'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { rutaInterna } from './rutaInterna'
 import { env } from '@/lib/supabase'
 import { AccesoSocial } from './AccesoSocial'
 import { useAuth } from './AuthProvider'
@@ -18,7 +19,7 @@ export function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const from = rutaInterna((location.state as { from?: string } | null)?.from)
   const [formError, setFormError] = useState<{ message: string; kind?: string } | null>(null)
 
   const {

@@ -41,7 +41,7 @@ export function PasswordForm({ submitLabel, onDone }: { submitLabel: string; onD
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       {error && <Alert tone="error">{error}</Alert>}
-      <Field label="Contraseña nueva" error={errors.password?.message} hint="Mínimo 8 caracteres.">
+      <Field label="Contraseña nueva" error={errors.password?.message} hint="Mínimo 10 caracteres, con mayúscula, minúscula y número.">
         {(p) => <Input {...p} type="password" autoComplete="new-password" {...register('password')} />}
       </Field>
       <Field label="Repite la contraseña" error={errors.confirm?.message}>

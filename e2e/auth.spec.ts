@@ -141,7 +141,7 @@ test.describe('con el usuario demo local', () => {
     await page.getByLabel('Contraseña nueva').fill('corta')
     await page.getByLabel('Repite la contraseña').fill('otra')
     await page.getByRole('button', { name: 'Cambiar contraseña' }).click()
-    await expect(page.getByText('Usa al menos 8 caracteres.')).toBeVisible()
+    await expect(page.getByText('Usa al menos 10 caracteres.')).toBeVisible()
   })
 
   test('en pantalla pequeña se usa la barra de navegación inferior', async ({ page }) => {

@@ -147,8 +147,8 @@ select throws_ok(
 -- Anónimo
 set local role anon;
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-select is((select count(*)::int from public.ambitos), 0, 'anon no ve el catálogo');
-select is((select count(*)::int from public.funds), 0, 'anon no ve fondos');
+select throws_ok($$select count(*) from public.ambitos$$, '42501', null, 'anon no ve el catálogo');
+select throws_ok($$select count(*) from public.funds$$, '42501', null, 'anon no ve fondos');
 
 select * from finish();
 rollback;

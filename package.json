@@ -18,6 +18,7 @@
     "test": "vitest run",
     "verify:seed": "node scripts/verificar-seed.mjs",
     "verify:security": "node scripts/verificar-seguridad.mjs",
+    "audit:aislamiento": "node scripts/auditar-aislamiento.mjs",
     "test:all": "npm run check && npm run db:test && npm run test:e2e && npm run verify:seed && npm run verify:security",
     "verify:install": "node scripts/verificar-instalacion.mjs",
     "verify:release": "node scripts/verificar-publicacion.mjs",

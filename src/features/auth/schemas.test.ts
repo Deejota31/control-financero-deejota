@@ -17,7 +17,13 @@ describe('loginSchema', () => {
 })
 
 describe('newPasswordSchema', () => {
-  it('exige 8 caracteres', () => {
+  it('exige 10 caracteres, mayúscula, minúscula y número', () => {
+    expect(newPasswordSchema.safeParse({ password: 'Corta1', confirm: 'Corta1' }).success).toBe(false)
+    expect(newPasswordSchema.safeParse({ password: 'sinmayuscula1', confirm: 'sinmayuscula1' }).success).toBe(false)
+    expect(newPasswordSchema.safeParse({ password: 'SINMINUSCULA1', confirm: 'SINMINUSCULA1' }).success).toBe(false)
+    expect(newPasswordSchema.safeParse({ password: 'SinNumeroAqui', confirm: 'SinNumeroAqui' }).success).toBe(false)
+  })
+  it('rechaza una contraseña corta', () => {
     expect(newPasswordSchema.safeParse({ password: 'corta', confirm: 'corta' }).success).toBe(false)
   })
   it('exige que coincidan', () => {

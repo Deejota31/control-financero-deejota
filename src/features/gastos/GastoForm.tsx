@@ -17,6 +17,7 @@ import { fechaEfectiva } from '@/domain/plantillas'
 import { cn } from '@/lib/cn'
 import { esErrorDeRed, mensajeDeError } from '@/lib/errors'
 import { errorImporte, formatFecha, formatSoles, parseImporte, toIso } from '@/lib/format'
+import { tipoRealDeArchivo } from '@/lib/tipoArchivo'
 import { supabase } from '@/lib/supabase'
 import type { Gasto, Plantilla } from '@/lib/tipos'
 import { useDebounced } from '@/lib/useDebounced'
@@ -207,11 +208,13 @@ export function GastoForm({ modo, gasto, plantilla, mes, orden, inicial, onClose
   const previoActualizando = payloadPrevio !== payloadDebounced || previo.isFetching
   const bloqueado = Boolean(previo.data?.blocked) && payloadPrevio === payloadDebounced
 
-  function elegirArchivo(f: File | null) {
+  async function elegirArchivo(f: File | null) {
     setErrorArchivo(null)
     if (!f) return setArchivo(null)
     if (!TIPOS_ARCHIVO.includes(f.type)) return setErrorArchivo('Usa una imagen JPG, PNG o WebP, o un PDF.')
     if (f.size > MAX_BYTES) return setErrorArchivo('El archivo supera los 5 MB.')
+    // El tipo declarado lo puede falsear quien elige el archivo: se comprueba el contenido real.
+    if ((await tipoRealDeArchivo(f)) !== f.type) return setErrorArchivo('El contenido no coincide con el tipo del archivo. Usa una imagen JPG, PNG o WebP, o un PDF.')
     setArchivo(f)
   }
 

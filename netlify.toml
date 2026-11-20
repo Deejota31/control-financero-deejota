@@ -19,6 +19,12 @@
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # CSP: la app no usa scripts en línea; style 'unsafe-inline' es necesario por los estilos dinámicos de React. Si se añade un proveedor (OAuth por redirección no requiere cambios), actualizar aquí y en e2e-pwa/csp.spec.ts.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    # HSTS sin includeSubDomains ni preload hasta confirmar el dominio definitivo y que TODOS sus subdominios sirven HTTPS.
+    Strict-Transport-Security = "max-age=31536000"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+    Cross-Origin-Resource-Policy = "same-site"
 
 # Los archivos de /assets llevan hash en el nombre: se pueden cachear sin límite.
 [[headers]]

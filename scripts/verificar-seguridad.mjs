@@ -73,6 +73,21 @@ const cfg = readFileSync('supabase/config.toml', 'utf8')
 const auth = cfg.split(/\n\[/).find((s) => s.startsWith('auth]')) ?? ''
 ok(/^enable_signup\s*=\s*false/m.test(auth), 'config.toml: el registro público está desactivado ([auth] enable_signup = false)')
 
+const minPass = Number(/^minimum_password_length\s*=\s*(\d+)/m.exec(auth)?.[1] ?? 0)
+ok(minPass >= 10, `config.toml: contraseña mínima de al menos 10 caracteres (actual: ${minPass})`)
+ok(/^password_requirements\s*=\s*"lower_upper_letters_digits"/m.test(auth), 'config.toml: la contraseña exige minúsculas, mayúsculas y números')
+ok(/^enable_manual_linking\s*=\s*false/m.test(auth), 'config.toml: sin vinculación manual de identidades')
+const proveedores = [...cfg.matchAll(/^\[auth\.external\.(\w+)\][^[]*?^enabled\s*=\s*true/gms)].map((m) => m[1])
+ok(proveedores.length === 0, `config.toml: ningún proveedor OAuth activado sin credenciales oficiales${proveedores.length ? ': ' + proveedores.join(', ') : ''}`)
+
+// 5b. Cabeceras de seguridad de producción (netlify.toml)
+const netlify = readFileSync('netlify.toml', 'utf8')
+const csp = /Content-Security-Policy = "([^"]+)"/.exec(netlify)?.[1] ?? ''
+ok(csp.includes("default-src 'self'") && csp.includes("object-src 'none'") && csp.includes("frame-ancestors 'none'"), 'netlify.toml: CSP restrictiva (default-src self, object-src none, frame-ancestors none)')
+ok(!/script-src[^;]*'unsafe-(inline|eval)'/.test(csp), "netlify.toml: la CSP no permite 'unsafe-inline' ni 'unsafe-eval' en scripts")
+ok(/Strict-Transport-Security = "max-age=\d{7,}/.test(netlify), 'netlify.toml: HSTS configurado')
+ok(!/includeSubDomains|preload/.test(/Strict-Transport-Security = "([^"]+)"/.exec(netlify)?.[1] ?? ''), 'netlify.toml: HSTS sin includeSubDomains/preload hasta confirmar el dominio definitivo')
+
 // 6. Un build de producción no incrusta URLs locales ni secretos (las variables del proceso priorizan sobre .env.local)
 const salida = mkdtempSync(join(tmpdir(), 'gd-build-'))
 try {
